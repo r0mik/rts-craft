@@ -9,7 +9,7 @@ var think_timer := 1.0
 var wave_size := 6
 var elapsed := 0.0
 var reserve := 0  # minerals held back for the next planned building
-var easy := false  # easy mode: slow reactions, small economy, marines only, rare small attacks
+var easy := false  # easy mode: slow reactions, small economy, marines only, never attacks, no Titan or missiles
 
 
 func _process(delta: float) -> void:
@@ -90,7 +90,6 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 			["barracks", rax < 1 and elapsed > 90.0],
 			["ebay", _count("ebay", buildings, workers) == 0 and (elapsed > 420.0 or air)],
 			["turret", _count("turret", buildings, workers) < 2 and air and game.has_completed(team, "ebay")],
-			["silo", _count("silo", buildings, workers) == 0 and elapsed > 470.0 and game.has_completed(team, "ebay")],
 		]
 	reserve = 0
 	for entry in plan:
@@ -139,7 +138,7 @@ func _military(cc, army: Array, buildings: Array) -> void:
 			reserve = maxi(reserve, int(Defs.UNITS.titan.cost))
 	# Missiles: keep the silo loaded and fire at the densest group of enemy units and buildings.
 	for b in buildings:
-		if b.kind != "silo" or not b.is_complete():
+		if easy or b.kind != "silo" or not b.is_complete():
 			continue
 		if b.missile_ready:
 			var tgt = _missile_target()
@@ -181,12 +180,14 @@ func _military(cc, army: Array, buildings: Array) -> void:
 			if a.is_idle() and a.position.distance_to(home) < 1200.0:
 				a.order_attack_move(threat.position)
 		return
-	if army.size() >= wave_size and (not easy or elapsed > 300.0):
+	if easy:
+		return  # the easy (red) opponent only defends its base: no attack waves
+	if army.size() >= wave_size:
 		var tgt = _enemy_target(home)
 		if tgt != null:
 			for a in army:
 				a.order_attack_move(tgt.position)
-			wave_size = mini(wave_size + 2, 12) if easy else mini(wave_size + 4, 40)
+			wave_size = mini(wave_size + 4, 40)
 		return
 	# Units already out on the field keep pushing towards the next target.
 	for a in army:
@@ -197,7 +198,7 @@ func _military(cc, army: Array, buildings: Array) -> void:
 
 
 func _wants_titan(cc) -> bool:
-	return cc != null and elapsed > (360.0 if easy else 300.0) and game.has_completed(team, "barracks") \
+	return not easy and cc != null and elapsed > 300.0 and game.has_completed(team, "barracks") \
 			and game.count_units(team, "titan") == 0
 
 
