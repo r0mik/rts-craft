@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0}
 
 var game
 var camera: Camera3D
@@ -572,9 +572,12 @@ func _sync(e, root: Node3D, delta: float) -> void:
 					if e.is_mining() and e.carrying == 0 and e.mine_timer > 0.0 and randf() < delta * 4.0:
 						_burst(p3 + Vector3(0, 1.0, 0) + Vector3(cos(e.facing), 0, sin(e.facing)) * 1.0,
 								6, _spark_ramp, _additive, 3.0, 0.25, 0.35, Vector3(0, -6, 0))
-			"wraith", "stormbird":
+			"wraith", "stormbird", "devastator":
 				var body: Node3D = model.get_node("Body")
-				body.position.y = Models.FLY_HEIGHT + (0.5 if e.kind == "stormbird" else 0.0) + sin(time * 2.2 + seed) * 0.25
+				var lift: float = {"stormbird": 0.5, "devastator": 1.0}.get(e.kind, 0.0)
+				body.position.y = Models.FLY_HEIGHT + lift + sin(time * 2.2 + seed) * 0.25
+				if e.kind == "devastator":  # the belly missile reloads during the cooldown
+					body.get_node("Payload").visible = e.cooldown_left < e.stats.cooldown * 0.5
 				body.rotation.x = lerpf(body.rotation.x, 0.25 if moved else 0.0, minf(1.0, delta * 3.0))
 			"titan":  # walking legs and a torso that turns towards the target
 				var swing := sin(time * 4.0 + seed) * 0.35 if moved else 0.0
@@ -874,6 +877,10 @@ func fx_shot(attacker, target, splash: bool) -> void:
 				width = 0.09
 			"stormbird":
 				rockets = true
+			"devastator":  # one huge bunker-buster from the belly
+				var hit_b := _world(target.position, top_of(target) * 0.5)
+				_rocket(muzzle + Vector3(0, -1.2, 0), hit_b, 2.2, 0.9)
+				return
 			"aa":
 				muzzle = _world(attacker.position + dir * 1.0 * PX, 2.3)
 				color = Color(1.0, 0.95, 0.8)
@@ -904,7 +911,7 @@ var _rockets: Array = []  # small visual missiles: {node, from, to, t}
 const ROCKET_TIME := 0.5
 
 
-func _rocket(from: Vector3, to: Vector3) -> void:
+func _rocket(from: Vector3, to: Vector3, size := 1.0, dur := ROCKET_TIME) -> void:
 	var n := Node3D.new()
 	var b: Models = builders[0]
 	var body := Node3D.new()
@@ -913,14 +920,15 @@ func _rocket(from: Vector3, to: Vector3) -> void:
 	b.cyl(body, 0.12, 0.12, 0.8, Vector3.ZERO, "hull", Vector3.ZERO, 10)
 	b.cyl(body, 0.0, 0.12, 0.25, Vector3(0, 0.52, 0), "red_glow", Vector3.ZERO, 10)
 	b.cyl(body, 0.1, 0.06, 0.12, Vector3(0, -0.46, 0), "fire_glow", Vector3.ZERO, 10)
+	n.scale = Vector3.ONE * size
 	fx_root.add_child(n)
 	n.position = from
-	_rockets.append({"node": n, "from": from, "to": to, "t": 0.0})
+	_rockets.append({"node": n, "from": from, "to": to, "t": 0.0, "size": size, "dur": dur})
 
 
 func _update_rockets(delta: float) -> void:
 	for rk in _rockets:
-		rk.t += delta / ROCKET_TIME
+		rk.t += delta / rk.dur
 		var t: float = minf(rk.t, 1.0)
 		var p: Vector3 = rk.from.lerp(rk.to, t) + Vector3(0, sin(t * PI) * 1.2, 0)
 		var n: Node3D = rk.node
@@ -931,6 +939,10 @@ func _update_rockets(delta: float) -> void:
 		_burst(p, 1, _smoke_ramp, _smoke, 0.3, 0.6, 0.7, Vector3(0, 0.4, 0))
 		if rk.t >= 1.0:
 			n.queue_free()
+			if rk.size > 1.5:  # bunker-buster: a big blast
+				fx_explosion(Vector2(p.x, p.z) * PX, 2.6)
+				_flash_light(p, Color(1.0, 0.7, 0.4), 14.0, 16.0, 0.5)
+				continue
 			_burst(p, 12, _fire_ramp, _additive, 4.0, 1.0, 0.35, Vector3(0, 1.0, 0))
 			_burst(p, 8, _smoke_ramp, _smoke, 2.0, 1.6, 1.0, Vector3(0, 1.0, 0))
 			_flash_light(p, Color(1.0, 0.6, 0.3), 4.0, 6.0, 0.2)
@@ -992,7 +1004,7 @@ func fx_death(e) -> void:
 			var off := Vector2(randf_range(-0.4, 0.4) * e.size.x, randf_range(-0.4, 0.4) * e.size.y)
 			fx_explosion(e.position + off, s * 0.6)
 	elif e.is_in_group("units"):
-		var size := 2.5 if e.kind in ["titan", "stormbird"] else 1.3 if e.kind in ["tank", "wraith", "aa"] else 0.6
+		var size := 2.5 if e.kind in ["titan", "stormbird", "devastator"] else 1.3 if e.kind in ["tank", "wraith", "aa"] else 0.6
 		fx_explosion(e.position, size, mid_of(e) if e.is_air() else -1.0)
 
 

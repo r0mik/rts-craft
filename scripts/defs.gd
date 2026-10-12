@@ -28,6 +28,12 @@ const UNITS := {
 		"damage": 32, "range": 240.0, "cooldown": 1.6, "sight": 340.0, "splash": 50.0,
 		"cost": 300, "supply": 4, "time": 40.0, "hotkey": KEY_B, "air": true,
 	},
+	# Siege bomber: one huge bunker-buster missile at a time, only against buildings.
+	"devastator": {
+		"name": "Devastator (бомбардировщик)", "hp": 340, "speed": 105.0, "radius": 20.0,
+		"damage": 260, "range": 270.0, "cooldown": 3.5, "sight": 340.0,
+		"cost": 400, "supply": 5, "time": 50.0, "hotkey": KEY_N, "air": true, "buildings_only": true,
+	},
 	# Anti-air vehicle: long-range missiles that hit only flyers.
 	"aa": {
 		"name": "AA Rover (ПВО)", "hp": 140, "speed": 95.0, "radius": 15.0,
@@ -79,7 +85,7 @@ const BUILDINGS := {
 	},
 	"starport": {
 		"name": "Starport", "short": "STARPORT", "hp": 1300, "size": Vector2(120, 100),
-		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird"], "hotkey": KEY_P, "requires": "factory",
+		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird", "devastator"], "hotkey": KEY_P, "requires": "factory",
 	},
 	"silo": {
 		"name": "Missile Silo", "short": "SILO", "hp": 600, "size": Vector2(70, 70),

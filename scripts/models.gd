@@ -231,6 +231,7 @@ func build(kind: String) -> Node3D:
 		"titan": return titan()
 		"aa": return aa_rover()
 		"stormbird": return stormbird()
+		"devastator": return devastator()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -802,6 +803,43 @@ func stormbird() -> Node3D:
 			anim(cyl(body, 0.0, 0.16, 0.8, p + Vector3(-1.0, 0, 0), "holo", Vector3(0, 0, 90), 16), "pulse", 4.0)
 		box(body, Vector3(0.9, 0.9, 0.07), Vector3(-1.6, 0.55, sz * 0.45), "team", Vector3(sz * 20.0, 0, 28))
 		box(body, Vector3(0.75, 0.05, 0.08), Vector3(-1.55, 0.6, sz * 0.47), "energy", Vector3(sz * 20.0, 0, 28))
+	return r
+
+
+## Devastator: stealth flying-wing siege bomber in dark armour, with a glowing team-coloured
+## spine, six engines in the trailing edge and a huge bunker-buster missile under its belly
+## ("Payload", hidden for a moment after each launch by view3d.gd).
+func devastator() -> Node3D:
+	var r := _root("Devastator")
+	var body := Node3D.new()
+	body.name = "Body"
+	body.position = Vector3(0, FLY_HEIGHT + 1.0, 0)
+	r.add_child(body)
+	octa(body, 3.6, 1.6, 0.55, Vector3(0, -0.25, 0), "gunmetal", 0.55)  # central hull
+	sphere(body, 0.5, Vector3(1.3, 0.12, 0), "glass_dark", Vector3(1.6, 0.5, 1.0))
+	box(body, Vector3(3.0, 0.06, 0.12), Vector3(-0.1, 0.32, 0), "energy")
+	for sz in [-1, 1]:
+		var wing := Node3D.new()  # flying wing: one big swept slab per side
+		wing.position = Vector3(0.9, -0.1, sz * 0.4)
+		wing.rotation_degrees = Vector3(0, -sz * 35.0, 0)
+		body.add_child(wing)
+		box(wing, Vector3(2.0, 0.22, 4.2), Vector3(-1.1, 0, sz * 2.1), "dark")
+		box(wing, Vector3(2.02, 0.05, 3.6), Vector3(-1.1, 0.12, sz * 2.0), "team_dark")
+		box(wing, Vector3(0.1, 0.24, 4.2), Vector3(-0.08, 0, sz * 2.1), "energy")
+		sphere(wing, 0.1, Vector3(-1.1, 0, sz * 4.2), "red_glow")
+		for k in 3:  # engines buried in the trailing edge
+			var p := Vector3(-2.15, 0, sz * (0.6 + k * 1.1))
+			cyl(wing, 0.2, 0.22, 0.3, p, "gunmetal", Vector3(0, 0, -90), 16)
+			anim(cyl(wing, 0.18, 0.18, 0.05, p + Vector3(-0.17, 0, 0), "glow", Vector3(0, 0, -90), 16), "pulse", 3.0)
+	var payload := Node3D.new()
+	payload.name = "Payload"
+	payload.position = Vector3(0.0, -0.75, 0)
+	body.add_child(payload)
+	cyl(payload, 0.3, 0.3, 2.6, Vector3.ZERO, "hull", Vector3(0, 0, -90), 20)
+	cyl(payload, 0.0, 0.3, 0.8, Vector3(1.7, 0, 0), "red_glow", Vector3(0, 0, -90), 20)
+	torus(payload, 0.28, 0.36, Vector3(0.6, 0, 0), "energy", Vector3(0, 0, 90))
+	for k in 4:
+		box(payload, Vector3(0.6, 0.05, 0.8), Vector3(-1.1, 0, 0), "dark", Vector3(k * 45.0, 0, 0))
 	return r
 
 

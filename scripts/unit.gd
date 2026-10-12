@@ -73,8 +73,11 @@ func is_air() -> bool:
 	return stats.get("air", false)
 
 
-## Flyers can only be hit by anti-air weapons; "air_only" units (AA Rover) cannot hit the ground.
+## Flyers can only be hit by anti-air weapons; "air_only" units (AA Rover) cannot hit the ground;
+## "buildings_only" units (Devastator) attack nothing but buildings.
 func can_target(e) -> bool:
+	if stats.get("buildings_only", false):
+		return e.is_in_group("buildings")
 	if e.is_air():
 		return stats.get("anti_air", true)
 	return not stats.get("air_only", false)
