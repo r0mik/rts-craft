@@ -18,6 +18,19 @@ const UNITS := {
 		"damage": 0, "range": 130.0, "cooldown": 1.0, "sight": 260.0,
 		"cost": 75, "supply": 1, "time": 18.0, "hotkey": KEY_E, "healer": true, "heal_rate": 14.0,
 	},
+	# Scout: unarmed, very fast hover drone with huge sight; drops sensor beacons (F).
+	"scout": {
+		"name": "Seeker (разведчик)", "hp": 55, "speed": 215.0, "radius": 10.0,
+		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 460.0,
+		"cost": 60, "supply": 1, "time": 14.0, "hotkey": KEY_R, "unarmed": true,
+		"beacon_cooldown": 25.0,
+	},
+	# Sensor beacon left by a Seeker: does not move, sees far, burns out after "lifetime" seconds.
+	"beacon": {
+		"name": "Sensor Beacon (маяк)", "hp": 40, "speed": 0.0, "radius": 8.0,
+		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 380.0,
+		"cost": 0, "supply": 0, "time": 0.0, "unarmed": true, "static": true, "lifetime": 90.0,
+	},
 	"tank": {
 		"name": "Siege Tank (танк)", "hp": 160, "speed": 75.0, "radius": 16.0,
 		"damage": 30, "range": 240.0, "cooldown": 2.2, "sight": 300.0, "splash": 40.0,
@@ -68,7 +81,7 @@ const UNITS := {
 const BUILDINGS := {
 	"cc": {
 		"name": "Command Center", "short": "COMMAND", "hp": 1500, "size": Vector2(130, 100),
-		"cost": 400, "time": 70.0, "supply": 10, "trains": ["worker", "titan"], "hotkey": KEY_C,
+		"cost": 400, "time": 70.0, "supply": 10, "trains": ["worker", "scout", "titan"], "hotkey": KEY_C,
 	},
 	"depot": {
 		"name": "Supply Depot", "short": "DEPOT", "hp": 400, "size": Vector2(70, 70),

@@ -32,6 +32,8 @@ var stuck_time := 0.0
 var build_timer := 0.0
 var heal_target = null  # medic: the friendly unit being healed right now
 var heal_timer := 0.0
+var ability_cd := 0.0   # Seeker: time until the next beacon
+var life_left := 0.0    # Sensor beacon: seconds before it burns out
 
 
 ## Gives this unit its own copy of the stats with randomised values and a random title (Titan).
@@ -54,6 +56,7 @@ func setup(g, t: int, k: String) -> void:
 		_roll_stats()
 	max_hp = stats.hp
 	hp = max_hp
+	life_left = stats.get("lifetime", 0.0)
 	radius = stats.radius
 	speed = stats.speed
 	acquire_timer = randf() * 0.3
@@ -78,7 +81,7 @@ func is_air() -> bool:
 ## Flyers can only be hit by anti-air weapons; "air_only" units (AA Rover) cannot hit the ground;
 ## "buildings_only" units (Devastator) attack nothing but buildings.
 func can_target(e) -> bool:
-	if stats.get("healer", false):
+	if stats.get("healer", false) or stats.get("unarmed", false):
 		return false
 	if stats.get("buildings_only", false):
 		return e.is_in_group("buildings")
@@ -181,6 +184,12 @@ func order_build(k: String, p: Vector2) -> void:
 func _process(delta: float) -> void:
 	if hp <= 0.0:
 		return
+	if stats.get("static", false):  # sensor beacon: just watches, then burns out
+		life_left -= delta
+		if life_left <= 0.0:
+			game.kill(self)
+		return
+	ability_cd = maxf(0.0, ability_cd - delta)
 	cooldown_left = maxf(0.0, cooldown_left - delta)
 	shot_flash = maxf(0.0, shot_flash - delta)
 	acquire_timer -= delta
@@ -238,6 +247,8 @@ func _wounded_ally(radius_px: float):
 
 func _do_idle(delta: float) -> void:
 	if is_worker():
+		return
+	if stats.get("unarmed", false):
 		return
 	if stats.get("healer", false):
 		if heal_target == null and acquire_timer <= 0.0:

@@ -239,6 +239,8 @@ func build(kind: String) -> Node3D:
 		"devastator": return devastator()
 		"drone": return kamikaze_drone()
 		"medic": return medic()
+		"scout": return seeker()
+		"beacon": return sensor_beacon()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -667,6 +669,48 @@ func medic() -> Node3D:
 	# heal emitter
 	cyl(r, 0.06, 0.06, 0.55, Vector3(0.55, 1.2, -0.2), "gunmetal", Vector3(0, 0, -90), 12)
 	anim(sphere(r, 0.09, Vector3(0.85, 1.2, -0.2), "heal_glow"), "pulse", 3.0)
+	return r
+
+
+## Seeker: hovering recon orb. A glass sensor eye in a white shell, a spinning ring of
+## stabiliser fins, antenna and a glowing anti-grav pad underneath. "Body" bobs in view3d.gd.
+func seeker() -> Node3D:
+	var r := _root("Seeker")
+	var body := Node3D.new()
+	body.name = "Body"
+	body.position = Vector3(0, 1.1, 0)
+	r.add_child(body)
+	sphere(body, 0.42, Vector3.ZERO, "white")
+	sphere(body, 0.44, Vector3(0, -0.02, 0), "team", Vector3(1.0, 0.35, 1.0))  # team band
+	sphere(body, 0.24, Vector3(0.3, 0.08, 0), "glass", Vector3(0.7, 1.0, 1.0))  # sensor eye
+	sphere(body, 0.09, Vector3(0.44, 0.08, 0), "heal_glow")
+	var ring := anim(Node3D.new(), "spin", 3.0)
+	body.add_child(ring)
+	torus(ring, 0.55, 0.62, Vector3.ZERO, "gunmetal")
+	for k in 4:
+		var a := k * TAU / 4.0
+		box(ring, Vector3(0.3, 0.05, 0.12), Vector3(cos(a) * 0.68, 0, sin(a) * 0.68), "energy", Vector3(0, -rad_to_deg(a), 0))
+	cyl(body, 0.01, 0.015, 0.5, Vector3(-0.15, 0.6, 0.1), "dark", Vector3.ZERO, 6)
+	sphere(body, 0.035, Vector3(-0.15, 0.86, 0.1), "red_glow")
+	anim(cyl(body, 0.3, 0.12, 0.05, Vector3(0, -0.45, 0), "glow", Vector3.ZERO, 20), "pulse", 4.0)
+	anim(cyl(body, 0.0, 0.32, 0.6, Vector3(0, -0.78, 0), "holo", Vector3(180, 0, 0), 20), "pulse", 4.0)
+	return r
+
+
+## Sensor beacon: small tripod with a tall mast, a spinning radar eye and a pulsing range ring.
+func sensor_beacon() -> Node3D:
+	var r := _root("SensorBeacon")
+	for k in 3:
+		var a := k * TAU / 3.0
+		box(r, Vector3(0.06, 0.7, 0.06), Vector3(cos(a) * 0.25, 0.3, sin(a) * 0.25), "gunmetal",
+			Vector3(sin(a) * 20.0, 0, -cos(a) * 20.0))
+	cyl(r, 0.05, 0.07, 1.4, Vector3(0, 0.9, 0), "white", Vector3.ZERO, 8)
+	var eye := anim(Node3D.new(), "spin", 2.0)
+	eye.position = Vector3(0, 1.7, 0)
+	r.add_child(eye)
+	box(eye, Vector3(0.6, 0.08, 0.08), Vector3.ZERO, "team")
+	sphere(eye, 0.12, Vector3(0.3, 0, 0), "heal_glow")
+	anim(torus(r, 0.5, 0.56, Vector3(0, 0.05, 0), "holo_line"), "pulse", 1.5)
 	return r
 
 

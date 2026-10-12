@@ -505,14 +505,18 @@ func get_commands() -> Array:
 	var units := selected_units()
 	var blds := selected_buildings()
 	if not units.is_empty():
-		cmds.append({"key": KEY_G, "label": "Атака (G)", "fn": cmd_attack})
-		cmds.append({"key": KEY_X, "label": "Стоп (X)", "fn": cmd_stop})
-		cmds.append({"key": KEY_H, "label": "Держать (H)", "fn": cmd_hold})
+		cmds.append({"key": KEY_G, "label": "Атака (G)", "fn": cmd_attack, "icon": "@attack"})
+		cmds.append({"key": KEY_X, "label": "Стоп (X)", "fn": cmd_stop, "icon": "@stop"})
+		cmds.append({"key": KEY_H, "label": "Держать позицию (H)", "fn": cmd_hold, "icon": "@hold"})
+		if units.any(func(u): return u.kind == "scout"):
+			var ready := units.any(func(u): return u.kind == "scout" and u.ability_cd <= 0.0)
+			cmds.append({"key": KEY_F, "label": "Сбросить маяк (F): видит всё вокруг 90 с" if ready else "Маяк перезаряжается",
+				"fn": cmd_beacon, "icon": "beacon", "disabled": not ready})
 		if units.any(func(u): return u.is_worker()):
 			for bk in Defs.WORKER_BUILDS:
 				var st: Dictionary = Defs.BUILDINGS[bk]
 				cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [st.name, OS.get_keycode_string(st.hotkey), st.cost],
-					"fn": func(): start_placing(bk)})
+					"fn": func(): start_placing(bk), "icon": bk, "cost": st.cost})
 	elif not blds.is_empty():
 		var kinds := []
 		for b in blds:
@@ -522,7 +526,7 @@ func get_commands() -> Array:
 		for uk in kinds:
 			var st: Dictionary = Defs.UNITS[uk]
 			cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [st.name, OS.get_keycode_string(st.hotkey), st.cost],
-				"fn": func(): train_selected(uk)})
+				"fn": func(): train_selected(uk), "icon": uk, "cost": st.cost})
 		var research := []
 		for b in blds:
 			for key in b.stats.get("research", []):
@@ -534,21 +538,22 @@ func get_commands() -> Array:
 			var label := "%s +%d (%s) %d" % [up.name, lvl + 1, OS.get_keycode_string(up.hotkey), upgrade_cost(PLAYER, key)]
 			if lvl >= up.max:
 				label = "%s: макс." % up.name
-			cmds.append({"key": up.hotkey, "label": label, "fn": func(): research_selected(key)})
+			cmds.append({"key": up.hotkey, "label": label, "fn": func(): research_selected(key), "icon": "@" + key,
+				"cost": upgrade_cost(PLAYER, key) if lvl < up.max else 0, "disabled": lvl >= up.max})
 		if blds.any(func(b): return not b.queue.is_empty()):
-			cmds.append({"key": KEY_X, "label": "Отмена (X)", "fn": cmd_cancel})
+			cmds.append({"key": KEY_X, "label": "Отмена (X)", "fn": cmd_cancel, "icon": "@cancel"})
 		var silos := blds.filter(func(b): return b.kind == "silo" and b.is_complete())
 		if silos.any(func(b): return b.missile_ready):
-			cmds.append({"key": Defs.MISSILE.launch_key, "label": "Пуск ракеты (L)", "fn": cmd_launch})
+			cmds.append({"key": Defs.MISSILE.launch_key, "label": "Пуск ракеты (L)", "fn": cmd_launch, "icon": "@launch"})
 		if silos.any(func(b): return not b.missile_ready and b.queue.is_empty()):
-			cmds.append({"key": Defs.MISSILE.arm_key, "label": "Ракета (M) %d" % Defs.MISSILE.cost,
-				"fn": arm_selected})
+			cmds.append({"key": Defs.MISSILE.arm_key, "label": "Собрать ракету (M) %d" % Defs.MISSILE.cost,
+				"fn": arm_selected, "icon": "@missile", "cost": Defs.MISSILE.cost})
 		var damaged := _damaged_bunkers()
 		if not damaged.is_empty():
 			var cost := 0
 			for b in damaged:
 				cost += repair_cost(b)
-			cmds.append({"key": KEY_R, "label": "Чинить (R) %d" % cost, "fn": cmd_repair})
+			cmds.append({"key": KEY_R, "label": "Чинить (R) %d" % cost, "fn": cmd_repair, "icon": "@repair", "cost": cost})
 	return cmds
 
 
@@ -556,6 +561,16 @@ func cmd_attack() -> void:
 	attack_mode = true
 	missile_mode = false
 	placing = ""
+
+
+## Seeker: the first ready scout in the selection drops a sensor beacon where it stands.
+func cmd_beacon() -> void:
+	for u in selected_units():
+		if u.kind == "scout" and u.ability_cd <= 0.0:
+			u.ability_cd = u.stats.beacon_cooldown
+			spawn_unit(u.team, "beacon", u.position)
+			show_message("Маяк установлен")
+			return
 
 
 func cmd_launch() -> void:
@@ -1055,7 +1070,7 @@ func _resolve_collisions() -> void:
 		if not u.is_alive():
 			continue
 		# Mining workers pass through other units, like in StarCraft.
-		var ghost: bool = u.is_worker() and u.is_mining()
+		var ghost: bool = (u.is_worker() and u.is_mining()) or u.stats.get("static", false)
 		if not ghost:
 			var c := Vector2i(floori(u.position.x / CELL), floori(u.position.y / CELL))
 			for dx in [-1, 0, 1]:
@@ -1066,7 +1081,7 @@ func _resolve_collisions() -> void:
 					for o in cell:
 						if o == u or o.get_instance_id() < u.get_instance_id() or not o.is_alive():
 							continue
-						if (o.is_worker() and o.is_mining()) or o.is_air() != u.is_air():
+						if (o.is_worker() and o.is_mining()) or o.is_air() != u.is_air() or o.stats.get("static", false):
 							continue
 						var diff: Vector2 = u.position - o.position
 						var min_d: float = u.radius + o.radius
