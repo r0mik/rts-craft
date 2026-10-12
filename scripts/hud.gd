@@ -34,7 +34,7 @@ func setup(g) -> void:
 	res_label.add_theme_font_size_override("font_size", 18)
 	top_box.add_child(res_label)
 	var help := Label.new()
-	help.text = "ЛКМ — выбор   ПКМ — приказ   A — атака   Ctrl+1..9 — группы   Space — база   "
+	help.text = "ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база   "
 	help.modulate = Color(1, 1, 1, 0.6)
 	top_box.add_child(help)
 	# Message line
