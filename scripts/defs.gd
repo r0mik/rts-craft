@@ -34,6 +34,13 @@ const UNITS := {
 		"damage": 260, "range": 270.0, "cooldown": 3.5, "sight": 340.0,
 		"cost": 400, "supply": 5, "time": 50.0, "hotkey": KEY_N, "air": true, "buildings_only": true,
 	},
+	# Kamikaze drone: fast and fragile, dives into a building and explodes (dies on impact).
+	"drone": {
+		"name": "Kamikaze Drone (дрон-камикадзе)", "hp": 40, "speed": 210.0, "radius": 9.0,
+		"damage": 380, "range": 8.0, "cooldown": 1.0, "sight": 280.0,
+		"cost": 100, "supply": 1, "time": 15.0, "hotkey": KEY_K, "air": true, "buildings_only": true,
+		"kamikaze": true,
+	},
 	# Anti-air vehicle: long-range missiles that hit only flyers.
 	"aa": {
 		"name": "AA Rover (ПВО)", "hp": 140, "speed": 95.0, "radius": 15.0,
@@ -85,7 +92,7 @@ const BUILDINGS := {
 	},
 	"starport": {
 		"name": "Starport", "short": "STARPORT", "hp": 1300, "size": Vector2(120, 100),
-		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird", "devastator"], "hotkey": KEY_P, "requires": "factory",
+		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird", "devastator", "drone"], "hotkey": KEY_P, "requires": "factory",
 	},
 	"silo": {
 		"name": "Missile Silo", "short": "SILO", "hp": 600, "size": Vector2(70, 70),

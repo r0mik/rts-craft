@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3}
 
 var game
 var camera: Camera3D
@@ -579,6 +579,17 @@ func _sync(e, root: Node3D, delta: float) -> void:
 				if e.kind == "devastator":  # the belly missile reloads during the cooldown
 					body.get_node("Payload").visible = e.cooldown_left < e.stats.cooldown * 0.5
 				body.rotation.x = lerpf(body.rotation.x, 0.25 if moved else 0.0, minf(1.0, delta * 3.0))
+			"drone":  # cruises high, then dives onto its target building
+				var body: Node3D = model.get_node("Body")
+				var want := Models.FLY_HEIGHT - 1.0 + sin(time * 3.0 + seed) * 0.2
+				var dive := 0.0
+				if game.valid(e.target):
+					var d: float = game.edge_dist(e, e.target)
+					var k := clampf(d / 220.0, 0.0, 1.0)
+					want = lerpf(top_of(e.target) * 0.6 / model.scale.y, want, k)
+					dive = (1.0 - k) * 0.9
+				body.position.y = lerpf(body.position.y, want, minf(1.0, delta * 8.0))
+				body.rotation.z = lerpf(body.rotation.z, -dive, minf(1.0, delta * 8.0))
 			"titan":  # walking legs and a torso that turns towards the target
 				var swing := sin(time * 4.0 + seed) * 0.35 if moved else 0.0
 				for i in 2:
@@ -1004,6 +1015,8 @@ func fx_death(e) -> void:
 			var off := Vector2(randf_range(-0.4, 0.4) * e.size.x, randf_range(-0.4, 0.4) * e.size.y)
 			fx_explosion(e.position + off, s * 0.6)
 	elif e.is_in_group("units"):
+		if e.stats.get("kamikaze", false) and e.hp > 0.0:
+			return  # crashed into its target: the impact blast is drawn by unit.gd
 		var size := 2.5 if e.kind in ["titan", "stormbird", "devastator"] else 1.3 if e.kind in ["tank", "wraith", "aa"] else 0.6
 		fx_explosion(e.position, size, mid_of(e) if e.is_air() else -1.0)
 

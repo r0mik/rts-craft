@@ -164,6 +164,8 @@ func _military(cc, army: Array, buildings: Array) -> void:
 				kind = "devastator"
 			elif spare >= 400:
 				kind = "stormbird"
+			elif spare >= 150 and game.count_units(team, "drone") < 4:
+				kind = "drone"
 			game.try_train(b, kind)
 		elif b.kind == "ebay" and b.queue.is_empty() and game.bank[team] >= 250:
 			if not game.try_research(b, "weapons"):

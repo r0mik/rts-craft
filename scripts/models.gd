@@ -232,6 +232,7 @@ func build(kind: String) -> Node3D:
 		"aa": return aa_rover()
 		"stormbird": return stormbird()
 		"devastator": return devastator()
+		"drone": return kamikaze_drone()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -840,6 +841,32 @@ func devastator() -> Node3D:
 	torus(payload, 0.28, 0.36, Vector3(0.6, 0, 0), "energy", Vector3(0, 0, 90))
 	for k in 4:
 		box(payload, Vector3(0.6, 0.05, 0.8), Vector3(-1.1, 0, 0), "dark", Vector3(k * 45.0, 0, 0))
+	return r
+
+
+## Kamikaze drone: small jet with X-tail, a hazard-striped warhead with a red tip and blinking
+## warning lights. view3d.gd dives its "Body" down onto the target building.
+func kamikaze_drone() -> Node3D:
+	var r := _root("KamikazeDrone")
+	var body := Node3D.new()
+	body.name = "Body"
+	body.position = Vector3(0, FLY_HEIGHT - 1.0, 0)
+	r.add_child(body)
+	cyl(body, 0.22, 0.26, 1.2, Vector3(-0.1, 0, 0), "gunmetal", Vector3(0, 0, -90), 16)
+	cyl(body, 0.26, 0.26, 0.4, Vector3(0.7, 0, 0), "hazard", Vector3(0, 0, -90), 16)  # warhead
+	cyl(body, 0.0, 0.26, 0.45, Vector3(1.12, 0, 0), "red_glow", Vector3(0, 0, -90), 16)
+	cyl(body, 0.27, 0.27, 0.05, Vector3(0.45, 0, 0), "energy", Vector3(0, 0, -90), 16)
+	for sz in [-1, 1]:
+		box(body, Vector3(0.6, 0.05, 1.0), Vector3(-0.05, 0, sz * 0.6), "team", Vector3(0, -sz * 25.0, 0))
+		anim(sphere(body, 0.06, Vector3(-0.25, 0.02, sz * 1.05), "red_glow"), "pulse", 6.0)
+	for k in 4:  # X-tail
+		var fin := Node3D.new()
+		fin.position = Vector3(-0.6, 0, 0)
+		fin.rotation_degrees = Vector3(45.0 + k * 90.0, 0, 0)
+		body.add_child(fin)
+		box(fin, Vector3(0.35, 0.45, 0.04), Vector3(0, 0.3, 0), "hull")
+	cyl(body, 0.15, 0.15, 0.04, Vector3(-0.72, 0, 0), "glow", Vector3(0, 0, -90), 12)
+	anim(cyl(body, 0.0, 0.12, 0.5, Vector3(-1.0, 0, 0), "holo", Vector3(0, 0, 90), 12), "pulse", 6.0)
 	return r
 
 

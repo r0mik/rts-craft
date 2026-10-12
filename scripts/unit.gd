@@ -244,6 +244,11 @@ func _engage(t, delta: float, can_chase: bool) -> void:
 	var d: float = game.edge_dist(self, t)
 	if d <= stats.range:
 		facing = (t.position - position).angle()
+		if stats.get("kamikaze", false):  # crash into the target: huge damage, the drone is gone
+			t.take_damage(game.scaled_damage(self, t, float(stats.damage)), self)
+			game.view.fx_explosion(t.position, 2.4)
+			game.kill(self)
+			return
 		if cooldown_left <= 0.0:
 			cooldown_left = stats.cooldown
 			shot_flash = 0.08
