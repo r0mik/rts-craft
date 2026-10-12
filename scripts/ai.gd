@@ -158,7 +158,7 @@ func _military(cc, army: Array, buildings: Array) -> void:
 			# answer enemy flyers with AA Rovers, otherwise build tanks
 			game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")
 		elif b.kind == "starport" and b.queue.size() < 1:
-			game.try_train(b, "wraith")
+			game.try_train(b, "stormbird" if game.bank[team] - reserve >= 400 else "wraith")
 		elif b.kind == "ebay" and b.queue.is_empty() and game.bank[team] >= 250:
 			if not game.try_research(b, "weapons"):
 				game.try_research(b, "armor")

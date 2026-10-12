@@ -230,6 +230,7 @@ func build(kind: String) -> Node3D:
 		"wraith": return wraith()
 		"titan": return titan()
 		"aa": return aa_rover()
+		"stormbird": return stormbird()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -762,6 +763,45 @@ func titan() -> Node3D:
 	tor.add_child(radar)
 	cyl(radar, 0.04, 0.04, 0.4, Vector3(0, 0.2, 0), "dark", Vector3.ZERO, 8)
 	box(radar, Vector3(0.08, 0.3, 0.9), Vector3(0, 0.45, 0), "hull")
+	return r
+
+
+## Stormbird: heavy delta-wing missile bomber. Flying-wing hull with glowing leading edges,
+## twin canted tails, four engines with pulsing exhaust and six missiles on underwing pylons.
+func stormbird() -> Node3D:
+	var r := _root("Stormbird")
+	var body := Node3D.new()
+	body.name = "Body"
+	body.position = Vector3(0, FLY_HEIGHT + 0.5, 0)
+	r.add_child(body)
+	cyl(body, 0.42, 0.55, 2.6, Vector3(-0.3, 0, 0), "hull", Vector3(0, 0, -90), 24)  # fuselage
+	cyl(body, 0.04, 0.42, 1.6, Vector3(1.8, 0, 0), "team", Vector3(0, 0, -90), 24)    # nose
+	sphere(body, 0.34, Vector3(1.0, 0.3, 0), "glass", Vector3(2.0, 0.7, 0.9))
+	cyl(body, 0.43, 0.43, 0.06, Vector3(0.6, 0, 0), "energy", Vector3(0, 0, -90), 24)
+	box(body, Vector3(2.4, 0.18, 1.2), Vector3(-0.5, 0.05, 0), "gunmetal")  # wing root / spine
+	for sz in [-1, 1]:
+		var wing := Node3D.new()  # big swept delta wing
+		wing.position = Vector3(0.2, -0.05, sz * 0.5)
+		wing.rotation_degrees = Vector3(0, -sz * 40.0, 0)
+		body.add_child(wing)
+		box(wing, Vector3(1.6, 0.12, 3.0), Vector3(-0.6, 0, sz * 1.45), "hull")
+		box(wing, Vector3(0.5, 0.13, 2.6), Vector3(-1.05, 0, sz * 1.5), "team")
+		box(wing, Vector3(0.08, 0.14, 3.0), Vector3(0.2, 0, sz * 1.45), "energy")
+		sphere(wing, 0.08, Vector3(-0.6, 0, sz * 2.95), "red_glow")
+		for k in 3:  # pylon with a missile under the wing
+			var mz: float = sz * (0.7 + k * 0.65)
+			box(wing, Vector3(0.5, 0.18, 0.06), Vector3(-0.3, -0.15, mz), "dark")
+			cyl(wing, 0.1, 0.1, 0.9, Vector3(-0.3, -0.32, mz), "hull", Vector3(0, 0, -90), 12)
+			cyl(wing, 0.0, 0.1, 0.25, Vector3(0.27, -0.32, mz), "red_glow", Vector3(0, 0, -90), 12)
+		# two engines per side with glowing nozzles and pulsing exhaust
+		for ez in [0.75, 1.35]:
+			var p := Vector3(-1.5, 0.05, sz * ez)
+			cyl(body, 0.22, 0.26, 1.1, p, "gunmetal", Vector3(0, 0, -90), 20)
+			torus(body, 0.2, 0.27, p + Vector3(0.55, 0, 0), "team", Vector3(0, 0, 90))
+			cyl(body, 0.18, 0.18, 0.06, p + Vector3(-0.57, 0, 0), "glow", Vector3(0, 0, -90), 20)
+			anim(cyl(body, 0.0, 0.16, 0.8, p + Vector3(-1.0, 0, 0), "holo", Vector3(0, 0, 90), 16), "pulse", 4.0)
+		box(body, Vector3(0.9, 0.9, 0.07), Vector3(-1.6, 0.55, sz * 0.45), "team", Vector3(sz * 20.0, 0, 28))
+		box(body, Vector3(0.75, 0.05, 0.08), Vector3(-1.55, 0.6, sz * 0.47), "energy", Vector3(sz * 20.0, 0, 28))
 	return r
 
 

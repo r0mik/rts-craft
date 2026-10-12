@@ -22,6 +22,12 @@ const UNITS := {
 		"damage": 10, "range": 150.0, "cooldown": 1.1, "sight": 280.0,
 		"cost": 150, "supply": 2, "time": 28.0, "hotkey": KEY_V, "air": true,
 	},
+	# Heavy missile bomber: salvos of homing missiles against ground and air, splash damage.
+	"stormbird": {
+		"name": "Stormbird (ракетоносец)", "hp": 280, "speed": 125.0, "radius": 18.0,
+		"damage": 32, "range": 240.0, "cooldown": 1.6, "sight": 340.0, "splash": 50.0,
+		"cost": 300, "supply": 4, "time": 40.0, "hotkey": KEY_B, "air": true,
+	},
 	# Anti-air vehicle: long-range missiles that hit only flyers.
 	"aa": {
 		"name": "AA Rover (ПВО)", "hp": 140, "speed": 95.0, "radius": 15.0,
@@ -73,7 +79,7 @@ const BUILDINGS := {
 	},
 	"starport": {
 		"name": "Starport", "short": "STARPORT", "hp": 1300, "size": Vector2(120, 100),
-		"cost": 200, "time": 50.0, "trains": ["wraith"], "hotkey": KEY_P, "requires": "factory",
+		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird"], "hotkey": KEY_P, "requires": "factory",
 	},
 	"silo": {
 		"name": "Missile Silo", "short": "SILO", "hp": 600, "size": Vector2(70, 70),
