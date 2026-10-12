@@ -229,6 +229,7 @@ func build(kind: String) -> Node3D:
 		"tank": return tank()
 		"wraith": return wraith()
 		"titan": return titan()
+		"aa": return aa_rover()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -672,13 +673,16 @@ func tank() -> Node3D:
 	return r
 
 
+const FLY_HEIGHT := 8.0  # flyers cruise high above ground units and buildings
+
+
 ## Flying fighter, hovering above the ground: tapered fuselage, swept wings with energy leading
 ## edges and wingtip pods, twin engines with pulsing exhaust plumes.
 func wraith() -> Node3D:
 	var r := _root("Wraith")
 	var body := Node3D.new()
 	body.name = "Body"
-	body.position = Vector3(0, 3.0, 0)
+	body.position = Vector3(0, FLY_HEIGHT, 0)
 	r.add_child(body)
 	cyl(body, 0.36, 0.46, 1.6, Vector3(-0.6, 0, 0), "hull", Vector3(0, 0, -90), 24)  # fuselage
 	cyl(body, 0.03, 0.36, 1.7, Vector3(1.05, 0, 0), "team", Vector3(0, 0, -90), 24)  # nose
@@ -758,6 +762,46 @@ func titan() -> Node3D:
 	tor.add_child(radar)
 	cyl(radar, 0.04, 0.04, 0.4, Vector3(0, 0.2, 0), "dark", Vector3.ZERO, 8)
 	box(radar, Vector3(0.08, 0.3, 0.9), Vector3(0, 0.45, 0), "hull")
+	return r
+
+
+## AA Rover: six-wheeled vehicle with a rotating "Turret" carrying a radar dish and two
+## upward-angled quad missile pods.
+func aa_rover() -> Node3D:
+	var r := _root("AARover")
+	for sz in [-1, 1]:
+		for k in 3:
+			cyl(r, 0.36, 0.36, 0.3, Vector3(-0.9 + k * 0.9, 0.36, sz * 1.0), "rubber", Vector3(90, 0, 0), 20)
+			cyl(r, 0.16, 0.16, 0.32, Vector3(-0.9 + k * 0.9, 0.36, sz * 1.0), "gunmetal", Vector3(90, 0, 0), 12)
+		box(r, Vector3(2.7, 0.1, 0.45), Vector3(0, 0.78, sz * 0.98), "team")
+	octa(r, 2.8, 1.7, 0.5, Vector3(0, 0.45, 0), "gunmetal", 0.85)
+	octa(r, 2.4, 1.5, 0.35, Vector3(-0.1, 0.95, 0), "hull", 0.8)
+	octa(r, 2.45, 1.55, 0.05, Vector3(-0.1, 0.95, 0), "energy")
+	box(r, Vector3(0.6, 0.35, 1.3), Vector3(1.25, 0.8, 0), "team_dark", Vector3(0, 0, 28))
+	for sz in [-1, 1]:
+		box(r, Vector3(0.05, 0.08, 0.2), Vector3(1.5, 0.85, sz * 0.45), "amber_glow", Vector3(0, 0, 28))
+	var tur := Node3D.new()  # rotates towards the target
+	tur.name = "Turret"
+	tur.position = Vector3(-0.2, 0, 0)
+	r.add_child(tur)
+	cyl(tur, 0.6, 0.7, 0.35, Vector3(0, 1.45, 0), "hull", Vector3.ZERO, 24)
+	for sz in [-1, 1]:  # missile pods angled up at the sky
+		var pod := Node3D.new()
+		pod.position = Vector3(0.1, 1.95, sz * 0.62)
+		pod.rotation_degrees = Vector3(0, 0, 32)
+		tur.add_child(pod)
+		box(pod, Vector3(1.3, 0.55, 0.5), Vector3.ZERO, "team")
+		box(pod, Vector3(1.32, 0.06, 0.52), Vector3(0, -0.12, 0), "energy")
+		for my in [-0.13, 0.13]:
+			for mz in [-0.12, 0.12]:
+				cyl(pod, 0.08, 0.08, 0.06, Vector3(0.66, my, mz), "red_glow", Vector3(0, 0, -90), 10)
+		box(tur, Vector3(0.3, 0.3, 0.2), Vector3(0, 1.75, sz * 0.4), "gunmetal")
+	var radar := anim(Node3D.new(), "spin", 2.5)
+	radar.position = Vector3(-0.45, 1.6, 0)
+	tur.add_child(radar)
+	cyl(radar, 0.04, 0.04, 0.6, Vector3(0, 0.3, 0), "dark", Vector3.ZERO, 8)
+	sphere(radar, 0.38, Vector3(0, 0.75, 0), "metal", Vector3(0.35, 1.0, 1.0), true)
+	sphere(radar, 0.06, Vector3(0.12, 0.75, 0), "glow")
 	return r
 
 

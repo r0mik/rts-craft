@@ -85,9 +85,11 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 	]
 	plan.append(["silo", _count("silo", buildings, workers) == 0 and elapsed > 330.0 and game.has_completed(team, "ebay")])
 	if easy:
+		var air := _enemy_air() > 0  # turrets are the easy AI's only answer to flyers
 		plan = [
 			["barracks", rax < 1 and elapsed > 90.0],
-			["ebay", _count("ebay", buildings, workers) == 0 and elapsed > 420.0],
+			["ebay", _count("ebay", buildings, workers) == 0 and (elapsed > 420.0 or air)],
+			["turret", _count("turret", buildings, workers) < 2 and air and game.has_completed(team, "ebay")],
 			["silo", _count("silo", buildings, workers) == 0 and elapsed > 470.0 and game.has_completed(team, "ebay")],
 		]
 	reserve = 0
@@ -153,7 +155,8 @@ func _military(cc, army: Array, buildings: Array) -> void:
 		if b.kind == "barracks" and b.queue.size() < 2:
 			game.try_train(b, "marine")
 		elif b.kind == "factory" and b.queue.size() < 1:
-			game.try_train(b, "tank")
+			# answer enemy flyers with AA Rovers, otherwise build tanks
+			game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")
 		elif b.kind == "starport" and b.queue.size() < 1:
 			game.try_train(b, "wraith")
 		elif b.kind == "ebay" and b.queue.is_empty() and game.bank[team] >= 250:
@@ -186,6 +189,14 @@ func _military(cc, army: Array, buildings: Array) -> void:
 func _wants_titan(cc) -> bool:
 	return cc != null and elapsed > (360.0 if easy else 300.0) and game.has_completed(team, "barracks") \
 			and game.count_units(team, "titan") == 0
+
+
+func _enemy_air() -> int:
+	var n := 0
+	for u in game.get_tree().get_nodes_in_group("units"):
+		if u.team != team and u.is_alive() and u.is_air():
+			n += 1
+	return n
 
 
 func _missile_target():

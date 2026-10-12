@@ -227,7 +227,7 @@ func find_enemy(u, radius: float):
 				best_score = score
 				best = e
 	for b in get_tree().get_nodes_in_group("buildings"):
-		if b.team == u.team or not b.is_alive():
+		if b.team == u.team or not b.is_alive() or not u.can_target(b):
 			continue
 		var d := edge_dist(u, b)
 		if d <= radius and d + 200.0 < best_score:

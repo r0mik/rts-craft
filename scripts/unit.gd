@@ -73,8 +73,11 @@ func is_air() -> bool:
 	return stats.get("air", false)
 
 
+## Flyers can only be hit by anti-air weapons; "air_only" units (AA Rover) cannot hit the ground.
 func can_target(e) -> bool:
-	return stats.get("anti_air", true) if e.is_air() else true
+	if e.is_air():
+		return stats.get("anti_air", true)
+	return not stats.get("air_only", false)
 
 
 func is_idle() -> bool:
@@ -97,7 +100,7 @@ func take_damage(amount: float, attacker) -> void:
 		game.kill(self)
 		return
 	# Idle combat units fight back.
-	if not is_worker() and state == State.IDLE and game.valid(attacker) and not game.valid(target):
+	if not is_worker() and state == State.IDLE and game.valid(attacker) and not game.valid(target) and can_target(attacker):
 		target = attacker
 
 

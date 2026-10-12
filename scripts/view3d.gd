@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05}
 
 var game
 var camera: Camera3D
@@ -541,6 +541,12 @@ func _max_y(n: Node, parent_xf: Transform3D) -> float:
 
 
 ## Height of an entity's model in world units (for HP bars and picking).
+## Height of an entity's visual centre (flyers: their hull high in the air).
+func mid_of(e) -> float:
+	var h := top_of(e)
+	return h - 0.6 if e.is_in_group("units") and e.is_air() else h * 0.5
+
+
 func top_of(e) -> float:
 	var kind: String = "minerals" if e.is_in_group("minerals") else e.kind
 	return heights.get(kind, 2.0)
@@ -568,7 +574,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 								6, _spark_ramp, _additive, 3.0, 0.25, 0.35, Vector3(0, -6, 0))
 			"wraith":
 				var body: Node3D = model.get_node("Body")
-				body.position.y = 3.0 + sin(time * 2.2 + seed) * 0.18
+				body.position.y = Models.FLY_HEIGHT + sin(time * 2.2 + seed) * 0.25
 				body.rotation.x = lerpf(body.rotation.x, 0.25 if moved else 0.0, minf(1.0, delta * 3.0))
 			"titan":  # walking legs and a torso that turns towards the target
 				var swing := sin(time * 4.0 + seed) * 0.35 if moved else 0.0
@@ -581,7 +587,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 				if game.valid(e.target):
 					aim = -(e.target.position - e.position).angle() - model.rotation.y
 				torso.rotation.y = lerp_angle(torso.rotation.y, aim, minf(1.0, delta * 4.0))
-			"tank":
+			"tank", "aa":
 				var tur: Node3D = model.get_node("Turret")
 				var want := 0.0
 				if game.valid(e.target):
@@ -702,8 +708,10 @@ func pick(sp: Vector2):
 		if not game.valid(e) or not e.is_in_group("units") or not game.visible_to_player(e):
 			continue
 		var h := top_of(e)
-		var c := to_screen(e.position, h * 0.5)
-		var r := maxf(px_size(e.position, e.radius / PX + 0.3, h * 0.5), px_size(e.position, h * 0.45, h * 0.5))
+		var mid := mid_of(e)
+		var c := to_screen(e.position, mid)
+		var r := px_size(e.position, e.radius / PX + 0.8, mid) if e.is_air() \
+				else maxf(px_size(e.position, e.radius / PX + 0.3, mid), px_size(e.position, h * 0.45, mid))
 		var d := c.distance_to(sp)
 		if d < r and d < best_d:
 			best_d = d
@@ -724,7 +732,7 @@ func units_in_rect(rect: Rect2, team: int) -> Array:
 	var res := []
 	for e in views:
 		if game.valid(e) and e.is_in_group("units") and e.team == team:
-			if rect.has_point(to_screen(e.position, top_of(e) * 0.4)):
+			if rect.has_point(to_screen(e.position, mid_of(e))):
 				res.append(e)
 	return res
 
@@ -854,7 +862,7 @@ func fx_shot(attacker, target, splash: bool) -> void:
 			width = 0.14
 	else:
 		var fwd: float = attacker.radius / PX + 0.4
-		muzzle = _world(attacker.position + dir * fwd * PX, a_h * 0.55)
+		muzzle = _world(attacker.position + dir * fwd * PX, mid_of(attacker) if attacker.is_air() else a_h * 0.55)
 		match attacker.kind:
 			"tank":
 				muzzle = _world(attacker.position + dir * 3.0 * PX, 1.62)
@@ -863,13 +871,17 @@ func fx_shot(attacker, target, splash: bool) -> void:
 			"wraith":
 				color = game.team_color(attacker.team).lightened(0.4)
 				width = 0.09
+			"aa":
+				muzzle = _world(attacker.position + dir * 1.0 * PX, 2.3)
+				color = Color(1.0, 0.95, 0.8)
+				width = 0.1
 			"titan":
 				muzzle = _world(attacker.position + dir * 3.0 * PX, 3.9)
 				color = game.team_color(attacker.team).lerp(Color(1.0, 0.7, 0.3), 0.5)
 				width = 0.22
 			"worker":
 				return
-	var t_h: float = top_of(target) * 0.45 if not target.is_in_group("buildings") else top_of(target) * 0.5
+	var t_h: float = mid_of(target) if target.is_air() else top_of(target) * 0.45 if not target.is_in_group("buildings") else top_of(target) * 0.5
 	var hit := _world(target.position, t_h) + Vector3(randf_range(-0.3, 0.3), 0, randf_range(-0.3, 0.3))
 	_tracer(muzzle, hit, color, width)
 	_burst(muzzle, 3, _fire_ramp, _additive, 0.5, 0.5 if width < 0.1 else 1.2, 0.08, Vector3.ZERO)
@@ -902,8 +914,8 @@ func _tracer(from: Vector3, to: Vector3, c: Color, width: float) -> void:
 
 
 ## Explosion: fireball, smoke column, sparks, light flash and a scorch mark.
-func fx_explosion(p: Vector2, size: float) -> void:
-	var pos := _world(p, 0.6 * size)
+func fx_explosion(p: Vector2, size: float, height := -1.0) -> void:
+	var pos := _world(p, 0.6 * size if height < 0.0 else height)
 	_burst(pos, int(18 * size) + 6, _fire_ramp, _additive, 5.0 * size, 1.6 * size, 0.6, Vector3(0, 1.5, 0))
 	_burst(pos, int(12 * size) + 4, _smoke_ramp, _smoke, 3.0 * size, 2.6 * size, 1.8, Vector3(0.5, 2.0, 0))
 	_burst(pos, int(16 * size) + 6, _spark_ramp, _additive, 10.0 * size, 0.3, 0.7, Vector3(0, -12, 0))
@@ -935,7 +947,8 @@ func fx_death(e) -> void:
 			var off := Vector2(randf_range(-0.4, 0.4) * e.size.x, randf_range(-0.4, 0.4) * e.size.y)
 			fx_explosion(e.position + off, s * 0.6)
 	elif e.is_in_group("units"):
-		fx_explosion(e.position, 2.5 if e.kind == "titan" else 1.3 if e.kind in ["tank", "wraith"] else 0.6)
+		var size := 2.5 if e.kind == "titan" else 1.3 if e.kind in ["tank", "wraith", "aa"] else 0.6
+		fx_explosion(e.position, size, mid_of(e) if e.is_air() else -1.0)
 
 
 # --- Missiles --------------------------------------------------------------------

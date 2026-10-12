@@ -60,8 +60,8 @@ func is_air() -> bool:
 	return false
 
 
-func can_target(_e) -> bool:
-	return true
+func can_target(e) -> bool:
+	return stats.get("anti_air", true) if e.is_air() else true
 
 
 func can_train(uk: String) -> bool:

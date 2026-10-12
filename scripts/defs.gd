@@ -10,7 +10,7 @@ const UNITS := {
 	"marine": {
 		"name": "Marine (пехотинец)", "hp": 45, "speed": 105.0, "radius": 10.0,
 		"damage": 6, "range": 130.0, "cooldown": 0.65, "sight": 240.0,
-		"cost": 50, "supply": 1, "time": 14.0, "hotkey": KEY_Q,
+		"cost": 50, "supply": 1, "time": 14.0, "hotkey": KEY_Q, "anti_air": false,
 	},
 	"tank": {
 		"name": "Siege Tank (танк)", "hp": 160, "speed": 75.0, "radius": 16.0,
@@ -21,6 +21,12 @@ const UNITS := {
 		"name": "Wraith (истребитель)", "hp": 120, "speed": 150.0, "radius": 13.0,
 		"damage": 10, "range": 150.0, "cooldown": 1.1, "sight": 280.0,
 		"cost": 150, "supply": 2, "time": 28.0, "hotkey": KEY_V, "air": true,
+	},
+	# Anti-air vehicle: long-range missiles that hit only flyers.
+	"aa": {
+		"name": "AA Rover (ПВО)", "hp": 140, "speed": 95.0, "radius": 15.0,
+		"damage": 20, "range": 280.0, "cooldown": 0.9, "sight": 330.0,
+		"cost": 125, "supply": 2, "time": 22.0, "hotkey": KEY_Y, "air_only": true,
 	},
 	# Boss unit: one per side, trained at the Command Center once a Barracks is up.
 	"titan": {
@@ -49,12 +55,12 @@ const BUILDINGS := {
 	},
 	"factory": {
 		"name": "Factory", "short": "FACTORY", "hp": 1250, "size": Vector2(120, 90),
-		"cost": 200, "time": 50.0, "trains": ["tank"], "hotkey": KEY_F, "requires": "barracks",
+		"cost": 200, "time": 50.0, "trains": ["tank", "aa"], "hotkey": KEY_F, "requires": "barracks",
 	},
 	"bunker": {
 		"name": "Bunker", "short": "BUNKER", "hp": 550, "size": Vector2(80, 64),
 		"cost": 100, "time": 25.0, "trains": [], "hotkey": KEY_U, "requires": "barracks",
-		"damage": 7, "range": 150.0, "cooldown": 0.45,
+		"damage": 7, "range": 150.0, "cooldown": 0.45, "anti_air": false,
 	},
 	"ebay": {
 		"name": "Engineering Bay", "short": "ENG BAY", "hp": 850, "size": Vector2(100, 80),
