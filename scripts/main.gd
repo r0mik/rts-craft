@@ -74,6 +74,7 @@ func _add_ai(t: int) -> void:
 	var ai = AIScript.new()
 	ai.game = self
 	ai.team = t
+	ai.easy = t == ENEMY  # the red opponent plays on easy; in AI-vs-AI tests blue uses the full build
 	add_child(ai)
 	ais.append(ai)
 

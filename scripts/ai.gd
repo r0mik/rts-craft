@@ -9,6 +9,7 @@ var think_timer := 1.0
 var wave_size := 6
 var elapsed := 0.0
 var reserve := 0  # minerals held back for the next planned building
+var easy := false  # easy mode: slow reactions, small economy, marines only, rare small attacks
 
 
 func _process(delta: float) -> void:
@@ -16,7 +17,7 @@ func _process(delta: float) -> void:
 	think_timer -= delta
 	if think_timer > 0.0 or game.game_over:
 		return
-	think_timer = 0.6
+	think_timer = 2.0 if easy else 0.6
 	_think()
 
 
@@ -68,7 +69,8 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 		if game.bank[team] >= 100:
 			_build("depot", cc, workers)
 		return  # save up for the depot
-	if workers.size() + cc.queue.size() < 18 and cc.queue.is_empty():
+	var max_workers := 8 if easy else 18
+	if workers.size() + cc.queue.size() < max_workers and cc.queue.is_empty():
 		game.try_train(cc, "worker")
 	# Tech/defence build order: first entry whose conditions hold gets built.
 	var rax := _count("barracks", buildings, workers)
@@ -80,6 +82,8 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 		["turret", _count("turret", buildings, workers) < 2 and game.has_completed(team, "ebay")],
 		["starport", _count("starport", buildings, workers) == 0 and elapsed > 280.0 and game.has_completed(team, "factory")],
 	]
+	if easy:
+		plan = [["barracks", rax < 1 and elapsed > 90.0]]
 	reserve = 0
 	for entry in plan:
 		if entry[1]:
@@ -124,6 +128,8 @@ func _military(cc, army: Array, buildings: Array) -> void:
 	for b in buildings:
 		if not b.is_complete() or game.bank[team] - reserve < 50:
 			continue
+		if easy and (b.kind != "barracks" or not b.queue.is_empty() or game.bank[team] < 100):
+			continue
 		if b.kind == "barracks" and b.queue.size() < 2:
 			game.try_train(b, "marine")
 		elif b.kind == "factory" and b.queue.size() < 1:
@@ -142,12 +148,12 @@ func _military(cc, army: Array, buildings: Array) -> void:
 			if a.is_idle() and a.position.distance_to(home) < 1200.0:
 				a.order_attack_move(threat.position)
 		return
-	if army.size() >= wave_size:
+	if army.size() >= wave_size and (not easy or elapsed > 300.0):
 		var tgt = _enemy_target(home)
 		if tgt != null:
 			for a in army:
 				a.order_attack_move(tgt.position)
-			wave_size = mini(wave_size + 4, 40)
+			wave_size = mini(wave_size + 2, 12) if easy else mini(wave_size + 4, 40)
 		return
 	# Units already out on the field keep pushing towards the next target.
 	for a in army:
