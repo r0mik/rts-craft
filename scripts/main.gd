@@ -505,6 +505,12 @@ func get_commands() -> Array:
 			cmds.append({"key": up.hotkey, "label": label, "fn": func(): research_selected(key)})
 		if blds.any(func(b): return not b.queue.is_empty()):
 			cmds.append({"key": KEY_X, "label": "Отмена (X)", "fn": cmd_cancel})
+		var damaged := _damaged_bunkers()
+		if not damaged.is_empty():
+			var cost := 0
+			for b in damaged:
+				cost += repair_cost(b)
+			cmds.append({"key": KEY_R, "label": "Чинить (R) %d" % cost, "fn": cmd_repair})
 	return cmds
 
 
@@ -535,6 +541,32 @@ func research_selected(key: String) -> void:
 		if b.can_research(key):
 			try_research(b, key)
 			return
+
+
+const REPAIR_COST_PER_HP := 0.1  # minerals per hit point; a fully broken bunker costs 55
+
+
+func _damaged_bunkers() -> Array:
+	return selected_buildings().filter(func(b): return b.kind == "bunker" and b.is_complete() and b.hp < b.max_hp)
+
+
+func repair_cost(b) -> int:
+	return ceili((b.max_hp - b.hp) * REPAIR_COST_PER_HP)
+
+
+## Instantly repairs the selected bunkers for minerals; if money runs short, repairs as much as it can pay for.
+func cmd_repair() -> void:
+	for b in _damaged_bunkers():
+		if bank[PLAYER] <= 0:
+			show_message("Недостаточно минералов")
+			return
+		var cost := repair_cost(b)
+		if bank[PLAYER] >= cost:
+			bank[PLAYER] -= cost
+			b.hp = b.max_hp
+		else:
+			b.hp = minf(b.max_hp, b.hp + bank[PLAYER] / REPAIR_COST_PER_HP)
+			bank[PLAYER] = 0
 
 
 func train_selected(uk: String) -> void:
