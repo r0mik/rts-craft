@@ -119,6 +119,8 @@ func _update_info() -> void:
 		var txt := ""
 		if e.is_in_group("units"):
 			txt = "%s — %s\nHP: %d / %d\nУрон: %d   Дальность: %d" % [e.stats.name, owner_str, ceil(e.hp), e.max_hp, e.stats.damage, e.stats.range]
+			if e.stats.get("healer", false):
+				txt = "%s — %s\nHP: %d / %d\nЛечение: %d HP/с, радиус %d" % [e.stats.name, owner_str, ceil(e.hp), e.max_hp, e.stats.heal_rate, e.stats.range]
 			if e.carrying > 0:
 				txt += "\nНесёт минералы: %d" % e.carrying
 		else:

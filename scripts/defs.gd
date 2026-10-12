@@ -12,6 +12,12 @@ const UNITS := {
 		"damage": 6, "range": 130.0, "cooldown": 0.65, "sight": 240.0,
 		"cost": 50, "supply": 1, "time": 14.0, "hotkey": KEY_Q, "anti_air": false,
 	},
+	# Medic: no weapon; heals the most damaged friendly unit within "range" (vehicles and flyers too).
+	"medic": {
+		"name": "Medic (медик)", "hp": 60, "speed": 110.0, "radius": 10.0,
+		"damage": 0, "range": 130.0, "cooldown": 1.0, "sight": 260.0,
+		"cost": 75, "supply": 1, "time": 18.0, "hotkey": KEY_E, "healer": true, "heal_rate": 14.0,
+	},
 	"tank": {
 		"name": "Siege Tank (танк)", "hp": 160, "speed": 75.0, "radius": 16.0,
 		"damage": 30, "range": 240.0, "cooldown": 2.2, "sight": 300.0, "splash": 40.0,
@@ -70,7 +76,7 @@ const BUILDINGS := {
 	},
 	"barracks": {
 		"name": "Barracks", "short": "BARRACKS", "hp": 1000, "size": Vector2(110, 90),
-		"cost": 150, "time": 40.0, "trains": ["marine"], "hotkey": KEY_B,
+		"cost": 150, "time": 40.0, "trains": ["marine", "medic"], "hotkey": KEY_B,
 	},
 	"factory": {
 		"name": "Factory", "short": "FACTORY", "hp": 1250, "size": Vector2(120, 90),

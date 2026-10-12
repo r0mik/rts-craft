@@ -153,7 +153,9 @@ func _military(cc, army: Array, buildings: Array) -> void:
 		if easy and (b.kind != "barracks" or not b.queue.is_empty() or game.bank[team] < 100):
 			continue
 		if b.kind == "barracks" and b.queue.size() < 2:
-			game.try_train(b, "marine")
+			# one medic for every five marines
+			var medic: bool = game.count_units(team, "medic") * 5 < game.count_units(team, "marine") - 2
+			game.try_train(b, "medic" if medic else "marine")
 		elif b.kind == "factory" and b.queue.size() < 1:
 			# answer enemy flyers with AA Rovers, otherwise build tanks
 			game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")

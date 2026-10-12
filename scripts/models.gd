@@ -74,6 +74,11 @@ func mat(name: String) -> Material:
 			m.roughness = 0.5
 		"glow":
 			_emissive(m, team_color.lightened(0.45), 4.0)
+		"heal_glow":
+			_emissive(m, Color(0.35, 1.0, 0.55), 3.5)
+		"white":
+			m.albedo_color = Color(0.9, 0.92, 0.94)
+			m.roughness = 0.4
 		"red_glow":
 			_emissive(m, Color(1.0, 0.35, 0.25), 4.0)
 		"amber_glow":
@@ -233,6 +238,7 @@ func build(kind: String) -> Node3D:
 		"stormbird": return stormbird()
 		"devastator": return devastator()
 		"drone": return kamikaze_drone()
+		"medic": return medic()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -630,6 +636,37 @@ func marine() -> Node3D:
 	cyl(gun, 0.04, 0.04, 0.28, Vector3(0.2, 0.12, 0), "black", Vector3(0, 0, -90), 12)
 	box(gun, Vector3(0.11, 0.22, 0.08), Vector3(0.12, -0.16, 0), "dark", Vector3(0, 0, 12))
 	box(gun, Vector3(0.3, 0.04, 0.12), Vector3(0.42, -0.06, 0), "glow")
+	return r
+
+
+## Medic: white armour with team trim, a backpack with a glowing green cross and a heal emitter
+## held in front.
+func medic() -> Node3D:
+	var r := _root("Medic")
+	for sz in [-1, 1]:
+		octa(r, 0.38, 0.25, 0.15, Vector3(0.05, 0, sz * 0.19), "gunmetal", 0.8)
+		capsule(r, 0.11, 0.55, Vector3(0, 0.43, sz * 0.19), "white")
+		sphere(r, 0.11, Vector3(0.07, 0.69, sz * 0.19), "team", Vector3(0.8, 1.0, 1.0))
+		capsule(r, 0.13, 0.46, Vector3(0, 0.9, sz * 0.19), "white")
+	octa(r, 0.46, 0.56, 0.18, Vector3(0, 1.02, 0), "dark", 0.9)
+	octa(r, 0.56, 0.7, 0.52, Vector3(0, 1.18, 0), "white", 1.12)
+	box(r, Vector3(0.05, 0.05, 0.42), Vector3(0.34, 1.32, 0), "team")
+	box(r, Vector3(0.05, 0.22, 0.07), Vector3(0.33, 1.5, 0), "red_glow")  # red cross on the chest
+	box(r, Vector3(0.05, 0.07, 0.22), Vector3(0.33, 1.5, 0), "red_glow")
+	cyl(r, 0.17, 0.22, 0.1, Vector3(0, 1.75, 0), "gunmetal", Vector3.ZERO, 16)
+	sphere(r, 0.22, Vector3(0.02, 1.9, 0), "white", Vector3(1.05, 1.0, 0.95))
+	box(r, Vector3(0.09, 0.07, 0.28), Vector3(0.19, 1.9, 0), "heal_glow")
+	# backpack: med kit with a glowing green cross
+	octa(r, 0.3, 0.5, 0.5, Vector3(-0.4, 1.15, 0), "white", 0.85)
+	box(r, Vector3(0.05, 0.3, 0.1), Vector3(-0.56, 1.42, 0), "heal_glow")
+	box(r, Vector3(0.05, 0.1, 0.3), Vector3(-0.56, 1.42, 0), "heal_glow")
+	for sz in [-1, 1]:
+		sphere(r, 0.2, Vector3(0, 1.64, sz * 0.4), "team", Vector3(1.1, 0.7, 1.0), true)
+		capsule(r, 0.08, 0.36, Vector3(0.04, 1.45, sz * 0.4), "white")
+		capsule(r, 0.08, 0.34, Vector3(0.22, 1.25, sz * 0.3), "gunmetal", Vector3(sz * 25.0, 0, -70))
+	# heal emitter
+	cyl(r, 0.06, 0.06, 0.55, Vector3(0.55, 1.2, -0.2), "gunmetal", Vector3(0, 0, -90), 12)
+	anim(sphere(r, 0.09, Vector3(0.85, 1.2, -0.2), "heal_glow"), "pulse", 3.0)
 	return r
 
 

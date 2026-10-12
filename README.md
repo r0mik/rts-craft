@@ -41,7 +41,7 @@
   | `P` | Starport | 200 | Factory | авиация: Wraith, Stormbird, Devastator, дроны |
   | `M` | Missile Silo | 200 | Engineering Bay | ракеты: `M` — собрать (150, 30 с), `L` + клик — пуск в любую точку карты |
   | `C` | Command Center | 400 | — | рабочие, Титан, приём минералов, +10 supply |
-- **Юниты:** SCV (`Q` в CC), Marine (`Q` в Barracks), Siege Tank (`T` в Factory, урон по площади),
+- **Юниты:** SCV (`Q` в CC), Marine (`Q` в Barracks), Medic — медик (`E` в Barracks, 75: без оружия, лечит ближайших раненых юнитов на 14 HP/с, сам подходит к раненым), Siege Tank (`T` в Factory, урон по площади),
   AA Rover — ПВО (`Y` в Factory, ракеты дальностью 280, бьёт только по воздуху),
   Wraith (`V` в Starport, летает высоко над картой; рабочие, пехота, танки и бункеры его не достают —
   только ПВО, ракетные турели, другие Wraith и Титан),

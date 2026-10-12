@@ -30,6 +30,8 @@ var selected := false
 var last_dist := INF
 var stuck_time := 0.0
 var build_timer := 0.0
+var heal_target = null  # medic: the friendly unit being healed right now
+var heal_timer := 0.0
 
 
 ## Gives this unit its own copy of the stats with randomised values and a random title (Titan).
@@ -76,6 +78,8 @@ func is_air() -> bool:
 ## Flyers can only be hit by anti-air weapons; "air_only" units (AA Rover) cannot hit the ground;
 ## "buildings_only" units (Devastator) attack nothing but buildings.
 func can_target(e) -> bool:
+	if stats.get("healer", false):
+		return false
 	if stats.get("buildings_only", false):
 		return e.is_in_group("buildings")
 	if e.is_air():
@@ -180,6 +184,8 @@ func _process(delta: float) -> void:
 	cooldown_left = maxf(0.0, cooldown_left - delta)
 	shot_flash = maxf(0.0, shot_flash - delta)
 	acquire_timer -= delta
+	if stats.get("healer", false):
+		_heal(delta)
 	match state:
 		State.IDLE:
 			_do_idle(delta)
@@ -204,8 +210,42 @@ func _process(delta: float) -> void:
 			_do_build(delta)
 
 
+## Medic: heal the most damaged friendly unit in range; while idle, walk up to wounded allies nearby.
+func _heal(delta: float) -> void:
+	heal_timer -= delta
+	if heal_timer <= 0.0:
+		heal_timer = 0.25
+		heal_target = _wounded_ally(stats.range)
+	if game.valid(heal_target) and heal_target.hp < heal_target.max_hp \
+			and game.edge_dist(self, heal_target) <= stats.range:
+		heal_target.hp = minf(heal_target.max_hp, heal_target.hp + stats.heal_rate * delta)
+		facing = (heal_target.position - position).angle()
+	else:
+		heal_target = null
+
+
+func _wounded_ally(radius_px: float):
+	var best = null
+	var best_f := 1.0
+	for u in game.get_tree().get_nodes_in_group("units"):
+		if u == self or u.team != team or not u.is_alive() or u.hp >= u.max_hp:
+			continue
+		if game.edge_dist(self, u) <= radius_px and u.hp / u.max_hp < best_f:
+			best_f = u.hp / u.max_hp
+			best = u
+	return best
+
+
 func _do_idle(delta: float) -> void:
 	if is_worker():
+		return
+	if stats.get("healer", false):
+		if heal_target == null and acquire_timer <= 0.0:
+			acquire_timer = 0.5
+			var w = _wounded_ally(stats.sight)
+			if w != null:
+				target_pos = w.position
+				state = State.MOVE
 		return
 	if game.valid(target) and game.edge_dist(self, target) <= stats.sight * 1.3:
 		_engage(target, delta, true)
