@@ -172,6 +172,16 @@ func octa(parent: Node3D, w: float, d: float, h: float, pos: Vector3, m: String,
 	return holder
 
 
+## Capsule (rounded limb) along its local Y axis; h is the full length including the caps.
+func capsule(parent: Node3D, r: float, h: float, pos: Vector3, m: String, rot := Vector3.ZERO) -> MeshInstance3D:
+	var mesh := CapsuleMesh.new()
+	mesh.radius = r
+	mesh.height = maxf(h, r * 2.0)
+	mesh.radial_segments = 20
+	mesh.rings = 6
+	return _add(parent, mesh, pos, m, rot)
+
+
 func torus(parent: Node3D, r_in: float, r_out: float, pos: Vector3, m: String, rot := Vector3.ZERO) -> MeshInstance3D:
 	var mesh := TorusMesh.new()
 	mesh.inner_radius = r_in
@@ -484,79 +494,181 @@ func starport() -> Node3D:
 
 # --- Units (face +X) ----------------------------------------------------------
 
+## Units share the buildings' look: white hull plating over gunmetal, team-coloured armour and
+## glowing energy seams. Higher-segment meshes and capsule limbs give smoother silhouettes.
+
+## SCV: tracked utility mech with a glass cockpit, a spinning drill arm, a claw arm (holds the
+## mineral it carries) and a glowing backpack reactor.
 func worker() -> Node3D:
 	var r := _root("SCV")
+	for sz in [-1, 1]:  # tracks with rounded ends, road wheels and team mudguards
+		box(r, Vector3(0.8, 0.34, 0.26), Vector3(0, 0.2, sz * 0.46), "rubber")
+		for ex in [-0.4, 0.4]:
+			cyl(r, 0.17, 0.17, 0.26, Vector3(ex, 0.2, sz * 0.46), "rubber", Vector3(90, 0, 0), 20)
+		for k in 3:
+			cyl(r, 0.12, 0.12, 0.04, Vector3(-0.32 + k * 0.32, 0.2, sz * 0.6), "gunmetal", Vector3(90, 0, 0), 16)
+		box(r, Vector3(1.0, 0.05, 0.32), Vector3(0, 0.4, sz * 0.46), "team")
+	octa(r, 1.0, 0.7, 0.28, Vector3(0, 0.34, 0), "gunmetal", 0.85)
+	octa(r, 0.95, 0.92, 0.7, Vector3(-0.05, 0.6, 0), "hull", 0.78)
+	octa(r, 0.94, 0.91, 0.05, Vector3(-0.05, 0.86, 0), "energy")
 	for sz in [-1, 1]:
-		box(r, Vector3(0.4, 0.7, 0.35), Vector3(0, 0.35, sz * 0.32), "dark")
-	box(r, Vector3(1.0, 0.85, 1.1), Vector3(-0.05, 1.1, 0), "metal")
+		box(r, Vector3(0.04, 0.07, 0.14), Vector3(0.46, 0.78, sz * 0.24), "amber_glow")
+	# cockpit: glass dome on a team-coloured collar
+	torus(r, 0.3, 0.38, Vector3(0.12, 1.3, 0), "team")
+	sphere(r, 0.34, Vector3(0.12, 1.32, 0), "glass", Vector3(1.1, 0.85, 1.0))
+	# backpack reactor with a pulsing energy ring and exhaust stacks
+	cyl(r, 0.22, 0.24, 0.62, Vector3(-0.55, 1.12, 0), "gunmetal", Vector3.ZERO, 20)
+	anim(torus(r, 0.21, 0.27, Vector3(-0.55, 1.22, 0), "glow"), "pulse", 2.0)
+	cyl(r, 0.2, 0.2, 0.06, Vector3(-0.55, 1.45, 0), "hull", Vector3.ZERO, 20)
 	for sz in [-1, 1]:
-		box(r, Vector3(0.6, 0.35, 0.4), Vector3(0, 1.5, sz * 0.68), "team")
-	box(r, Vector3(0.45, 0.65, 0.8), Vector3(-0.65, 1.2, 0), "dark")
-	sphere(r, 0.36, Vector3(0.28, 1.55, 0), "glass")
-	cyl(r, 0.0, 0.17, 0.75, Vector3(0.85, 1.0, 0.62), "yellow", Vector3(0, 0, -90))
-	box(r, Vector3(0.6, 0.16, 0.16), Vector3(0.6, 1.0, -0.62), "dark")
-	box(r, Vector3(0.2, 0.25, 0.08), Vector3(0.95, 1.0, -0.62), "metal")
-	var carry := Node3D.new()  # shown while carrying minerals
+		cyl(r, 0.05, 0.06, 0.4, Vector3(-0.68, 1.55, sz * 0.12), "dark", Vector3.ZERO, 10)
+	cyl(r, 0.012, 0.012, 0.55, Vector3(-0.3, 1.55, 0.3), "dark", Vector3.ZERO, 6)
+	sphere(r, 0.04, Vector3(-0.3, 1.84, 0.3), "red_glow")
+	for sz in [-1, 1]:  # shoulders and arms
+		sphere(r, 0.19, Vector3(0.02, 1.15, sz * 0.52), "team")
+		capsule(r, 0.08, 0.5, Vector3(0.22, 0.98, sz * 0.58), "gunmetal", Vector3(0, 0, -65))
+	# right arm: motor housing and a spinning drill (spins around its own Y, which points forward)
+	cyl(r, 0.13, 0.13, 0.26, Vector3(0.5, 0.88, 0.58), "gunmetal", Vector3(0, 0, -90), 16)
+	var holder := Node3D.new()
+	holder.position = Vector3(0.63, 0.88, 0.58)
+	holder.rotation_degrees = Vector3(0, 0, -90)
+	r.add_child(holder)
+	var drill := anim(Node3D.new(), "spin", 14.0)
+	holder.add_child(drill)
+	cyl(drill, 0.0, 0.15, 0.55, Vector3(0, 0.28, 0), "yellow", Vector3.ZERO, 16)
+	for k in 3:
+		torus(drill, 0.1 - k * 0.03, 0.14 - k * 0.035, Vector3(0, 0.12 + k * 0.13, 0), "dark", Vector3(10, 0, 0))
+	# left arm: two-finger claw
+	cyl(r, 0.1, 0.12, 0.2, Vector3(0.5, 0.88, -0.58), "gunmetal", Vector3(0, 0, -90), 12)
+	for sy in [-1, 1]:
+		box(r, Vector3(0.3, 0.05, 0.07), Vector3(0.7, 0.88 + sy * 0.08, -0.58), "dark", Vector3(0, 0, sy * 18))
+	var carry := Node3D.new()  # shown while carrying minerals: a crystal held in the claw
 	carry.name = "Carry"
 	carry.visible = false
 	r.add_child(carry)
-	cyl(carry, 0.02, 0.22, 0.6, Vector3(-0.75, 1.75, 0), "crystal", Vector3(0, 0, 15), 6)
+	cyl(carry, 0.02, 0.2, 0.5, Vector3(0.82, 0.92, -0.58), "crystal", Vector3(0, 0, -70), 6)
 	return r
 
 
+## Marine: powered armour with capsule limbs, big shoulder pads, a glowing visor,
+## a backpack with thrusters and a detailed rifle.
 func marine() -> Node3D:
 	var r := _root("Marine")
+	for sz in [-1, 1]:  # legs: boots, shins, knee guards, thighs
+		octa(r, 0.4, 0.26, 0.16, Vector3(0.06, 0, sz * 0.2), "gunmetal", 0.8)
+		capsule(r, 0.12, 0.55, Vector3(0, 0.44, sz * 0.2), "hull")
+		sphere(r, 0.12, Vector3(0.08, 0.7, sz * 0.2), "team", Vector3(0.8, 1.0, 1.0))
+		capsule(r, 0.14, 0.48, Vector3(0, 0.92, sz * 0.2), "gunmetal")
+	octa(r, 0.48, 0.6, 0.2, Vector3(0, 1.04, 0), "dark", 0.9)
+	# torso widening towards the chest, with a white chest plate and an energy strip
+	octa(r, 0.6, 0.76, 0.56, Vector3(0, 1.22, 0), "team", 1.15)
+	box(r, Vector3(0.1, 0.36, 0.48), Vector3(0.36, 1.5, 0), "hull", Vector3(0, 0, -12))
+	box(r, Vector3(0.04, 0.05, 0.4), Vector3(0.4, 1.36, 0), "energy")
+	cyl(r, 0.18, 0.24, 0.12, Vector3(0, 1.83, 0), "gunmetal", Vector3.ZERO, 16)
+	# helmet with visor band and crest
+	sphere(r, 0.23, Vector3(0.02, 1.98, 0), "hull", Vector3(1.05, 1.0, 0.95))
+	box(r, Vector3(0.1, 0.08, 0.3), Vector3(0.2, 1.98, 0), "amber_glow")
+	box(r, Vector3(0.34, 0.05, 0.06), Vector3(-0.02, 2.2, 0), "team")
+	cyl(r, 0.01, 0.01, 0.4, Vector3(-0.12, 2.1, 0.18), "dark", Vector3.ZERO, 6)
+	# backpack: armoured pack, twin thrusters, glowing vents
+	octa(r, 0.3, 0.52, 0.55, Vector3(-0.42, 1.2, 0), "gunmetal", 0.85)
 	for sz in [-1, 1]:
-		box(r, Vector3(0.38, 0.8, 0.34), Vector3(0, 0.4, sz * 0.24), "dark")
-	box(r, Vector3(0.7, 0.75, 0.9), Vector3(0, 1.15, 0), "team")
-	box(r, Vector3(0.12, 0.45, 0.6), Vector3(0.36, 1.18, 0), "metal")
-	for sz in [-1, 1]:
-		sphere(r, 0.3, Vector3(0, 1.45, sz * 0.55), "team", Vector3(1.0, 0.8, 1.0))
-	box(r, Vector3(0.35, 0.6, 0.65), Vector3(-0.48, 1.2, 0), "dark")
-	sphere(r, 0.28, Vector3(0.02, 1.75, 0), "metal")
-	box(r, Vector3(0.1, 0.12, 0.34), Vector3(0.25, 1.77, 0), "amber_glow")
-	box(r, Vector3(1.15, 0.16, 0.16), Vector3(0.55, 1.15, -0.26), "black")
-	box(r, Vector3(0.2, 0.3, 0.12), Vector3(0.35, 0.98, -0.26), "dark")
+		cyl(r, 0.08, 0.1, 0.32, Vector3(-0.58, 1.3, sz * 0.15), "dark", Vector3.ZERO, 12)
+		cyl(r, 0.07, 0.07, 0.03, Vector3(-0.58, 1.13, sz * 0.15), "glow", Vector3.ZERO, 12)
+	box(r, Vector3(0.03, 0.2, 0.3), Vector3(-0.58, 1.48, 0), "energy")
+	for sz in [-1, 1]:  # shoulder pads with white trim, arms reaching to the rifle
+		sphere(r, 0.26, Vector3(0, 1.7, sz * 0.46), "team", Vector3(1.15, 0.75, 1.0), true)
+		torus(r, 0.24, 0.29, Vector3(0, 1.7, sz * 0.46), "hull")
+		capsule(r, 0.09, 0.38, Vector3(0.04, 1.5, sz * 0.44), "gunmetal")
+		capsule(r, 0.09, 0.38, Vector3(0.24, 1.3, sz * 0.36), "hull", Vector3(sz * 25.0, 0, -70))
+	# rifle on the right side
+	var gun := Node3D.new()
+	gun.position = Vector3(0.38, 1.26, -0.28)
+	r.add_child(gun)
+	box(gun, Vector3(0.8, 0.15, 0.11), Vector3(0.2, 0, 0), "gunmetal")
+	box(gun, Vector3(0.28, 0.13, 0.09), Vector3(-0.3, -0.02, 0), "dark")
+	cyl(gun, 0.04, 0.04, 0.55, Vector3(0.85, 0.02, 0), "black", Vector3(0, 0, -90), 12)
+	cyl(gun, 0.06, 0.06, 0.12, Vector3(1.14, 0.02, 0), "dark", Vector3(0, 0, -90), 12)
+	cyl(gun, 0.04, 0.04, 0.28, Vector3(0.2, 0.12, 0), "black", Vector3(0, 0, -90), 12)
+	box(gun, Vector3(0.11, 0.22, 0.08), Vector3(0.12, -0.16, 0), "dark", Vector3(0, 0, 12))
+	box(gun, Vector3(0.3, 0.04, 0.12), Vector3(0.42, -0.06, 0), "glow")
 	return r
 
 
+## Siege tank: rounded tracks under armoured skirts, layered hull, octagonal turret with an
+## energy-coiled cannon, sensor dome and antenna.
 func tank() -> Node3D:
 	var r := _root("SiegeTank")
 	for sz in [-1, 1]:
-		box(r, Vector3(3.8, 0.7, 0.7), Vector3(0, 0.38, sz * 1.15), "rubber")
+		box(r, Vector3(3.5, 0.62, 0.72), Vector3(0, 0.36, sz * 1.15), "rubber")
+		for ex in [-1.75, 1.75]:
+			cyl(r, 0.31, 0.31, 0.72, Vector3(ex, 0.36, sz * 1.15), "rubber", Vector3(90, 0, 0), 24)
+			cyl(r, 0.2, 0.2, 0.06, Vector3(ex, 0.36, sz * 1.52), "gunmetal", Vector3(90, 0, 0), 16)
 		for k in 5:
-			cyl(r, 0.3, 0.3, 0.12, Vector3(-1.4 + k * 0.7, 0.38, sz * 1.52), "dark", Vector3(90, 0, 0), 16)
-	box(r, Vector3(3.3, 0.6, 1.7), Vector3(-0.1, 0.85, 0), "team")
-	box(r, Vector3(0.7, 0.45, 1.7), Vector3(1.6, 0.75, 0), "team_dark", Vector3(0, 0, 30))
-	box(r, Vector3(2.6, 0.2, 1.5), Vector3(-0.3, 1.24, 0), "metal")
+			cyl(r, 0.24, 0.24, 0.06, Vector3(-1.2 + k * 0.6, 0.32, sz * 1.52), "gunmetal", Vector3(90, 0, 0), 16)
+			cyl(r, 0.08, 0.08, 0.08, Vector3(-1.2 + k * 0.6, 0.32, sz * 1.54), "dark", Vector3(90, 0, 0), 10)
+		box(r, Vector3(3.4, 0.28, 0.08), Vector3(0, 0.7, sz * 1.55), "team")
+		box(r, Vector3(3.2, 0.04, 0.09), Vector3(0, 0.6, sz * 1.56), "energy")
+	octa(r, 3.7, 2.2, 0.5, Vector3(0, 0.62, 0), "team", 0.88)
+	octa(r, 3.1, 1.8, 0.32, Vector3(-0.15, 1.1, 0), "hull", 0.85)
+	octa(r, 3.15, 1.85, 0.05, Vector3(-0.15, 1.1, 0), "energy")
+	box(r, Vector3(0.75, 0.42, 1.7), Vector3(1.62, 0.9, 0), "team_dark", Vector3(0, 0, 32))
+	for sz in [-1, 1]:
+		box(r, Vector3(0.05, 0.1, 0.22), Vector3(1.86, 0.95, sz * 0.6), "amber_glow", Vector3(0, 0, 32))
+		cyl(r, 0.09, 0.1, 0.3, Vector3(-1.75, 1.15, sz * 0.6), "dark", Vector3(0, 0, 90), 12)
+		cyl(r, 0.07, 0.07, 0.03, Vector3(-1.91, 1.15, sz * 0.6), "fire_glow", Vector3(0, 0, 90), 12)
+	box(r, Vector3(0.7, 0.06, 1.1), Vector3(-1.15, 1.44, 0), "dark")
 	var tur := Node3D.new()  # rotates independently towards the target
 	tur.name = "Turret"
 	tur.position = Vector3(-0.3, 0, 0)
 	r.add_child(tur)
-	cyl(tur, 0.68, 0.78, 0.5, Vector3(0, 1.58, 0), "metal", Vector3.ZERO, 28)
-	box(tur, Vector3(0.9, 0.18, 0.9), Vector3(-0.05, 1.9, 0), "team")
-	cyl(tur, 0.09, 0.11, 2.2, Vector3(1.7, 1.62, 0), "black", Vector3(0, 0, -90), 12)
-	box(tur, Vector3(0.3, 0.22, 0.22), Vector3(2.8, 1.62, 0), "dark")
-	cyl(tur, 0.02, 0.03, 1.2, Vector3(-0.7, 2.3, 0.45), "dark")
+	octa(tur, 1.7, 1.4, 0.48, Vector3(0, 1.42, 0), "hull", 0.75)
+	octa(tur, 1.74, 1.44, 0.05, Vector3(0, 1.5, 0), "energy")
+	octa(tur, 1.0, 0.85, 0.18, Vector3(-0.15, 1.9, 0), "gunmetal", 0.8)
+	box(tur, Vector3(0.35, 0.42, 0.6), Vector3(0.78, 1.66, 0), "gunmetal")
+	cyl(tur, 0.1, 0.13, 2.2, Vector3(1.95, 1.68, 0), "gunmetal", Vector3(0, 0, -90), 16)
+	cyl(tur, 0.16, 0.16, 0.55, Vector3(1.2, 1.68, 0), "team", Vector3(0, 0, -90), 16)
+	for k in 3:
+		torus(tur, 0.12, 0.17, Vector3(1.65 + k * 0.32, 1.68, 0), "glow", Vector3(0, 0, 90))
+	cyl(tur, 0.17, 0.17, 0.32, Vector3(3.1, 1.68, 0), "dark", Vector3(0, 0, -90), 8)
+	sphere(tur, 0.17, Vector3(-0.45, 2.1, 0.4), "glass")
+	cyl(tur, 0.2, 0.2, 0.08, Vector3(-0.2, 2.1, -0.25), "gunmetal", Vector3.ZERO, 16)
+	cyl(tur, 0.015, 0.02, 1.0, Vector3(-0.7, 2.45, -0.45), "dark", Vector3.ZERO, 6)
+	sphere(tur, 0.04, Vector3(-0.7, 2.96, -0.45), "red_glow")
 	return r
 
 
-## Flying fighter, hovering above the ground (its shadow lands on the ground in the sprite).
+## Flying fighter, hovering above the ground: tapered fuselage, swept wings with energy leading
+## edges and wingtip pods, twin engines with pulsing exhaust plumes.
 func wraith() -> Node3D:
 	var r := _root("Wraith")
 	var body := Node3D.new()
 	body.name = "Body"
 	body.position = Vector3(0, 3.0, 0)
 	r.add_child(body)
-	cyl(body, 0.05, 0.42, 2.2, Vector3(0.9, 0, 0), "team", Vector3(0, 0, -90), 12)  # nose
-	cyl(body, 0.42, 0.5, 1.3, Vector3(-0.85, 0, 0), "metal", Vector3(0, 0, -90), 12)  # fuselage
-	sphere(body, 0.3, Vector3(0.55, 0.28, 0), "glass", Vector3(1.6, 0.7, 0.9))
-	for sz in [-1, 1]:  # swept wings, engines, tail fins
-		box(body, Vector3(1.4, 0.1, 1.7), Vector3(-0.5, -0.05, sz * 1.1), "metal", Vector3(0, sz * 28.0, 0))
-		box(body, Vector3(0.5, 0.12, 0.9), Vector3(-0.8, 0.0, sz * 1.65), "team", Vector3(0, sz * 28.0, 0))
-		cyl(body, 0.2, 0.24, 1.0, Vector3(-1.2, -0.05, sz * 0.55), "dark", Vector3(0, 0, -90), 10)
-		cyl(body, 0.15, 0.15, 0.08, Vector3(-1.72, -0.05, sz * 0.55), "glow", Vector3(0, 0, -90), 10)
-		box(body, Vector3(0.6, 0.6, 0.08), Vector3(-1.3, 0.35, sz * 0.32), "metal", Vector3(sz * 15.0, 0, 20))
+	cyl(body, 0.36, 0.46, 1.6, Vector3(-0.6, 0, 0), "hull", Vector3(0, 0, -90), 24)  # fuselage
+	cyl(body, 0.03, 0.36, 1.7, Vector3(1.05, 0, 0), "team", Vector3(0, 0, -90), 24)  # nose
+	cyl(body, 0.37, 0.37, 0.06, Vector3(0.2, 0, 0), "energy", Vector3(0, 0, -90), 24)
+	sphere(body, 0.3, Vector3(0.5, 0.26, 0), "glass", Vector3(1.8, 0.75, 0.85))
+	box(body, Vector3(1.2, 0.22, 0.06), Vector3(-0.75, 0.42, 0), "team", Vector3(0, 0, -6))
+	for sz in [-1, 1]:
+		var wing := Node3D.new()  # swept wing, rooted at the fuselage
+		wing.position = Vector3(-0.2, -0.05, sz * 0.35)
+		wing.rotation_degrees = Vector3(0, -sz * 32.0, 0)
+		body.add_child(wing)
+		box(wing, Vector3(1.1, 0.08, 1.8), Vector3(-0.35, 0, sz * 0.9), "hull")
+		box(wing, Vector3(0.35, 0.09, 1.5), Vector3(-0.55, 0, sz * 0.95), "team")
+		box(wing, Vector3(0.06, 0.1, 1.8), Vector3(0.2, 0, sz * 0.9), "energy")
+		cyl(wing, 0.08, 0.1, 0.9, Vector3(-0.3, 0, sz * 1.85), "gunmetal", Vector3(0, 0, -90), 12)
+		sphere(wing, 0.06, Vector3(-0.78, 0, sz * 1.85), "red_glow")
+		cyl(body, 0.04, 0.04, 0.8, Vector3(0.5, -0.22, sz * 0.75), "black", Vector3(0, 0, -90), 10)
+		# engines and exhaust
+		cyl(body, 0.21, 0.25, 1.1, Vector3(-1.2, -0.02, sz * 0.5), "gunmetal", Vector3(0, 0, -90), 20)
+		torus(body, 0.19, 0.25, Vector3(-0.65, -0.02, sz * 0.5), "team", Vector3(0, 0, 90))
+		cyl(body, 0.17, 0.17, 0.06, Vector3(-1.77, -0.02, sz * 0.5), "glow", Vector3(0, 0, -90), 20)
+		var plume := cyl(body, 0.0, 0.15, 0.7, Vector3(-2.15, -0.02, sz * 0.5), "holo", Vector3(0, 0, 90), 16)
+		anim(plume, "pulse", 4.0)
+		box(body, Vector3(0.7, 0.65, 0.06), Vector3(-1.35, 0.4, sz * 0.32), "team", Vector3(sz * 18.0, 0, 25))
 	return r
 
 

@@ -475,14 +475,19 @@ func _collect_anims(n: Node, out: Array) -> void:
 		_collect_anims(c, out)
 
 
-## Spinning radars / holograms, pulsing energy cores, and defence turrets tracking their target.
-func _animate_building(e, root: Node3D, model: Node3D, delta: float) -> void:
+## Nodes tagged with Models.anim(): "spin" rotates around local Y, "pulse" breathes in scale.
+func _run_anims(root: Node3D, delta: float) -> void:
 	for a in root.get_meta("anims", []):
 		var n: Node3D = a.node
 		if a.kind == "spin":
 			n.rotation.y += delta * a.speed
 		else:
 			n.scale = a.scale * (1.0 + 0.12 * sin(time * a.speed * 2.0 + a.phase))
+
+
+## Spinning radars / holograms, pulsing energy cores, and defence turrets tracking their target.
+func _animate_building(e, root: Node3D, model: Node3D, delta: float) -> void:
+	_run_anims(root, delta)
 	var tur: Node3D = model.get_node_or_null("Turret")
 	if tur:
 		if game.valid(e.target):
@@ -530,6 +535,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 		root.position = p3
 		var seed := float(e.get_instance_id() % 97)
 		model.rotation.y = lerp_angle(model.rotation.y, -e.facing, minf(1.0, delta * 12.0))
+		_run_anims(root, delta)
 		match e.kind:
 			"marine", "worker":
 				var bob := absf(sin(time * 11.0 + seed)) * 0.12 if moved else 0.0
