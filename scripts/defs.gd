@@ -27,6 +27,10 @@ const UNITS := {
 		"name": "Titan (босс)", "hp": 1400, "speed": 50.0, "radius": 30.0,
 		"damage": 40, "range": 220.0, "cooldown": 1.6, "sight": 320.0, "splash": 60.0,
 		"cost": 500, "supply": 6, "time": 45.0, "hotkey": KEY_Y, "requires": "barracks", "limit": 1,
+		# every Titan rolls its own stats: each value is multiplied by a random factor from [min, max]
+		"random": {"hp": [0.7, 1.4], "damage": [0.6, 1.6], "range": [0.8, 1.3], "speed": [0.7, 1.4],
+			"cooldown": [0.7, 1.4], "splash": [0.6, 1.6]},
+		"titles": ["Гром", "Молот", "Колосс", "Бастион", "Жнец", "Циклоп", "Буря", "Атлас", "Голиаф", "Вулкан"],
 	},
 }
 

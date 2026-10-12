@@ -32,11 +32,24 @@ var stuck_time := 0.0
 var build_timer := 0.0
 
 
+## Gives this unit its own copy of the stats with randomised values and a random title (Titan).
+func _roll_stats() -> void:
+	stats = stats.duplicate()
+	for key in stats.random:
+		var f: Array = stats.random[key]
+		stats[key] = stats[key] * randf_range(f[0], f[1])
+	stats.damage = roundi(stats.damage)
+	stats.hp = roundi(stats.hp)
+	stats.name = "Титан «%s»" % stats.titles.pick_random()
+
+
 func setup(g, t: int, k: String) -> void:
 	game = g
 	team = t
 	kind = k
 	stats = Defs.UNITS[k]
+	if stats.has("random"):
+		_roll_stats()
 	max_hp = stats.hp
 	hp = max_hp
 	radius = stats.radius
