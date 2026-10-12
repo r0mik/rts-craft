@@ -20,7 +20,7 @@ const UNITS := {
 	"wraith": {
 		"name": "Wraith (истребитель)", "hp": 120, "speed": 150.0, "radius": 13.0,
 		"damage": 10, "range": 150.0, "cooldown": 1.1, "sight": 280.0,
-		"cost": 150, "supply": 2, "time": 28.0, "hotkey": KEY_W, "air": true,
+		"cost": 150, "supply": 2, "time": 28.0, "hotkey": KEY_V, "air": true,
 	},
 }
 
@@ -31,7 +31,7 @@ const BUILDINGS := {
 	},
 	"depot": {
 		"name": "Supply Depot", "short": "DEPOT", "hp": 400, "size": Vector2(70, 70),
-		"cost": 100, "time": 20.0, "supply": 8, "trains": [], "hotkey": KEY_D,
+		"cost": 100, "time": 20.0, "supply": 8, "trains": [], "hotkey": KEY_V,
 	},
 	"barracks": {
 		"name": "Barracks", "short": "BARRACKS", "hp": 1000, "size": Vector2(110, 90),
@@ -63,7 +63,7 @@ const BUILDINGS := {
 
 ## Team-wide research done in the Engineering Bay.
 const UPGRADES := {
-	"weapons": {"name": "Оружие", "cost": [100, 175], "time": 40.0, "hotkey": KEY_W, "max": 2},
+	"weapons": {"name": "Оружие", "cost": [100, 175], "time": 40.0, "hotkey": KEY_G, "max": 2},
 	"armor": {"name": "Броня", "cost": [100, 175], "time": 40.0, "hotkey": KEY_R, "max": 2},
 }
 

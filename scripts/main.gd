@@ -472,8 +472,8 @@ func get_commands() -> Array:
 	var units := selected_units()
 	var blds := selected_buildings()
 	if not units.is_empty():
-		cmds.append({"key": KEY_A, "label": "Атака (A)", "fn": cmd_attack})
-		cmds.append({"key": KEY_S, "label": "Стоп (S)", "fn": cmd_stop})
+		cmds.append({"key": KEY_G, "label": "Атака (G)", "fn": cmd_attack})
+		cmds.append({"key": KEY_X, "label": "Стоп (X)", "fn": cmd_stop})
 		cmds.append({"key": KEY_H, "label": "Держать (H)", "fn": cmd_hold})
 		if units.any(func(u): return u.is_worker()):
 			for bk in Defs.WORKER_BUILDS:
@@ -808,10 +808,11 @@ func _autotest_screenshot() -> void:
 
 func _update_camera(delta: float) -> void:
 	var dir := Vector2.ZERO
-	if Input.is_key_pressed(KEY_LEFT): dir.x -= 1
-	if Input.is_key_pressed(KEY_RIGHT): dir.x += 1
-	if Input.is_key_pressed(KEY_UP): dir.y -= 1
-	if Input.is_key_pressed(KEY_DOWN): dir.y += 1
+	# WASD by physical position, so it works with any keyboard layout; arrows kept as a fallback.
+	if Input.is_physical_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT): dir.x -= 1
+	if Input.is_physical_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): dir.x += 1
+	if Input.is_physical_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): dir.y -= 1
+	if Input.is_physical_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): dir.y += 1
 	if DisplayServer.window_is_focused() and not autotest:
 		var mp := get_viewport().get_mouse_position()
 		var vs := get_viewport_rect().size
