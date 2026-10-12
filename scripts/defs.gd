@@ -22,12 +22,18 @@ const UNITS := {
 		"damage": 10, "range": 150.0, "cooldown": 1.1, "sight": 280.0,
 		"cost": 150, "supply": 2, "time": 28.0, "hotkey": KEY_V, "air": true,
 	},
+	# Boss unit: one per side, trained at the Command Center once a Barracks is up.
+	"titan": {
+		"name": "Titan (босс)", "hp": 1400, "speed": 50.0, "radius": 30.0,
+		"damage": 40, "range": 220.0, "cooldown": 1.6, "sight": 320.0, "splash": 60.0,
+		"cost": 500, "supply": 6, "time": 45.0, "hotkey": KEY_Y, "requires": "barracks", "limit": 1,
+	},
 }
 
 const BUILDINGS := {
 	"cc": {
 		"name": "Command Center", "short": "COMMAND", "hp": 1500, "size": Vector2(130, 100),
-		"cost": 400, "time": 70.0, "supply": 10, "trains": ["worker"], "hotkey": KEY_C,
+		"cost": 400, "time": 70.0, "supply": 10, "trains": ["worker", "titan"], "hotkey": KEY_C,
 	},
 	"depot": {
 		"name": "Supply Depot", "short": "DEPOT", "hp": 400, "size": Vector2(70, 70),

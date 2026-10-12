@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15}
 
 var game
 var camera: Camera3D
@@ -549,6 +549,17 @@ func _sync(e, root: Node3D, delta: float) -> void:
 				var body: Node3D = model.get_node("Body")
 				body.position.y = 3.0 + sin(time * 2.2 + seed) * 0.18
 				body.rotation.x = lerpf(body.rotation.x, 0.25 if moved else 0.0, minf(1.0, delta * 3.0))
+			"titan":  # walking legs and a torso that turns towards the target
+				var swing := sin(time * 4.0 + seed) * 0.35 if moved else 0.0
+				for i in 2:
+					var leg: Node3D = model.get_node("Leg%d" % i)
+					leg.rotation.z = lerpf(leg.rotation.z, swing if i == 0 else -swing, minf(1.0, delta * 8.0))
+				model.position.y = absf(sin(time * 4.0 + seed)) * 0.15 if moved else 0.0
+				var torso: Node3D = model.get_node("Turret")
+				var aim := 0.0
+				if game.valid(e.target):
+					aim = -(e.target.position - e.position).angle() - model.rotation.y
+				torso.rotation.y = lerp_angle(torso.rotation.y, aim, minf(1.0, delta * 4.0))
 			"tank":
 				var tur: Node3D = model.get_node("Turret")
 				var want := 0.0
@@ -829,6 +840,10 @@ func fx_shot(attacker, target, splash: bool) -> void:
 			"wraith":
 				color = game.team_color(attacker.team).lightened(0.4)
 				width = 0.09
+			"titan":
+				muzzle = _world(attacker.position + dir * 3.0 * PX, 3.9)
+				color = game.team_color(attacker.team).lerp(Color(1.0, 0.7, 0.3), 0.5)
+				width = 0.22
 			"worker":
 				return
 	var t_h: float = top_of(target) * 0.45 if not target.is_in_group("buildings") else top_of(target) * 0.5
@@ -895,7 +910,7 @@ func fx_death(e) -> void:
 			var off := Vector2(randf_range(-0.4, 0.4) * e.size.x, randf_range(-0.4, 0.4) * e.size.y)
 			fx_explosion(e.position + off, s * 0.6)
 	elif e.is_in_group("units"):
-		fx_explosion(e.position, 1.3 if e.kind in ["tank", "wraith"] else 0.6)
+		fx_explosion(e.position, 2.5 if e.kind == "titan" else 1.3 if e.kind in ["tank", "wraith"] else 0.6)
 
 
 func fx_marker(p: Vector2, c: Color) -> void:

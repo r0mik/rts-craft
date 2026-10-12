@@ -323,18 +323,34 @@ func try_train(b, uk: String) -> bool:
 	var st: Dictionary = Defs.UNITS[uk]
 	if not b.can_train(uk):
 		return false
+	if st.has("requires") and not has_completed(b.team, st.requires):
+		if b.team == PLAYER:
+			show_message("Сначала нужен %s" % Defs.BUILDINGS[st.requires].name)
+		return false
+	if st.has("limit") and count_units(b.team, uk) >= int(st.limit):
+		if b.team == PLAYER:
+			show_message("%s может быть только один" % st.name)
+		return false
 	if bank[b.team] < st.cost:
 		if b.team == PLAYER:
 			show_message("Недостаточно минералов")
 		return false
 	if supply_used(b.team) + int(st.supply) > supply_cap(b.team):
 		if b.team == PLAYER:
-			show_message("Нужно больше Supply Depot (D рабочим)")
+			show_message("Нужно больше Supply Depot (V рабочим)")
 		return false
 	bank[b.team] -= st.cost
 	b.queue.append(uk)
 	b.queue_costs.append(st.cost)
 	return true
+
+
+## Units of a kind a team has, counting ones queued in its buildings.
+func count_units(t: int, uk: String) -> int:
+	var n := team_units(t).filter(func(u): return u.kind == uk).size()
+	for b in team_buildings(t):
+		n += b.queue.count(uk)
+	return n
 
 
 ## Next research level for a team, counting research already in progress.

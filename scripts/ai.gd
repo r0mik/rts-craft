@@ -65,7 +65,8 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 	for w in workers:
 		if w.build_kind == "depot":
 			pending_depots += 1
-	if cap < Defs.MAX_SUPPLY and used + 4 >= cap + pending_depots * 8:
+	var margin := 8 if _wants_titan(cc) else 4  # a Titan needs 6 free supply
+	if cap < Defs.MAX_SUPPLY and used + margin >= cap + pending_depots * 8:
 		if game.bank[team] >= 100:
 			_build("depot", cc, workers)
 		return  # save up for the depot
@@ -125,6 +126,10 @@ func _find_spot(kind: String, center: Vector2):
 
 
 func _military(cc, army: Array, buildings: Array) -> void:
+	# Boss: one Titan once the base is established; minerals are held back for it.
+	if _wants_titan(cc):
+		if not game.try_train(cc, "titan"):
+			reserve = maxi(reserve, int(Defs.UNITS.titan.cost))
 	for b in buildings:
 		if not b.is_complete() or game.bank[team] - reserve < 50:
 			continue
@@ -161,6 +166,11 @@ func _military(cc, army: Array, buildings: Array) -> void:
 			var tgt = _enemy_target(a.position)
 			if tgt != null:
 				a.order_attack_move(tgt.position)
+
+
+func _wants_titan(cc) -> bool:
+	return cc != null and elapsed > (360.0 if easy else 300.0) and game.has_completed(team, "barracks") \
+			and game.count_units(team, "titan") == 0
 
 
 func _threat_near(p: Vector2, r: float):

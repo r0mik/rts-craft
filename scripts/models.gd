@@ -228,6 +228,7 @@ func build(kind: String) -> Node3D:
 		"marine": return marine()
 		"tank": return tank()
 		"wraith": return wraith()
+		"titan": return titan()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
@@ -669,6 +670,61 @@ func wraith() -> Node3D:
 		var plume := cyl(body, 0.0, 0.15, 0.7, Vector3(-2.15, -0.02, sz * 0.5), "holo", Vector3(0, 0, 90), 16)
 		anim(plume, "pulse", 4.0)
 		box(body, Vector3(0.7, 0.65, 0.06), Vector3(-1.35, 0.4, sz * 0.32), "team", Vector3(sz * 18.0, 0, 25))
+	return r
+
+
+## Titan (boss): huge two-legged walker. Legs "Leg0"/"Leg1" swing from the hips and the torso
+## "Turret" turns towards the target (both animated in view3d.gd). Shoulder cannons, missile racks,
+## a glass cockpit and a pulsing reactor on its back.
+func titan() -> Node3D:
+	var r := _root("Titan")
+	octa(r, 1.4, 2.0, 0.5, Vector3(0, 2.15, 0), "gunmetal", 0.85)
+	for i in 2:
+		var sz := -1 if i == 0 else 1
+		cyl(r, 0.36, 0.36, 0.5, Vector3(0, 2.4, sz * 0.95), "dark", Vector3(90, 0, 0), 20)
+		var leg := Node3D.new()
+		leg.name = "Leg%d" % i
+		leg.position = Vector3(0, 2.4, sz * 0.95)
+		r.add_child(leg)
+		capsule(leg, 0.32, 1.3, Vector3(0.15, -0.55, 0), "gunmetal", Vector3(0, 0, -15))
+		box(leg, Vector3(0.5, 0.9, 0.42), Vector3(0.28, -0.5, sz * 0.12), "team", Vector3(0, 0, -15))
+		sphere(leg, 0.3, Vector3(0.3, -1.15, 0), "hull")
+		capsule(leg, 0.28, 1.2, Vector3(0.15, -1.7, 0), "hull", Vector3(0, 0, 12))
+		box(leg, Vector3(0.05, 0.6, 0.2), Vector3(0.43, -1.7, 0), "energy", Vector3(0, 0, 12))
+		octa(leg, 1.2, 0.75, 0.3, Vector3(0.15, -2.4, 0), "gunmetal", 0.75)
+		for tz in [-0.2, 0.2]:
+			box(leg, Vector3(0.4, 0.14, 0.18), Vector3(0.82, -2.33, tz), "dark", Vector3(0, 0, -15))
+	var tor := Node3D.new()
+	tor.name = "Turret"
+	r.add_child(tor)
+	octa(tor, 2.0, 2.4, 1.3, Vector3(0, 2.6, 0), "hull", 0.8)
+	octa(tor, 2.05, 2.45, 0.06, Vector3(0, 3.1, 0), "energy")
+	octa(tor, 1.6, 1.9, 0.18, Vector3(0, 3.9, 0), "team", 0.8)
+	sphere(tor, 0.42, Vector3(0.75, 3.45, 0), "glass", Vector3(1.0, 0.7, 1.2))
+	torus(tor, 0.32, 0.46, Vector3(-0.95, 3.3, 0), "gunmetal", Vector3(0, 0, 90))
+	anim(sphere(tor, 0.3, Vector3(-0.95, 3.3, 0), "glow"), "pulse", 2.0)
+	for sz in [-1, 1]:
+		cyl(tor, 0.1, 0.12, 0.6, Vector3(-0.75, 4.3, sz * 0.4), "dark", Vector3.ZERO, 12)
+		cyl(tor, 0.08, 0.08, 0.03, Vector3(-0.75, 4.61, sz * 0.4), "fire_glow", Vector3.ZERO, 12)
+		# shoulder, twin-barrel cannon pod with glowing muzzles, missile rack
+		sphere(tor, 0.55, Vector3(0, 3.8, sz * 1.4), "team", Vector3(1.0, 0.9, 1.0))
+		box(tor, Vector3(1.4, 0.6, 0.6), Vector3(0.45, 3.9, sz * 1.75), "gunmetal")
+		box(tor, Vector3(1.0, 0.08, 0.62), Vector3(0.45, 3.85, sz * 1.75), "energy")
+		for by in [-0.14, 0.14]:
+			cyl(tor, 0.09, 0.09, 1.4, Vector3(1.75, 3.9 + by, sz * 1.75), "black", Vector3(0, 0, -90), 12)
+			torus(tor, 0.08, 0.13, Vector3(2.45, 3.9 + by, sz * 1.75), "glow", Vector3(0, 0, 90))
+		box(tor, Vector3(0.7, 0.35, 0.6), Vector3(-0.2, 4.37, sz * 1.75), "team_dark")
+		for k in 3:
+			sphere(tor, 0.07, Vector3(0.16, 4.37, sz * 1.75 + (k - 1) * 0.18), "red_glow")
+		# arm hanging down to a forearm cannon
+		capsule(tor, 0.25, 1.1, Vector3(0.05, 3.0, sz * 1.55), "gunmetal")
+		cyl(tor, 0.28, 0.3, 0.9, Vector3(0.45, 2.45, sz * 1.55), "hull", Vector3(0, 0, -90), 16)
+		cyl(tor, 0.2, 0.2, 0.04, Vector3(0.92, 2.45, sz * 1.55), "glow", Vector3(0, 0, -90), 16)
+	var radar := anim(Node3D.new(), "spin", 1.5)
+	radar.position = Vector3(-0.35, 4.1, 0)
+	tor.add_child(radar)
+	cyl(radar, 0.04, 0.04, 0.4, Vector3(0, 0.2, 0), "dark", Vector3.ZERO, 8)
+	box(radar, Vector3(0.08, 0.3, 0.9), Vector3(0, 0.45, 0), "hull")
 	return r
 
 
