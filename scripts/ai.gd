@@ -83,8 +83,13 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 		["turret", _count("turret", buildings, workers) < 2 and game.has_completed(team, "ebay")],
 		["starport", _count("starport", buildings, workers) == 0 and elapsed > 280.0 and game.has_completed(team, "factory")],
 	]
+	plan.append(["silo", _count("silo", buildings, workers) == 0 and elapsed > 330.0 and game.has_completed(team, "ebay")])
 	if easy:
-		plan = [["barracks", rax < 1 and elapsed > 90.0]]
+		plan = [
+			["barracks", rax < 1 and elapsed > 90.0],
+			["ebay", _count("ebay", buildings, workers) == 0 and elapsed > 420.0],
+			["silo", _count("silo", buildings, workers) == 0 and elapsed > 470.0 and game.has_completed(team, "ebay")],
+		]
 	reserve = 0
 	for entry in plan:
 		if entry[1]:
@@ -130,6 +135,16 @@ func _military(cc, army: Array, buildings: Array) -> void:
 	if _wants_titan(cc):
 		if not game.try_train(cc, "titan"):
 			reserve = maxi(reserve, int(Defs.UNITS.titan.cost))
+	# Missiles: keep the silo loaded and fire at the densest group of enemy units and buildings.
+	for b in buildings:
+		if b.kind != "silo" or not b.is_complete():
+			continue
+		if b.missile_ready:
+			var tgt = _missile_target()
+			if tgt != null:
+				game.launch_missile(b, tgt)
+		elif b.queue.is_empty() and game.bank[team] - reserve >= Defs.MISSILE.cost:
+			game.try_arm_missile(b)
 	for b in buildings:
 		if not b.is_complete() or game.bank[team] - reserve < 50:
 			continue
@@ -171,6 +186,25 @@ func _military(cc, army: Array, buildings: Array) -> void:
 func _wants_titan(cc) -> bool:
 	return cc != null and elapsed > (360.0 if easy else 300.0) and game.has_completed(team, "barracks") \
 			and game.count_units(team, "titan") == 0
+
+
+func _missile_target():
+	var enemies := []
+	for e in game.get_tree().get_nodes_in_group("units") + game.get_tree().get_nodes_in_group("buildings"):
+		if e.team != team and e.team >= 0 and e.is_alive():
+			enemies.append(e)
+	var best = null
+	var best_n := 0
+	var r: float = Defs.MISSILE.radius
+	for c in enemies:
+		var n := 0
+		for e in enemies:
+			if c.position.distance_squared_to(e.position) <= r * r:
+				n += 2 if e.is_in_group("buildings") else 1
+		if n > best_n:
+			best_n = n
+			best = c.position
+	return best
 
 
 func _threat_near(p: Vector2, r: float):

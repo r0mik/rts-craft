@@ -129,6 +129,8 @@ func _update_info() -> void:
 				txt += "\nПроизводство: %s %d%%" % [game.item_name(e.queue[0]), int(e.prod_progress * 100.0)]
 				if e.queue.size() > 1:
 					txt += "  (+%d в очереди)" % (e.queue.size() - 1)
+			if e.kind == "silo":
+				txt += "\nРакета: %s" % ("готова к пуску (L)" if e.missile_ready else "нет (M — собрать)")
 			if e.stats.has("damage"):
 				txt += "\nОборона: урон %d, дальность %d" % [e.stats.damage, e.stats.range]
 			if e.stats.has("research"):

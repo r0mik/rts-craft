@@ -76,6 +76,10 @@ func is_researching(key: String) -> bool:
 	return key in queue
 
 
+var missile_ready := false    # Missile Silo: a missile is loaded and can be launched
+var seen_by_player := false   # fog of war: enemy buildings stay on the map once spotted
+
+
 func take_damage(amount: float, _attacker) -> void:
 	if hp <= 0.0:
 		return
@@ -105,13 +109,17 @@ func _process(delta: float) -> void:
 	elif not queue.is_empty():
 		var item: String = queue[0]
 		var is_upgrade := Defs.UPGRADES.has(item)
-		var t: float = Defs.UPGRADES[item].time if is_upgrade else Defs.UNITS[item].time
+		var t: float = Defs.MISSILE.time if item == "missile" else Defs.UPGRADES[item].time if is_upgrade else Defs.UNITS[item].time
 		prod_progress += delta / t
 		if prod_progress >= 1.0:
 			prod_progress = 0.0
 			queue.pop_front()
 			queue_costs.pop_front()
-			if is_upgrade:
+			if item == "missile":
+				missile_ready = true
+				if team == game.PLAYER:
+					game.show_message("Ракета готова к пуску (L)")
+			elif is_upgrade:
 				game.complete_upgrade(team, item)
 			else:
 				_spawn(item)

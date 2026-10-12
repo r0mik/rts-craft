@@ -233,6 +233,7 @@ func build(kind: String) -> Node3D:
 		"ebay": return engineering_bay()
 		"turret": return missile_turret()
 		"starport": return starport()
+		"silo": return missile_silo()
 	push_error("unknown model " + kind)
 	return null
 
@@ -490,6 +491,38 @@ func starport() -> Node3D:
 	box(r, Vector3(2.2, 1.0, 2.6), Vector3(4.3, 0.95, 1.8), "gunmetal")
 	for k in 6:
 		anim(sphere(r, 0.12, Vector3(-4.6 + k * 1.3, 0.55, d / 2.0 - 0.5), "energy"), "pulse", 1.5 + k * 0.3)
+	return r
+
+
+## Missile silo: armoured octagonal pad with hazard ring, two blast doors over the launch tube and
+## a missile ("Missile", shown by view3d.gd while one is loaded) standing in the open hatch.
+func missile_silo() -> Node3D:
+	var r := _root("MissileSilo")
+	var w := 7.0
+	var d := 7.0 * depth_k
+	octa(r, w, d, 0.5, Vector3.ZERO, "gunmetal", 0.9)
+	octa(r, w * 0.92, d * 0.92, 0.08, Vector3(0, 0.5, 0), "hazard")
+	octa(r, w * 0.8, d * 0.8, 0.3, Vector3(0, 0.55, 0), "hull", 0.9)
+	octa(r, w * 0.81, d * 0.81, 0.06, Vector3(0, 0.7, 0), "energy")
+	cyl(r, 1.55, 1.7, 0.3, Vector3(0, 0.95, 0), "dark", Vector3.ZERO, 32)  # launch tube rim
+	cyl(r, 1.3, 1.3, 0.05, Vector3(0, 1.1, 0), "black", Vector3.ZERO, 32)
+	for sz in [-1, 1]:  # blast doors, swung open
+		box(r, Vector3(2.6, 0.18, 1.3), Vector3(0, 1.9, sz * 1.85), "team", Vector3(sz * 62.0, 0, 0))
+		box(r, Vector3(2.4, 0.2, 0.1), Vector3(0, 1.95, sz * 1.92), "hazard", Vector3(sz * 62.0, 0, 0))
+	for k in 4:  # corner warning beacons
+		var a := k * TAU / 4.0 + PI / 4.0
+		var p := Vector3(cos(a) * 2.6, 0.9, sin(a) * 2.6 * depth_k)
+		cyl(r, 0.12, 0.15, 0.4, p, "gunmetal", Vector3.ZERO, 12)
+		anim(sphere(r, 0.12, p + Vector3(0, 0.3, 0), "red_glow"), "pulse", 3.0)
+	var m := Node3D.new()
+	m.name = "Missile"
+	m.visible = false
+	r.add_child(m)
+	cyl(m, 0.45, 0.45, 2.6, Vector3(0, 2.2, 0), "hull", Vector3.ZERO, 20)
+	cyl(m, 0.0, 0.45, 1.1, Vector3(0, 4.05, 0), "red_glow", Vector3.ZERO, 20)
+	torus(m, 0.42, 0.52, Vector3(0, 3.0, 0), "energy")
+	for k in 4:
+		box(m, Vector3(0.06, 0.8, 0.7), Vector3(0, 1.3, 0), "dark", Vector3(0, k * 45.0, 0))
 	return r
 
 

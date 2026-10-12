@@ -69,7 +69,16 @@ const BUILDINGS := {
 		"name": "Starport", "short": "STARPORT", "hp": 1300, "size": Vector2(120, 100),
 		"cost": 200, "time": 50.0, "trains": ["wraith"], "hotkey": KEY_P, "requires": "factory",
 	},
+	"silo": {
+		"name": "Missile Silo", "short": "SILO", "hp": 600, "size": Vector2(70, 70),
+		"cost": 200, "time": 40.0, "trains": [], "hotkey": KEY_M, "requires": "ebay",
+	},
 }
+
+## Missile built in a Missile Silo and launched at any point of the map. It hits everything
+## (both sides!) within radius: full damage at the centre, half at the edge.
+const MISSILE := {"name": "Ракета", "cost": 150, "time": 30.0, "damage": 320.0, "radius": 170.0,
+	"flight": 4.0, "arm_key": KEY_M, "launch_key": KEY_L}
 
 ## Team-wide research done in the Engineering Bay.
 const UPGRADES := {
@@ -77,5 +86,5 @@ const UPGRADES := {
 	"armor": {"name": "Броня", "cost": [100, 175], "time": 40.0, "hotkey": KEY_R, "max": 2},
 }
 
-const WORKER_BUILDS := ["depot", "barracks", "bunker", "ebay", "turret", "factory", "starport", "cc"]
+const WORKER_BUILDS := ["depot", "barracks", "bunker", "ebay", "turret", "factory", "starport", "silo", "cc"]
 const MAX_SUPPLY := 200

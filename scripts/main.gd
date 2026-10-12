@@ -30,6 +30,19 @@ var dragging := false
 var drag_start := Vector2.ZERO  # screen position where the selection box started
 var placing := ""
 var attack_mode := false
+var missile_mode := false  # next left click picks the missile target
+var missiles: Array = []   # in flight: {team, from, to, t, node}
+
+## Fog of war, from the player's point of view (the AI ignores it). Cells of FOG_CELL px:
+## fog_vis = seen right now, fog_seen = explored at least once.
+const FOG_CELL := 50.0
+var fog_cols := 0
+var fog_rows := 0
+var fog_vis := PackedByteArray()
+var fog_seen := PackedByteArray()
+var fog_texture: ImageTexture      # L8: 255 visible, 110 explored, 0 unexplored (3D view)
+var fog_mini_texture: ImageTexture  # RGBA dark overlay for the minimap
+var fog_timer := 0.0
 var game_over := false
 var elapsed := 0.0
 var win_check := 1.0
@@ -66,6 +79,7 @@ func _ready() -> void:
 	_add_ai(ENEMY)
 	if autotest:
 		_add_ai(PLAYER)  # AI vs AI to exercise every system
+	_init_fog()
 	view.focus = start_positions[PLAYER] + Vector2(250, 120)
 	show_message("Добывай минералы, строй армию и уничтожь красную базу!")
 
@@ -394,6 +408,8 @@ func complete_upgrade(t: int, key: String) -> void:
 
 
 func item_name(item: String) -> String:
+	if item == "missile":
+		return Defs.MISSILE.name
 	if Defs.UPGRADES.has(item):
 		return "%s +%d" % [Defs.UPGRADES[item].name, upgrades[PLAYER][item] + 1]
 	return Defs.UNITS[item].name
@@ -521,6 +537,12 @@ func get_commands() -> Array:
 			cmds.append({"key": up.hotkey, "label": label, "fn": func(): research_selected(key)})
 		if blds.any(func(b): return not b.queue.is_empty()):
 			cmds.append({"key": KEY_X, "label": "Отмена (X)", "fn": cmd_cancel})
+		var silos := blds.filter(func(b): return b.kind == "silo" and b.is_complete())
+		if silos.any(func(b): return b.missile_ready):
+			cmds.append({"key": Defs.MISSILE.launch_key, "label": "Пуск ракеты (L)", "fn": cmd_launch})
+		if silos.any(func(b): return not b.missile_ready and b.queue.is_empty()):
+			cmds.append({"key": Defs.MISSILE.arm_key, "label": "Ракета (M) %d" % Defs.MISSILE.cost,
+				"fn": arm_selected})
 		var damaged := _damaged_bunkers()
 		if not damaged.is_empty():
 			var cost := 0
@@ -532,7 +554,138 @@ func get_commands() -> Array:
 
 func cmd_attack() -> void:
 	attack_mode = true
+	missile_mode = false
 	placing = ""
+
+
+func cmd_launch() -> void:
+	missile_mode = true
+	attack_mode = false
+	placing = ""
+	show_message("Выберите цель для ракеты (ЛКМ), ПКМ — отмена")
+
+
+# --- Missiles ---------------------------------------------------------------
+
+func arm_selected() -> void:
+	for b in selected_buildings():
+		if try_arm_missile(b):
+			return
+
+
+func try_arm_missile(b) -> bool:
+	if b.kind != "silo" or not b.is_complete() or b.missile_ready or not b.queue.is_empty():
+		return false
+	if bank[b.team] < Defs.MISSILE.cost:
+		if b.team == PLAYER:
+			show_message("Недостаточно минералов")
+		return false
+	bank[b.team] -= Defs.MISSILE.cost
+	b.queue.append("missile")
+	b.queue_costs.append(Defs.MISSILE.cost)
+	return true
+
+
+func launch_missile(silo, target: Vector2) -> bool:
+	if not valid(silo) or not silo.missile_ready:
+		return false
+	silo.missile_ready = false
+	target = target.clamp(Vector2.ZERO, map_size)
+	var m := {"team": silo.team, "from": silo.position, "to": target, "t": 0.0}
+	m["node"] = view.add_missile(silo.position, target)
+	missiles.append(m)
+	if silo.team != PLAYER:
+		show_message("Внимание! Пуск вражеской ракеты!")
+	return true
+
+
+func _update_missiles(delta: float) -> void:
+	for m in missiles.duplicate():
+		m["t"] += delta / Defs.MISSILE.flight
+		if m.t < 1.0:
+			view.move_missile(m.node, m.from, m.to, m.t)
+			continue
+		missiles.erase(m)
+		view.missile_impact(m.node, m.to, Defs.MISSILE.radius)
+		var all: Array = get_tree().get_nodes_in_group("units") + get_tree().get_nodes_in_group("buildings")
+		for e in all:
+			if not e.is_alive():
+				continue
+			var d: float = maxf(0.0, e.surface_distance(m.to))
+			if d <= Defs.MISSILE.radius:
+				e.take_damage(Defs.MISSILE.damage * (1.0 - 0.5 * d / Defs.MISSILE.radius), null)
+
+
+# --- Fog of war ---------------------------------------------------------------
+
+func _init_fog() -> void:
+	fog_cols = ceili(map_size.x / FOG_CELL)
+	fog_rows = ceili(map_size.y / FOG_CELL)
+	fog_vis.resize(fog_cols * fog_rows)
+	fog_seen.resize(fog_cols * fog_rows)
+	fog_vis.fill(0)
+	fog_seen.fill(0)
+	fog_texture = ImageTexture.create_from_image(Image.create(fog_cols, fog_rows, false, Image.FORMAT_L8))
+	fog_mini_texture = ImageTexture.create_from_image(Image.create(fog_cols, fog_rows, false, Image.FORMAT_RGBA8))
+	view.set_fog(fog_texture, Vector2(fog_cols, fog_rows) * FOG_CELL)
+	_update_fog()
+
+
+func sight_of(e) -> float:
+	if e.is_in_group("units"):
+		return e.stats.sight
+	return maxf(e.size.x, e.size.y) * 0.5 + 220.0
+
+
+func _update_fog() -> void:
+	fog_vis.fill(0)
+	for e in team_units(PLAYER) + team_buildings(PLAYER):
+		var r: float = sight_of(e)
+		var c: Vector2 = e.position
+		var x0 := maxi(0, int((c.x - r) / FOG_CELL))
+		var x1 := mini(fog_cols - 1, int((c.x + r) / FOG_CELL))
+		var y0 := maxi(0, int((c.y - r) / FOG_CELL))
+		var y1 := mini(fog_rows - 1, int((c.y + r) / FOG_CELL))
+		for y in range(y0, y1 + 1):
+			for x in range(x0, x1 + 1):
+				if Vector2((x + 0.5) * FOG_CELL, (y + 0.5) * FOG_CELL).distance_squared_to(c) <= r * r:
+					fog_vis[y * fog_cols + x] = 1
+					fog_seen[y * fog_cols + x] = 1
+	var lum := PackedByteArray()
+	var mini_px := PackedByteArray()
+	lum.resize(fog_vis.size())
+	mini_px.resize(fog_vis.size() * 4)
+	mini_px.fill(0)
+	for i in fog_vis.size():
+		lum[i] = 255 if fog_vis[i] else (110 if fog_seen[i] else 0)
+		mini_px[i * 4 + 3] = 0 if fog_vis[i] else (110 if fog_seen[i] else 200)
+	fog_texture.update(Image.create_from_data(fog_cols, fog_rows, false, Image.FORMAT_L8, lum))
+	fog_mini_texture.update(Image.create_from_data(fog_cols, fog_rows, false, Image.FORMAT_RGBA8, mini_px))
+	for b in get_tree().get_nodes_in_group("buildings"):
+		if b.team != PLAYER and not b.seen_by_player:
+			var r: Rect2 = b.rect()
+			for p in [r.get_center(), r.position, r.end, Vector2(r.position.x, r.end.y), Vector2(r.end.x, r.position.y)]:
+				if is_point_visible(p):
+					b.seen_by_player = true
+					break
+
+
+func is_point_visible(p: Vector2) -> bool:
+	var x := int(p.x / FOG_CELL)
+	var y := int(p.y / FOG_CELL)
+	if x < 0 or y < 0 or x >= fog_cols or y >= fog_rows:
+		return false
+	return fog_vis[y * fog_cols + x] == 1
+
+
+## Whether the player may see an entity: own things always, enemy units only inside vision,
+## enemy buildings once spotted, minerals always.
+func visible_to_player(e) -> bool:
+	if e.team == PLAYER or e.team < 0:
+		return true
+	if e.is_in_group("buildings"):
+		return e.seen_by_player
+	return is_point_visible(e.position)
 
 
 func cmd_stop() -> void:
@@ -647,6 +800,8 @@ func _right_click(p: Vector2, picked = null) -> void:
 			add_marker(p, Color(1.0, 0.9, 0.3))
 		return
 	var t = picked if picked != null else entity_at(p)
+	if t != null and not visible_to_player(t):
+		t = null  # no orders against things hidden in the fog
 	if t != null and t.is_in_group("minerals"):
 		var others := []
 		for u in units:
@@ -705,6 +860,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.pressed:
 					if placing != "":
 						_try_place(wp, event.shift_pressed)
+					elif missile_mode:
+						missile_mode = false
+						for b in selected_buildings():
+							if b.kind == "silo" and launch_missile(b, wp):
+								add_marker(wp, Color(1.0, 0.25, 0.2))
+								break
 					elif attack_mode:
 						var units := selected_units()
 						var t = view.pick(sp)
@@ -723,9 +884,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					_finish_selection(drag_start, sp, event.shift_pressed)
 			MOUSE_BUTTON_RIGHT:
 				if event.pressed:
-					if placing != "" or attack_mode:
+					if placing != "" or attack_mode or missile_mode:
 						placing = ""
 						attack_mode = false
+						missile_mode = false
 					elif not game_over:
 						_right_click(wp, view.pick(sp))
 			MOUSE_BUTTON_WHEEL_UP:
@@ -749,6 +911,7 @@ func _handle_key(event: InputEventKey) -> void:
 	if key == KEY_ESCAPE:
 		placing = ""
 		attack_mode = false
+		missile_mode = false
 		return
 	if key >= KEY_1 and key <= KEY_9:
 		var n := int(key - KEY_0)
@@ -801,6 +964,11 @@ func _finish_selection(a: Vector2, b: Vector2, add: bool) -> void:
 
 func _process(delta: float) -> void:
 	elapsed += delta
+	fog_timer -= delta
+	if fog_timer <= 0.0:
+		fog_timer = 0.2
+		_update_fog()
+	_update_missiles(delta)
 	_update_camera(delta)
 	_resolve_collisions()
 	if dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):

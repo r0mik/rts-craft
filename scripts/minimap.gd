@@ -29,10 +29,16 @@ func _draw() -> void:
 		draw_circle(_to_mini(l.pos), l.r * k * 0.9, Color(0.15, 0.35, 0.5))
 	for m in game.get_tree().get_nodes_in_group("minerals"):
 		draw_rect(Rect2(_to_mini(m.position) - Vector2(1.5, 1.5), Vector2(3, 3)), Color(0.4, 0.85, 1.0))
+	if game.fog_mini_texture != null:
+		draw_texture_rect(game.fog_mini_texture, Rect2(Vector2.ZERO, Vector2(game.fog_cols, game.fog_rows) * game.FOG_CELL / game.map_size * size), false)
 	for b in game.get_tree().get_nodes_in_group("buildings"):
+		if not game.visible_to_player(b):
+			continue
 		var r: Rect2 = b.rect()
 		draw_rect(Rect2(_to_mini(r.position), r.size / game.map_size * size), game.team_color(b.team))
 	for u in game.get_tree().get_nodes_in_group("units"):
+		if not game.visible_to_player(u):
+			continue
 		draw_rect(Rect2(_to_mini(u.position) - Vector2(1.5, 1.5), Vector2(3, 3)), game.team_color(u.team).lightened(0.3))
 	var poly: PackedVector2Array = game.view.view_polygon()  # camera view trapezoid on the ground
 	var pts := PackedVector2Array()

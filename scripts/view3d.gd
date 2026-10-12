@@ -63,6 +63,24 @@ func setup(g, team_colors: Array) -> void:
 	_make_doodads()
 
 
+## Fog of war overlay: a full-screen quad shaded by scripts/fog.gdshader.
+func set_fog(tex: Texture2D, size_px: Vector2) -> void:
+	var mi := MeshInstance3D.new()
+	mi.name = "Fog"
+	var q := QuadMesh.new()
+	q.size = Vector2.ONE
+	mi.mesh = q
+	var sm := ShaderMaterial.new()
+	sm.shader = load("res://scripts/fog.gdshader")
+	sm.set_shader_parameter("fog_tex", tex)
+	sm.set_shader_parameter("fog_size", size_px / PX)
+	sm.render_priority = 127  # after every other transparent pass
+	mi.material_override = sm
+	mi.extra_cull_margin = 16384.0  # never frustum-culled: it always covers the screen
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+
+
 # --- World setup --------------------------------------------------------------
 
 func _make_environment() -> void:
@@ -488,6 +506,8 @@ func _run_anims(root: Node3D, delta: float) -> void:
 ## Spinning radars / holograms, pulsing energy cores, and defence turrets tracking their target.
 func _animate_building(e, root: Node3D, model: Node3D, delta: float) -> void:
 	_run_anims(root, delta)
+	if e.kind == "silo":
+		model.get_node("Missile").visible = e.missile_ready
 	var tur: Node3D = model.get_node_or_null("Turret")
 	if tur:
 		if game.valid(e.target):
@@ -528,6 +548,7 @@ func top_of(e) -> float:
 
 func _sync(e, root: Node3D, delta: float) -> void:
 	var model: Node3D = root.get_node("Model")
+	root.visible = game.visible_to_player(e)
 	var p3 := Vector3(e.position.x / PX, ground_h(e.position), e.position.y / PX)
 	root.get_node("Ring").visible = e.selected
 	if e.is_in_group("units"):
@@ -678,7 +699,7 @@ func pick(sp: Vector2):
 	var best = null
 	var best_d := INF
 	for e in views:
-		if not game.valid(e) or not e.is_in_group("units"):
+		if not game.valid(e) or not e.is_in_group("units") or not game.visible_to_player(e):
 			continue
 		var h := top_of(e)
 		var c := to_screen(e.position, h * 0.5)
@@ -690,7 +711,7 @@ func pick(sp: Vector2):
 	if best != null:
 		return best
 	for e in views:
-		if game.valid(e) and e.is_in_group("buildings") and _building_screen_rect(e).has_point(sp):
+		if game.valid(e) and e.is_in_group("buildings") and game.visible_to_player(e) and _building_screen_rect(e).has_point(sp):
 			return e
 	for e in views:
 		if game.valid(e) and e.is_in_group("minerals"):
@@ -819,6 +840,8 @@ func _fire_emitter(offset: Vector3) -> Node3D:
 func fx_shot(attacker, target, splash: bool) -> void:
 	if not views.has(attacker) or not is_instance_valid(target):
 		return
+	if not game.visible_to_player(attacker) and not game.visible_to_player(target):
+		return  # fight hidden in the fog
 	var a_h := top_of(attacker)
 	var dir: Vector2 = (target.position - attacker.position).normalized()
 	var muzzle: Vector3
@@ -903,6 +926,8 @@ func fx_explosion(p: Vector2, size: float) -> void:
 
 
 func fx_death(e) -> void:
+	if not game.visible_to_player(e):
+		return
 	if e.is_in_group("buildings"):
 		var s: float = maxf(e.size.x, e.size.y) / 60.0
 		fx_explosion(e.position, s)
@@ -911,6 +936,63 @@ func fx_death(e) -> void:
 			fx_explosion(e.position + off, s * 0.6)
 	elif e.is_in_group("units"):
 		fx_explosion(e.position, 2.5 if e.kind == "titan" else 1.3 if e.kind in ["tank", "wraith"] else 0.6)
+
+
+# --- Missiles --------------------------------------------------------------------
+
+const MISSILE_PEAK := 18.0  # arc height in world units
+
+
+## Missile model plus a pulsing red warning ring at the target; returns the missile node.
+func add_missile(from: Vector2, to: Vector2) -> Node3D:
+	var n := Node3D.new()
+	var body := Node3D.new()
+	body.rotation_degrees = Vector3(0, 0, -90)  # missile mesh points along local +X
+	n.add_child(body)
+	var b: Models = builders[0]
+	b.cyl(body, 0.32, 0.32, 2.4, Vector3.ZERO, "hull", Vector3.ZERO, 16)
+	b.cyl(body, 0.0, 0.32, 0.9, Vector3(0, 1.65, 0), "red_glow", Vector3.ZERO, 16)
+	for k in 4:
+		b.box(body, Vector3(0.05, 0.6, 0.5), Vector3(0, -1.0, 0), "dark", Vector3(0, k * 90.0, 0))
+	b.cyl(body, 0.26, 0.2, 0.3, Vector3(0, -1.35, 0), "fire_glow", Vector3.ZERO, 16)
+	fx_root.add_child(n)
+	var ring := _ring(Defs.MISSILE.radius / PX, Color(1.0, 0.15, 0.1))
+	ring.position = _world(to, 0.15)
+	fx_root.add_child(ring)
+	n.set_meta("ring", ring)
+	_flash_light(_world(from, 2.0), Color(1.0, 0.6, 0.3), 8.0, 12.0, 0.5)
+	_burst(_world(from, 1.0), 40, _smoke_ramp, _smoke, 6.0, 3.0, 2.0, Vector3(0, 1.0, 0))
+	move_missile(n, from, to, 0.0)
+	return n
+
+
+func _missile_pos(from: Vector2, to: Vector2, t: float) -> Vector3:
+	var p := _world(from.lerp(to, t), 1.5)
+	p.y += MISSILE_PEAK * 4.0 * t * (1.0 - t)
+	return p
+
+
+func move_missile(n: Node3D, from: Vector2, to: Vector2, t: float) -> void:
+	var p := _missile_pos(from, to, t)
+	var ahead := _missile_pos(from, to, minf(t + 0.01, 1.0))
+	if t >= 0.99:
+		ahead = p + Vector3(0, -1, 0)
+	n.position = p
+	n.look_at(ahead, Vector3.UP if absf((ahead - p).normalized().y) < 0.99 else Vector3.FORWARD)
+	n.rotate_object_local(Vector3.UP, PI / 2.0)  # look_at aims -Z, the mesh points +X
+	_burst(p - (ahead - p).normalized() * 1.6, 2, _smoke_ramp, _smoke, 0.6, 1.4, 1.4, Vector3(0, 0.6, 0))
+	var ring: Node3D = n.get_meta("ring")
+	ring.scale = Vector3.ONE * (1.0 + 0.08 * sin(time * 10.0))
+
+
+func missile_impact(n: Node3D, p: Vector2, radius: float) -> void:
+	n.get_meta("ring").queue_free()
+	n.queue_free()
+	var s := radius / 40.0
+	fx_explosion(p, s)
+	for i in 6:
+		fx_explosion(p + Vector2.from_angle(i * TAU / 6.0) * radius * 0.55, s * 0.45)
+	_flash_light(_world(p, 6.0), Color(1.0, 0.75, 0.45), 30.0, radius / PX * 3.0, 0.8)
 
 
 func fx_marker(p: Vector2, c: Color) -> void:

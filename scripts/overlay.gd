@@ -21,7 +21,7 @@ func _draw() -> void:
 	var vs := get_viewport_rect().size
 	var all: Array = game.get_tree().get_nodes_in_group("units") + game.get_tree().get_nodes_in_group("buildings")
 	for e in all:
-		if not game.valid(e):
+		if not game.valid(e) or not game.visible_to_player(e):
 			continue
 		var is_b: bool = e.is_in_group("buildings")
 		var damaged: bool = e.hp < e.max_hp
@@ -52,6 +52,14 @@ func _draw() -> void:
 		var rect := Rect2(game.drag_start, Vector2.ZERO).expand(mp)
 		draw_rect(rect, Color(0.3, 1.0, 0.35, 0.1), true)
 		draw_rect(rect, Color(0.3, 1.0, 0.35, 0.9), false, 1.5)
+	if game.missile_mode:  # missile target: blast radius around the cursor
+		var c := Color(1.0, 0.2, 0.1)
+		var wp: Vector2 = v.screen_to_ground(mp)
+		var pts := PackedVector2Array()
+		for i in 49:
+			pts.append(v.to_screen(wp + Vector2.from_angle(i * TAU / 48.0) * game.Defs.MISSILE.radius, 0.2))
+		draw_polyline(pts, c, 2.0)
+		draw_circle(mp, 4.0, c)
 	if game.attack_mode:
 		var c := Color(1.0, 0.25, 0.2)
 		draw_arc(mp, 12.0, 0.0, TAU, 24, c, 2.0)
