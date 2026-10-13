@@ -783,9 +783,24 @@ func pick(sp: Vector2):
 			best = e
 	if best != null:
 		return best
+	# Buildings: screen boxes of neighbouring buildings overlap (tall ones reach far up the screen),
+	# so take the one whose box centre is relatively closest to the cursor, preferring the player's own.
+	var best_b = null
+	var best_score := INF
 	for e in views:
-		if game.valid(e) and e.is_in_group("buildings") and game.visible_to_player(e) and _building_screen_rect(e).has_point(sp):
-			return e
+		if not (game.valid(e) and e.is_in_group("buildings") and game.visible_to_player(e)):
+			continue
+		var r := _building_screen_rect(e)
+		if not r.has_point(sp):
+			continue
+		var score: float = sp.distance_to(r.get_center()) / maxf(r.size.length(), 1.0)
+		if e.team == game.PLAYER:
+			score *= 0.5
+		if score < best_score:
+			best_score = score
+			best_b = e
+	if best_b != null:
+		return best_b
 	for e in views:
 		if game.valid(e) and e.is_in_group("minerals"):
 			if to_screen(e.position, 1.0).distance_to(sp) < px_size(e.position, 2.2, 1.0):
