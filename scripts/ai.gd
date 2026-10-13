@@ -186,6 +186,10 @@ func _military(cc, army: Array, buildings: Array) -> void:
 		elif b.kind == "ebay" and b.queue.is_empty() and game.bank[team] >= 250:
 			if not game.try_research(b, "weapons"):
 				game.try_research(b, "armor")
+	# Merge idle units at home into super units whenever a recipe is complete.
+	for ck in Defs.COMBOS:
+		var idle := army.filter(func(u): return u.is_idle())
+		game.start_combine(team, ck, idle)
 	if army.is_empty():
 		return
 	var home: Vector2 = cc.position if cc != null else army[0].position

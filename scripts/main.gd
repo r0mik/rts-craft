@@ -34,6 +34,7 @@ var attack_mode := false
 var missile_mode := false  # next left click picks the missile target
 var missiles: Array = []   # in flight: {team, type, from, to, t, node}
 var fires: Array = []      # napalm fields: {pos, r, dps, t, node}
+var merges: Array = []     # unit combinations in progress: {kind, team, units, center, t}
 
 ## Fog of war, from the player's point of view (the AI ignores it). Cells of FOG_CELL px:
 ## fog_vis = seen right now, fog_seen = explored at least once.
@@ -534,6 +535,16 @@ func deal_damage(attacker, target, dmg: float, splash: float) -> void:
 		target.take_damage(scaled_damage(attacker, target, dmg), attacker)
 
 
+## Removes an entity without a death explosion (units merging into a super unit).
+func remove_silently(e) -> void:
+	view.remove_entity(e)
+	selection.erase(e)
+	for k in control_groups:
+		control_groups[k].erase(e)
+	e.hp = 0.0
+	e.queue_free()
+
+
 func kill(e) -> void:
 	view.fx_death(e)
 	view.remove_entity(e)
@@ -573,6 +584,11 @@ func get_commands() -> Array:
 		cmds.append({"key": KEY_G, "label": "Атака (G)", "fn": cmd_attack, "icon": "@attack"})
 		cmds.append({"key": KEY_X, "label": "Стоп (X)", "fn": cmd_stop, "icon": "@stop"})
 		cmds.append({"key": KEY_H, "label": "Держать позицию (H)", "fn": cmd_hold, "icon": "@hold"})
+		for ck in Defs.COMBOS:
+			if not combo_parts(units, ck).is_empty():
+				var cd: Dictionary = Defs.COMBOS[ck]
+				cmds.append({"key": cd.key, "label": "Объединить: %s (%s) — %s" % [cd.name, OS.get_keycode_string(cd.key), cd.desc],
+					"fn": func(): start_combine(PLAYER, ck, selected_units()), "icon": ck})
 		if units.any(func(u): return u.kind == "scout"):
 			var ready := units.any(func(u): return u.kind == "scout" and u.ability_cd <= 0.0)
 			cmds.append({"key": KEY_F, "label": "Сбросить маяк (F): видит всё вокруг 90 с" if ready else "Маяк перезаряжается",
@@ -642,6 +658,73 @@ func cmd_attack() -> void:
 	attack_mode = true
 	missile_mode = false
 	placing = ""
+
+
+# --- Unit combinations ------------------------------------------------------------
+
+## Picks the units for a combination from candidates (the ones closest to their group centre);
+## returns [] if there are not enough of some part.
+func combo_parts(candidates: Array, ck: String) -> Array:
+	var picked := []
+	var busy := []
+	for m in merges:
+		busy.append_array(m.units)
+	for part in Defs.COMBOS[ck].parts:
+		var need: int = Defs.COMBOS[ck].parts[part]
+		var pool: Array = candidates.filter(func(u): return valid(u) and u.kind == part and not u in busy)
+		if pool.size() < need:
+			return []
+		var c := Vector2.ZERO
+		for u in pool:
+			c += u.position
+		c /= pool.size()
+		pool.sort_custom(func(a, b): return a.position.distance_squared_to(c) < b.position.distance_squared_to(c))
+		picked.append_array(pool.slice(0, need))
+	return picked
+
+
+## Orders the parts to gather; _update_merges fuses them into the super unit once they meet.
+func start_combine(t: int, ck: String, candidates: Array) -> bool:
+	var parts := combo_parts(candidates, ck)
+	if parts.is_empty():
+		return false
+	var c := Vector2.ZERO
+	for u in parts:
+		c += u.position
+	c /= parts.size()
+	for u in parts:
+		u.order_move(c)
+	merges.append({"kind": ck, "team": t, "units": parts, "center": c, "t": 0.0})
+	if t == PLAYER:
+		show_message("Собираются в %s…" % Defs.COMBOS[ck].name.to_lower())
+		add_marker(c, Color(0.6, 0.8, 1.0))
+	return true
+
+
+func _update_merges(delta: float) -> void:
+	for m in merges.duplicate():
+		m["t"] += delta
+		if m.units.any(func(u): return not valid(u)) or m.t > 20.0:
+			merges.erase(m)
+			if m.team == PLAYER:
+				show_message("Объединение сорвано")
+			continue
+		var far := 0.0
+		for u in m.units:
+			far = maxf(far, u.position.distance_to(m.center))
+		if far > 110.0 and not (m.t > 6.0 and far < 230.0):
+			continue
+		merges.erase(m)
+		var was_selected := false
+		for u in m.units:
+			was_selected = was_selected or u.selected
+			remove_silently(u)
+		var su = spawn_unit(m.team, m.kind, m.center)
+		view.fx_merge(m.center)
+		if m.team == PLAYER:
+			show_message("%s готов!" % Defs.COMBOS[m.kind].name)
+			if was_selected:
+				set_selection(selection + [su])
 
 
 ## Seeker: the first ready scout in the selection drops a sensor beacon where it stands.
@@ -1120,6 +1203,7 @@ func _process(delta: float) -> void:
 		fog_timer = 0.2
 		_update_fog()
 	_update_missiles(delta)
+	_update_merges(delta)
 	_update_camera(delta)
 	_resolve_collisions()
 	if dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):

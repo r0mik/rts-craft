@@ -190,6 +190,8 @@ func _process(delta: float) -> void:
 			game.kill(self)
 		return
 	ability_cd = maxf(0.0, ability_cd - delta)
+	if stats.has("regen") and hp < max_hp:  # Battalion: self-repair
+		hp = minf(max_hp, hp + stats.regen * delta)
 	cooldown_left = maxf(0.0, cooldown_left - delta)
 	shot_flash = maxf(0.0, shot_flash - delta)
 	acquire_timer -= delta

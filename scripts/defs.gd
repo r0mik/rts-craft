@@ -18,6 +18,22 @@ const UNITS := {
 		"damage": 0, "range": 130.0, "cooldown": 1.0, "sight": 260.0,
 		"cost": 75, "supply": 1, "time": 18.0, "hotkey": KEY_E, "healer": true, "heal_rate": 14.0,
 	},
+	# --- Combined super units (made by merging regular units, see COMBOS; not trainable) ---
+	"battalion": {
+		"name": "Battalion (батальон)", "hp": 650, "speed": 95.0, "radius": 22.0,
+		"damage": 16, "range": 170.0, "cooldown": 0.4, "sight": 300.0, "splash": 25.0,
+		"cost": 0, "supply": 7, "time": 0.0, "regen": 4.0, "combined": true,
+	},
+	"supertank": {
+		"name": "Supertank (супертанк)", "hp": 1200, "speed": 62.0, "radius": 32.0,
+		"damage": 85, "range": 300.0, "cooldown": 2.0, "sight": 340.0, "splash": 70.0,
+		"cost": 0, "supply": 12, "time": 0.0, "anti_air": false, "combined": true,
+	},
+	"phantom": {
+		"name": "Phantom (фантом)", "hp": 480, "speed": 165.0, "radius": 20.0,
+		"damage": 28, "range": 210.0, "cooldown": 0.6, "sight": 340.0,
+		"cost": 0, "supply": 6, "time": 0.0, "air": true, "combined": true,
+	},
 	# Scout: unarmed, very fast hover drone with huge sight; drops sensor beacons (F).
 	"scout": {
 		"name": "Seeker (разведчик)", "hp": 55, "speed": 215.0, "radius": 10.0,
@@ -134,6 +150,16 @@ const MISSILES := {
 		"radius": 160.0, "burn_dps": 35.0, "burn_time": 8.0, "range": 1500.0, "flight": 3.5},
 	"heavy": {"name": "Тяжёлая ракета", "key": KEY_K, "cost": 300, "time": 50.0, "damage": 600.0,
 		"radius": 210.0, "range": 1100.0, "flight": 5.0},
+}
+
+## Unit combinations: select the parts and press the key; they gather and merge into one super unit.
+const COMBOS := {
+	"battalion": {"name": "Батальон", "key": KEY_Z, "parts": {"marine": 5, "medic": 2},
+		"desc": "5 пехотинцев + 2 медика: 650 HP, сам лечится, бьёт и по воздуху"},
+	"supertank": {"name": "Супертанк", "key": KEY_C, "parts": {"tank": 4},
+		"desc": "4 танка: 1200 HP, сдвоенная пушка 85 урона по площади, дальность 300"},
+	"phantom": {"name": "Фантом", "key": KEY_V, "parts": {"wraith": 3},
+		"desc": "3 истребителя: 480 HP, скорострельный тяжёлый истребитель"},
 }
 
 ## Ages, advanced at the Command Center (E), one after another like in Age of Empires.

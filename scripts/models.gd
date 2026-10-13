@@ -240,6 +240,9 @@ func build(kind: String) -> Node3D:
 		"drone": return kamikaze_drone()
 		"medic": return medic()
 		"scout": return seeker()
+		"battalion": return battalion()
+		"supertank": return supertank()
+		"phantom": return phantom()
 		"beacon": return sensor_beacon()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
@@ -655,6 +658,63 @@ func _legs(r: Node3D, hip_y: float, half_w: float, thigh: float, shin_mat: Strin
 		var low := hip_y - thigh  # knee height above the ground
 		capsule(knee, 0.12 * k, 0.55 * k, Vector3(0, -low * 0.37, 0), shin_mat)
 		octa(knee, 0.4 * k, 0.26 * k, 0.16, Vector3(0.06, -low, 0), "gunmetal", 0.8)
+
+
+## Battalion: a marine in heavy assault armour (scaled up in view3d.gd) with gold trim, shoulder
+## missile pods, a chest reactor and a rotary cannon instead of the rifle.
+func battalion() -> Node3D:
+	var r := marine()
+	r.name = "Battalion"
+	for sz in [-1, 1]:
+		box(r, Vector3(0.4, 0.22, 0.26), Vector3(-0.05, 1.98, sz * 0.48), "team_dark")  # missile pods
+		for k in 3:
+			cyl(r, 0.04, 0.04, 0.05, Vector3(0.16, 1.98, sz * 0.48 + (k - 1) * 0.08), "red_glow", Vector3(0, 0, -90), 8)
+		torus(r, 0.27, 0.32, Vector3(0, 1.7, sz * 0.46), "yellow")
+	anim(sphere(r, 0.1, Vector3(0.42, 1.45, 0), "glow"), "pulse", 3.0)
+	var gun := Node3D.new()  # rotary cannon on the right arm
+	gun.position = Vector3(0.6, 1.2, 0.3)
+	r.add_child(gun)
+	cyl(gun, 0.13, 0.15, 0.45, Vector3.ZERO, "gunmetal", Vector3(0, 0, -90), 16)
+	var barrels := anim(Node3D.new(), "spin", 8.0)
+	barrels.rotation_degrees = Vector3(0, 0, -90)
+	barrels.position = Vector3(0.45, 0, 0)
+	gun.add_child(barrels)
+	for k in 6:
+		var a := k * TAU / 6.0
+		cyl(barrels, 0.025, 0.025, 0.55, Vector3(cos(a) * 0.07, 0, sin(a) * 0.07), "black", Vector3.ZERO, 6)
+	return r
+
+
+## Supertank: a widened tank with heavier side armour, a second cannon and missile racks.
+func supertank() -> Node3D:
+	var r := tank()
+	r.name = "Supertank"
+	for sz in [-1, 1]:
+		box(r, Vector3(3.6, 0.5, 0.12), Vector3(0, 0.95, sz * 1.62), "gunmetal")
+		box(r, Vector3(3.4, 0.06, 0.13), Vector3(0, 1.15, sz * 1.63), "yellow")
+	var tur: Node3D = r.get_node("Turret")
+	cyl(tur, 0.1, 0.13, 2.2, Vector3(1.95, 1.68, -0.42), "gunmetal", Vector3(0, 0, -90), 16)
+	cyl(tur, 0.17, 0.17, 0.32, Vector3(3.1, 1.68, -0.42), "dark", Vector3(0, 0, -90), 8)
+	for sz in [-1, 1]:
+		box(tur, Vector3(0.8, 0.35, 0.4), Vector3(-0.4, 2.15, sz * 0.75), "team_dark")
+		for k in 4:
+			cyl(tur, 0.05, 0.05, 0.05, Vector3(0.0, 2.15 + (k % 2) * 0.1 - 0.05, sz * 0.75 + (k / 2) * 0.16 - 0.08),
+				"red_glow", Vector3(0, 0, -90), 8)
+	return r
+
+
+## Phantom: a wraith with extra wing cannons, a second set of engines and a glowing energy keel.
+func phantom() -> Node3D:
+	var r := wraith()
+	r.name = "Phantom"
+	var body: Node3D = r.get_node("Body")
+	box(body, Vector3(2.2, 0.08, 0.1), Vector3(-0.2, -0.3, 0), "energy")
+	for sz in [-1, 1]:
+		cyl(body, 0.06, 0.06, 1.2, Vector3(0.4, -0.15, sz * 1.2), "black", Vector3(0, 0, -90), 10)
+		cyl(body, 0.16, 0.2, 0.8, Vector3(-1.0, 0.3, sz * 0.9), "gunmetal", Vector3(0, 0, -90), 16)
+		cyl(body, 0.14, 0.14, 0.05, Vector3(-1.42, 0.3, sz * 0.9), "glow", Vector3(0, 0, -90), 16)
+		box(body, Vector3(0.6, 0.06, 0.6), Vector3(-0.6, 0.12, sz * 1.5), "yellow", Vector3(0, -sz * 30.0, 0))
+	return r
 
 
 ## Medic: white armour with team trim, a backpack with a glowing green cross and a heal emitter
