@@ -31,7 +31,8 @@ var drag_start := Vector2.ZERO  # screen position where the selection box starte
 var placing := ""
 var attack_mode := false
 var missile_mode := false  # next left click picks the missile target
-var missiles: Array = []   # in flight: {team, from, to, t, node}
+var missiles: Array = []   # in flight: {team, type, from, to, t, node}
+var fires: Array = []      # napalm fields: {pos, r, dps, t, node}
 
 ## Fog of war, from the player's point of view (the AI ignores it). Cells of FOG_CELL px:
 ## fog_vis = seen right now, fog_seen = explored at least once.
@@ -408,8 +409,8 @@ func complete_upgrade(t: int, key: String) -> void:
 
 
 func item_name(item: String) -> String:
-	if item == "missile":
-		return Defs.MISSILE.name
+	if item.begins_with("missile:"):
+		return Defs.MISSILES[item.get_slice(":", 1)].name
 	if Defs.UPGRADES.has(item):
 		return "%s +%d" % [Defs.UPGRADES[item].name, upgrades[PLAYER][item] + 1]
 	return Defs.UNITS[item].name
@@ -543,11 +544,16 @@ func get_commands() -> Array:
 		if blds.any(func(b): return not b.queue.is_empty()):
 			cmds.append({"key": KEY_X, "label": "Отмена (X)", "fn": cmd_cancel, "icon": "@cancel"})
 		var silos := blds.filter(func(b): return b.kind == "silo" and b.is_complete())
-		if silos.any(func(b): return b.missile_ready):
-			cmds.append({"key": Defs.MISSILE.launch_key, "label": "Пуск ракеты (L)", "fn": cmd_launch, "icon": "@launch"})
+		var ready_silo = missile_silo()
+		if ready_silo != null:
+			var rm: Dictionary = Defs.MISSILES[ready_silo.missile_type]
+			cmds.append({"key": Defs.MISSILE_LAUNCH_KEY, "label": "Пуск: %s (L), дальность %d" % [rm.name, rm.range],
+				"fn": cmd_launch, "icon": "@launch"})
 		if silos.any(func(b): return not b.missile_ready and b.queue.is_empty()):
-			cmds.append({"key": Defs.MISSILE.arm_key, "label": "Собрать ракету (M) %d" % Defs.MISSILE.cost,
-				"fn": arm_selected, "icon": "@missile", "cost": Defs.MISSILE.cost})
+			for mk in Defs.MISSILES:
+				var md: Dictionary = Defs.MISSILES[mk]
+				cmds.append({"key": md.key, "label": "%s (%s) %d: %s" % [md.name, OS.get_keycode_string(md.key), md.cost, _missile_tip(mk)],
+					"fn": func(): arm_selected(mk), "icon": "@missile:" + mk, "cost": md.cost})
 		var damaged := _damaged_bunkers()
 		if not damaged.is_empty():
 			var cost := 0
@@ -582,53 +588,108 @@ func cmd_launch() -> void:
 
 # --- Missiles ---------------------------------------------------------------
 
-func arm_selected() -> void:
+func _missile_tip(mk: String) -> String:
+	var md: Dictionary = Defs.MISSILES[mk]
+	match mk:
+		"cluster":
+			return "%d кассет по %d урона на площади %d" % [md.bomblets, md.damage, md.radius]
+		"napalm":
+			return "поджигает землю радиусом %d на %d с (%d урона/с)" % [md.radius, md.burn_time, md.burn_dps]
+	return "%d урона, радиус %d, дальность %d" % [md.damage, md.radius, md.range]
+
+
+## The first selected silo with a loaded missile (null if none).
+func missile_silo():
 	for b in selected_buildings():
-		if try_arm_missile(b):
+		if b.kind == "silo" and b.is_complete() and b.missile_ready:
+			return b
+	return null
+
+
+func arm_selected(mk: String) -> void:
+	for b in selected_buildings():
+		if try_arm_missile(b, mk):
 			return
 
 
-func try_arm_missile(b) -> bool:
+func try_arm_missile(b, mk: String) -> bool:
 	if b.kind != "silo" or not b.is_complete() or b.missile_ready or not b.queue.is_empty():
 		return false
-	if bank[b.team] < Defs.MISSILE.cost:
+	var md: Dictionary = Defs.MISSILES[mk]
+	if bank[b.team] < md.cost:
 		if b.team == PLAYER:
 			show_message("Недостаточно минералов")
 		return false
-	bank[b.team] -= Defs.MISSILE.cost
-	b.queue.append("missile")
-	b.queue_costs.append(Defs.MISSILE.cost)
+	bank[b.team] -= md.cost
+	b.queue.append("missile:" + mk)
+	b.queue_costs.append(md.cost)
 	return true
 
 
 func launch_missile(silo, target: Vector2) -> bool:
 	if not valid(silo) or not silo.missile_ready:
 		return false
-	silo.missile_ready = false
+	var mk: String = silo.missile_type
+	var md: Dictionary = Defs.MISSILES[mk]
 	target = target.clamp(Vector2.ZERO, map_size)
-	var m := {"team": silo.team, "from": silo.position, "to": target, "t": 0.0}
-	m["node"] = view.add_missile(silo.position, target)
+	if silo.position.distance_to(target) > md.range:
+		if silo.team == PLAYER:
+			show_message("Слишком далеко: %s бьёт не дальше %d" % [md.name, md.range])
+		return false
+	silo.missile_type = ""
+	var m := {"team": silo.team, "type": mk, "from": silo.position, "to": target, "t": 0.0}
+	m["node"] = view.add_missile(silo.position, target, mk)
 	missiles.append(m)
 	if silo.team != PLAYER:
-		show_message("Внимание! Пуск вражеской ракеты!")
+		show_message("Внимание! Пуск вражеской ракеты: %s!" % md.name)
 	return true
+
+
+## Damages everything (both sides) within r of p: full damage at the centre, half at the edge.
+func _blast(p: Vector2, r: float, dmg: float) -> void:
+	var all: Array = get_tree().get_nodes_in_group("units") + get_tree().get_nodes_in_group("buildings")
+	for e in all:
+		if not e.is_alive():
+			continue
+		var d: float = maxf(0.0, e.surface_distance(p))
+		if d <= r:
+			e.take_damage(dmg * (1.0 - 0.5 * d / r), null)
 
 
 func _update_missiles(delta: float) -> void:
 	for m in missiles.duplicate():
-		m["t"] += delta / Defs.MISSILE.flight
+		var md: Dictionary = Defs.MISSILES[m.type]
+		m["t"] += delta / md.flight
 		if m.t < 1.0:
 			view.move_missile(m.node, m.from, m.to, m.t)
 			continue
 		missiles.erase(m)
-		view.missile_impact(m.node, m.to, Defs.MISSILE.radius)
+		match m.type:
+			"cluster":
+				view.missile_impact(m.node, m.to, md.bomblet_radius)
+				for i in int(md.bomblets):
+					var p: Vector2 = m.to + Vector2.from_angle(randf() * TAU) * sqrt(randf()) * (md.radius - md.bomblet_radius)
+					view.fx_explosion(p, 1.6)
+					_blast(p, md.bomblet_radius, md.damage)
+			"napalm":
+				view.missile_impact(m.node, m.to, md.radius * 0.5)
+				_blast(m.to, md.radius * 0.5, md.damage)
+				fires.append({"pos": m.to, "r": md.radius, "dps": md.burn_dps, "t": md.burn_time,
+					"node": view.add_fire_zone(m.to, md.radius)})
+			_:
+				view.missile_impact(m.node, m.to, md.radius)
+				_blast(m.to, md.radius, md.damage)
+	# napalm fields keep burning everything inside them
+	for f in fires.duplicate():
+		f["t"] -= delta
+		if f.t <= 0.0:
+			fires.erase(f)
+			f.node.queue_free()
+			continue
 		var all: Array = get_tree().get_nodes_in_group("units") + get_tree().get_nodes_in_group("buildings")
 		for e in all:
-			if not e.is_alive():
-				continue
-			var d: float = maxf(0.0, e.surface_distance(m.to))
-			if d <= Defs.MISSILE.radius:
-				e.take_damage(Defs.MISSILE.damage * (1.0 - 0.5 * d / Defs.MISSILE.radius), null)
+			if e.is_alive() and not (e.is_in_group("units") and e.is_air()) and e.surface_distance(f.pos) <= f.r:
+				e.take_damage(f.dps * delta, null)
 
 
 # --- Fog of war ---------------------------------------------------------------

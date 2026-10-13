@@ -1048,20 +1048,27 @@ func fx_death(e) -> void:
 const MISSILE_PEAK := 18.0  # arc height in world units
 
 
+const MISSILE_LOOK := {  # tip material and size per missile type
+	"tactical": ["red_glow", 0.8], "cluster": ["amber_glow", 1.0], "napalm": ["fire_glow", 1.0], "heavy": ["energy", 1.5],
+}
+
+
 ## Missile model plus a pulsing red warning ring at the target; returns the missile node.
-func add_missile(from: Vector2, to: Vector2) -> Node3D:
+func add_missile(from: Vector2, to: Vector2, mk := "tactical") -> Node3D:
 	var n := Node3D.new()
 	var body := Node3D.new()
 	body.rotation_degrees = Vector3(0, 0, -90)  # missile mesh points along local +X
 	n.add_child(body)
 	var b: Models = builders[0]
 	b.cyl(body, 0.32, 0.32, 2.4, Vector3.ZERO, "hull", Vector3.ZERO, 16)
-	b.cyl(body, 0.0, 0.32, 0.9, Vector3(0, 1.65, 0), "red_glow", Vector3.ZERO, 16)
+	b.cyl(body, 0.0, 0.32, 0.9, Vector3(0, 1.65, 0), MISSILE_LOOK[mk][0], Vector3.ZERO, 16)
+	b.torus(body, 0.3, 0.38, Vector3(0, 0.6, 0), MISSILE_LOOK[mk][0])
+	n.scale = Vector3.ONE * float(MISSILE_LOOK[mk][1])
 	for k in 4:
 		b.box(body, Vector3(0.05, 0.6, 0.5), Vector3(0, -1.0, 0), "dark", Vector3(0, k * 90.0, 0))
 	b.cyl(body, 0.26, 0.2, 0.3, Vector3(0, -1.35, 0), "fire_glow", Vector3.ZERO, 16)
 	fx_root.add_child(n)
-	var ring := _ring(Defs.MISSILE.radius / PX, Color(1.0, 0.15, 0.1))
+	var ring := _ring(Defs.MISSILES[mk].radius / PX, Color(1.0, 0.15, 0.1))
 	ring.position = _world(to, 0.15)
 	fx_root.add_child(ring)
 	n.set_meta("ring", ring)
@@ -1088,6 +1095,51 @@ func move_missile(n: Node3D, from: Vector2, to: Vector2, t: float) -> void:
 	_burst(p - (ahead - p).normalized() * 1.6, 2, _smoke_ramp, _smoke, 0.6, 1.4, 1.4, Vector3(0, 0.6, 0))
 	var ring: Node3D = n.get_meta("ring")
 	ring.scale = Vector3.ONE * (1.0 + 0.08 * sin(time * 10.0))
+
+
+var _range_ring: MeshInstance3D
+var _range_r := 0.0
+
+
+## Yellow ground ring showing a silo's launch range while aiming (r = 0 hides it).
+func set_range_ring(center: Vector2, r: float) -> void:
+	if r <= 0.0:
+		if _range_ring:
+			_range_ring.visible = false
+		return
+	if _range_ring == null or not is_equal_approx(_range_r, r):
+		if _range_ring:
+			_range_ring.queue_free()
+		_range_ring = _ring(r / PX, Color(1.0, 0.85, 0.3))
+		(_range_ring.mesh as TorusMesh).outer_radius = r / PX + 0.35
+		(_range_ring.mesh as TorusMesh).rings = 128
+		fx_root.add_child(_range_ring)
+		_range_r = r
+	_range_ring.visible = true
+	_range_ring.position = _world(center, 0.3)
+
+
+## Napalm field: a ring of fire emitters and an orange glow; the caller frees it when it burns out.
+func add_fire_zone(p: Vector2, radius: float) -> Node3D:
+	var holder := Node3D.new()
+	holder.position = _world(p, 0.0)
+	fx_root.add_child(holder)
+	var r := radius / PX
+	for i in 18:
+		var off := Vector3.ZERO if i == 0 else Vector3(cos(i * 2.4), 0, sin(i * 2.4)) * r * sqrt(i / 18.0) * 0.9
+		var fe := _fire_emitter(off + Vector3(0, 0.2, 0))
+		fe.scale = Vector3.ONE * 1.6
+		holder.add_child(fe)
+	var glow := OmniLight3D.new()
+	glow.light_color = Color(1.0, 0.5, 0.15)
+	glow.light_energy = 4.0
+	glow.omni_range = r * 1.6
+	glow.position = Vector3(0, 2.0, 0)
+	holder.add_child(glow)
+	var scorch := _ring(r, Color(1.0, 0.4, 0.05))
+	scorch.position = Vector3(0, 0.15, 0)
+	holder.add_child(scorch)
+	return holder
 
 
 func missile_impact(n: Node3D, p: Vector2, radius: float) -> void:

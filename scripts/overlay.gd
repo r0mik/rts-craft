@@ -52,14 +52,19 @@ func _draw() -> void:
 		var rect := Rect2(game.drag_start, Vector2.ZERO).expand(mp)
 		draw_rect(rect, Color(0.3, 1.0, 0.35, 0.1), true)
 		draw_rect(rect, Color(0.3, 1.0, 0.35, 0.9), false, 1.5)
-	if game.missile_mode:  # missile target: blast radius around the cursor
-		var c := Color(1.0, 0.2, 0.1)
+	var silo = game.missile_silo()
+	if game.missile_mode and silo != null:  # missile target: silo range and blast radius at the cursor
+		var md: Dictionary = game.Defs.MISSILES[silo.missile_type]
 		var wp: Vector2 = v.screen_to_ground(mp)
-		var pts := PackedVector2Array()
-		for i in 49:
-			pts.append(v.to_screen(wp + Vector2.from_angle(i * TAU / 48.0) * game.Defs.MISSILE.radius, 0.2))
-		draw_polyline(pts, c, 2.0)
+		var ok: bool = silo.position.distance_to(wp) <= md.range
+		var c := Color(1.0, 0.2, 0.1) if ok else Color(0.5, 0.5, 0.5)
+		v.set_range_ring(silo.position, md.range)
+		_ground_circle(wp, md.radius, c, 2.0)
 		draw_circle(mp, 4.0, c)
+		if not ok:
+			draw_string(get_theme_default_font(), mp + Vector2(12, -10), "слишком далеко", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, c)
+	else:
+		v.set_range_ring(Vector2.ZERO, 0.0)
 	if game.attack_mode:
 		var c := Color(1.0, 0.25, 0.2)
 		draw_arc(mp, 12.0, 0.0, TAU, 24, c, 2.0)
@@ -67,6 +72,13 @@ func _draw() -> void:
 		draw_line(mp + Vector2(6, 0), mp + Vector2(18, 0), c, 2.0)
 		draw_line(mp + Vector2(0, -18), mp + Vector2(0, -6), c, 2.0)
 		draw_line(mp + Vector2(0, 6), mp + Vector2(0, 18), c, 2.0)
+
+
+func _ground_circle(center: Vector2, r: float, c: Color, w: float) -> void:
+	var pts := PackedVector2Array()
+	for i in 65:
+		pts.append(game.view.to_screen(center + Vector2.from_angle(i * TAU / 64.0) * r, 0.2))
+	draw_polyline(pts, c, w)
 
 
 func _hp_color(f: float) -> Color:

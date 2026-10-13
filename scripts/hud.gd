@@ -351,7 +351,8 @@ func _stats_text(e) -> String:
 		if e.stats.has("damage"):
 			lines.append("Оборона: урон %d, дальность %d" % [e.stats.damage, e.stats.range])
 		if e.kind == "silo":
-			lines.append("Ракета: " + ("готова к пуску (L)" if e.missile_ready else "нет (M — собрать)"))
+			lines.append("Ракета: " + ("%s — готова к пуску (L)" % Defs.MISSILES[e.missile_type].name if e.missile_ready
+				else "нет (M, J, N, K — собрать)"))
 		if e.stats.has("research"):
 			lines.append("Улучшения: Оружие +%d, Броня +%d" % [up.weapons, up.armor])
 		if e.team == 0 and not e.stats.trains.is_empty() and not e.constructing:
@@ -569,10 +570,8 @@ class QueueSlot extends Control:
 		var r := Rect2(Vector2(3, 3), size - Vector2(6, 6))
 		if tex != null:
 			draw_texture_rect(tex, r, false)
-		elif Defs.UPGRADES.has(item):
-			Glyphs.draw(self, "@" + item, r, Color.WHITE)
 		else:
-			Glyphs.draw(self, "@missile", r, Color.WHITE)
+			Glyphs.draw(self, "@" + item, r, Color.WHITE)
 		if first and is_instance_valid(building):
 			draw_rect(Rect2(2, size.y - 6, (size.x - 4) * float(building.prod_progress), 4), Color(0.4, 1.0, 0.5))
 
@@ -637,6 +636,26 @@ class Glyphs:
 		var red := Color(1.0, 0.35, 0.3) * tint
 		var cyan := Color(0.4, 0.85, 1.0) * tint
 		var green := Color(0.4, 1.0, 0.5) * tint
+		if name.begins_with("@missile:"):  # missile types: rocket with a coloured warhead and a type mark
+			var mk := name.get_slice(":", 1)
+			var col: Color = {"tactical": Color(1.0, 0.3, 0.25), "cluster": Color(1.0, 0.8, 0.25),
+				"napalm": Color(1.0, 0.5, 0.1), "heavy": Color(0.45, 0.85, 1.0)}.get(mk, Color.WHITE) * tint
+			var k := 1.15 if mk == "heavy" else 0.9
+			var body := PackedVector2Array([c + Vector2(0, -s * 0.85) * k, c + Vector2(s * 0.2, -s * 0.45) * k,
+				c + Vector2(s * 0.2, s * 0.5) * k, c + Vector2(-s * 0.2, s * 0.5) * k, c + Vector2(-s * 0.2, -s * 0.45) * k])
+			ci.draw_colored_polygon(body, w)
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -s * 0.85) * k, c + Vector2(s * 0.2, -s * 0.45) * k,
+				c + Vector2(-s * 0.2, -s * 0.45) * k]), col)
+			match mk:
+				"cluster":
+					for i in 4:
+						ci.draw_circle(c + Vector2(s * 0.55, -s * 0.5 + i * s * 0.3), s * 0.09, col)
+				"napalm":
+					ci.draw_colored_polygon(PackedVector2Array([c + Vector2(s * 0.35, s * 0.7), c + Vector2(s * 0.75, s * 0.7),
+						c + Vector2(s * 0.55, s * 0.05)]), col)
+				"heavy":
+					ci.draw_rect(Rect2(c + Vector2(-s * 0.2, s * 0.05) * k, Vector2(s * 0.4, s * 0.12) * k), col)
+			return
 		match name:
 			"@attack":  # crossed swords
 				ci.draw_line(c + Vector2(-s * 0.75, s * 0.75), c + Vector2(s * 0.7, -s * 0.7), w, 4.0)

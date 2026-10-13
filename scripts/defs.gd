@@ -119,10 +119,22 @@ const BUILDINGS := {
 	},
 }
 
-## Missile built in a Missile Silo and launched at any point of the map. It hits everything
-## (both sides!) within radius: full damage at the centre, half at the edge.
-const MISSILE := {"name": "Ракета", "cost": 150, "time": 30.0, "damage": 320.0, "radius": 170.0,
-	"flight": 4.0, "arm_key": KEY_M, "launch_key": KEY_L}
+## Missiles built in a Missile Silo (one loaded at a time) and launched (L + click) at a point no
+## farther than "range" from the silo. Blasts hit everything, both sides: full damage at the
+## centre, half at the edge of "radius".
+##   cluster: splits into "bomblets" small blasts scattered over "radius";
+##   napalm: a small blast, then the ground burns for "burn_time" s at "burn_dps".
+const MISSILE_LAUNCH_KEY := KEY_L
+const MISSILES := {
+	"tactical": {"name": "Тактическая ракета", "key": KEY_M, "cost": 100, "time": 20.0, "damage": 220.0,
+		"radius": 120.0, "range": 1500.0, "flight": 3.0},
+	"cluster": {"name": "Кассетная ракета", "key": KEY_J, "cost": 175, "time": 30.0, "damage": 110.0,
+		"radius": 220.0, "bomblets": 7, "bomblet_radius": 70.0, "range": 1500.0, "flight": 3.5},
+	"napalm": {"name": "Напалм", "key": KEY_N, "cost": 150, "time": 30.0, "damage": 60.0,
+		"radius": 160.0, "burn_dps": 35.0, "burn_time": 8.0, "range": 1500.0, "flight": 3.5},
+	"heavy": {"name": "Тяжёлая ракета", "key": KEY_K, "cost": 300, "time": 50.0, "damage": 600.0,
+		"radius": 210.0, "range": 1100.0, "flight": 5.0},
+}
 
 ## Team-wide research done in the Engineering Bay.
 const UPGRADES := {

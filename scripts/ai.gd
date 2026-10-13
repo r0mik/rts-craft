@@ -9,7 +9,7 @@ var think_timer := 1.0
 var wave_size := 6
 var elapsed := 0.0
 var reserve := 0  # minerals held back for the next planned building
-var easy := false  # easy mode: slow reactions, small economy, marines only, never attacks, no Titan or missiles
+var easy := false  # easy mode: slow reactions, small economy, marines only, never attacks with troops, no Titan
 
 
 func _process(delta: float) -> void:
@@ -90,6 +90,7 @@ func _economy(cc, workers: Array, buildings: Array) -> void:
 			["barracks", rax < 1 and elapsed > 90.0],
 			["ebay", _count("ebay", buildings, workers) == 0 and (elapsed > 420.0 or air)],
 			["turret", _count("turret", buildings, workers) < 2 and air and game.has_completed(team, "ebay")],
+			["silo", _count("silo", buildings, workers) == 0 and elapsed > 470.0 and game.has_completed(team, "ebay")],
 		]
 	reserve = 0
 	for entry in plan:
@@ -136,16 +137,23 @@ func _military(cc, army: Array, buildings: Array) -> void:
 	if _wants_titan(cc):
 		if not game.try_train(cc, "titan"):
 			reserve = maxi(reserve, int(Defs.UNITS.titan.cost))
-	# Missiles: keep the silo loaded and fire at the densest group of enemy units and buildings.
+	# Missiles: keep the silo loaded (random affordable type) and fire at the densest group of
+	# enemy units and buildings within the missile's range. The easy AI uses them too.
 	for b in buildings:
-		if easy or b.kind != "silo" or not b.is_complete():
+		if b.kind != "silo" or not b.is_complete():
 			continue
 		if b.missile_ready:
-			var tgt = _missile_target()
+			var md: Dictionary = Defs.MISSILES[b.missile_type]
+			var tgt = _missile_target(b.position, md.range, md.radius)
 			if tgt != null:
 				game.launch_missile(b, tgt)
-		elif b.queue.is_empty() and game.bank[team] - reserve >= Defs.MISSILE.cost:
-			game.try_arm_missile(b)
+		elif b.queue.is_empty():
+			var options := []
+			for mk in Defs.MISSILES:
+				if game.bank[team] - reserve >= Defs.MISSILES[mk].cost:
+					options.append(mk)
+			if not options.is_empty():
+				game.try_arm_missile(b, options.pick_random())
 	for b in buildings:
 		if not b.is_complete() or game.bank[team] - reserve < 50:
 			continue
@@ -210,14 +218,13 @@ func _enemy_air() -> int:
 	return n
 
 
-func _missile_target():
+func _missile_target(from: Vector2, max_range: float, r: float):
 	var enemies := []
 	for e in game.get_tree().get_nodes_in_group("units") + game.get_tree().get_nodes_in_group("buildings"):
-		if e.team != team and e.team >= 0 and e.is_alive():
+		if e.team != team and e.team >= 0 and e.is_alive() and e.position.distance_to(from) <= max_range:
 			enemies.append(e)
 	var best = null
 	var best_n := 0
-	var r: float = Defs.MISSILE.radius
 	for c in enemies:
 		var n := 0
 		for e in enemies:
