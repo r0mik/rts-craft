@@ -600,11 +600,7 @@ func worker() -> Node3D:
 ## a backpack with thrusters and a detailed rifle.
 func marine() -> Node3D:
 	var r := _root("Marine")
-	for sz in [-1, 1]:  # legs: boots, shins, knee guards, thighs
-		octa(r, 0.4, 0.26, 0.16, Vector3(0.06, 0, sz * 0.2), "gunmetal", 0.8)
-		capsule(r, 0.12, 0.55, Vector3(0, 0.44, sz * 0.2), "hull")
-		sphere(r, 0.12, Vector3(0.08, 0.7, sz * 0.2), "team", Vector3(0.8, 1.0, 1.0))
-		capsule(r, 0.14, 0.48, Vector3(0, 0.92, sz * 0.2), "gunmetal")
+	_legs(r, 1.1, 0.2, 0.4, "hull", "gunmetal", 1.0)
 	octa(r, 0.48, 0.6, 0.2, Vector3(0, 1.04, 0), "dark", 0.9)
 	# torso widening towards the chest, with a white chest plate and an energy strip
 	octa(r, 0.6, 0.76, 0.56, Vector3(0, 1.22, 0), "team", 1.15)
@@ -641,15 +637,31 @@ func marine() -> Node3D:
 	return r
 
 
+## Two jointed legs for infantry: "Leg0"/"Leg1" pivot at the hips, each with a "Knee" pivot
+## (thigh above it; knee guard, shin and boot below). view3d.gd swings them while walking.
+func _legs(r: Node3D, hip_y: float, half_w: float, thigh: float, shin_mat: String, thigh_mat: String, k: float) -> void:
+	for i in 2:
+		var sz := -1 if i == 0 else 1
+		var leg := Node3D.new()
+		leg.name = "Leg%d" % i
+		leg.position = Vector3(0, hip_y, sz * half_w)
+		r.add_child(leg)
+		capsule(leg, 0.14 * k, 0.48 * k, Vector3(0, -thigh * 0.45, 0), thigh_mat)
+		var knee := Node3D.new()
+		knee.name = "Knee"
+		knee.position = Vector3(0, -thigh, 0)
+		leg.add_child(knee)
+		sphere(knee, 0.12 * k, Vector3(0.08, 0, 0), "team", Vector3(0.8, 1.0, 1.0))
+		var low := hip_y - thigh  # knee height above the ground
+		capsule(knee, 0.12 * k, 0.55 * k, Vector3(0, -low * 0.37, 0), shin_mat)
+		octa(knee, 0.4 * k, 0.26 * k, 0.16, Vector3(0.06, -low, 0), "gunmetal", 0.8)
+
+
 ## Medic: white armour with team trim, a backpack with a glowing green cross and a heal emitter
 ## held in front.
 func medic() -> Node3D:
 	var r := _root("Medic")
-	for sz in [-1, 1]:
-		octa(r, 0.38, 0.25, 0.15, Vector3(0.05, 0, sz * 0.19), "gunmetal", 0.8)
-		capsule(r, 0.11, 0.55, Vector3(0, 0.43, sz * 0.19), "white")
-		sphere(r, 0.11, Vector3(0.07, 0.69, sz * 0.19), "team", Vector3(0.8, 1.0, 1.0))
-		capsule(r, 0.13, 0.46, Vector3(0, 0.9, sz * 0.19), "white")
+	_legs(r, 1.08, 0.19, 0.39, "white", "white", 0.95)
 	octa(r, 0.46, 0.56, 0.18, Vector3(0, 1.02, 0), "dark", 0.9)
 	octa(r, 0.56, 0.7, 0.52, Vector3(0, 1.18, 0), "white", 1.12)
 	box(r, Vector3(0.05, 0.05, 0.42), Vector3(0.34, 1.32, 0), "team")

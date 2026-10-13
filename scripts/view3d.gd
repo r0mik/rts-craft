@@ -567,6 +567,16 @@ func _sync(e, root: Node3D, delta: float) -> void:
 			"marine", "worker", "medic":
 				var bob := absf(sin(time * 11.0 + seed)) * 0.12 if moved else 0.0
 				model.position.y = lerpf(model.position.y, bob, minf(1.0, delta * 15.0))
+				if e.kind != "worker":  # infantry walk cycle: legs swing, the forward leg bends at the knee
+					var ph := time * 11.0 + seed
+					var amt := 1.0 if moved else 0.0
+					var k := minf(1.0, delta * 14.0)
+					for i in 2:
+						var sgn := 1.0 if i == 0 else -1.0
+						var leg: Node3D = model.get_node("Leg%d" % i)
+						leg.rotation.z = lerpf(leg.rotation.z, sin(ph) * 0.5 * sgn * amt, k)
+						var knee: Node3D = leg.get_node("Knee")
+						knee.rotation.z = lerpf(knee.rotation.z, -maxf(0.0, cos(ph) * sgn) * 0.9 * amt, k)
 				if e.kind == "medic" and game.valid(e.heal_target) and randf() < delta * 10.0:
 					_heal_fx(e, e.heal_target)
 				if e.kind == "worker":
