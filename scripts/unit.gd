@@ -295,6 +295,9 @@ func _do_attack_move(delta: float) -> void:
 
 func _engage(t, delta: float, can_chase: bool) -> void:
 	var d: float = game.edge_dist(self, t)
+	if d < stats.get("min_range", 0.0):  # too close to fire (Supertank): drop the target, look for another
+		target = null
+		return
 	if d <= stats.range:
 		facing = (t.position - position).angle()
 		if stats.get("kamikaze", false):  # crash into the target: huge damage, the drone is gone

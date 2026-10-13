@@ -224,6 +224,8 @@ func find_enemy(u, radius: float):
 		if e.team == u.team or not e.is_alive() or not u.can_target(e):
 			continue
 		var d := edge_dist(u, e)
+		if d < u.stats.get("min_range", 0.0):
+			continue  # inside the dead zone (Supertank)
 		if d <= radius:
 			var score := d + (60.0 if e.is_worker() else 0.0)
 			if score < best_score:
@@ -513,13 +515,15 @@ func on_building_complete(b) -> void:
 		show_message("%s построен" % b.stats.name)
 
 
-## Weapons upgrades add 20% damage per level, armour removes a flat 1.5 per level.
+## Damage of one hit: weapons upgrades add 20% per level (the last age +25% for units), then the
+## target's armour (its own plus 1.5 per armour upgrade) is subtracted; every hit does at least 1.
 func scaled_damage(attacker, target, dmg: float) -> float:
 	var w: int = upgrades[attacker.team].weapons
 	var a: int = upgrades[target.team].armor
 	if attacker.is_in_group("units"):
 		dmg *= age_unit_mult(attacker.team)
-	return maxf(dmg * (1.0 + 0.2 * w) - a * 1.5, dmg * 0.4)
+	var armor: float = float(target.stats.get("armor", 0)) + a * 1.5
+	return maxf(dmg * (1.0 + 0.2 * w) - armor, 1.0)
 
 
 func deal_damage(attacker, target, dmg: float, splash: float) -> void:

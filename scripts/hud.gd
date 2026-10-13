@@ -379,7 +379,11 @@ func _stats_text(e) -> String:
 			if e.kind == "beacon":
 				lines.append("Погаснет через %d с" % ceili(e.life_left))
 		else:
-			lines.append("Урон %d (+%d)   Броня +%d   Дальность %d" % [e.stats.damage, up.weapons, up.armor, e.stats.range])
+			lines.append("Урон %d (+%d)   Броня %d (+%d)   Дальность %d" % [e.stats.damage, up.weapons,
+				e.stats.get("armor", 0), up.armor, e.stats.range])
+			if e.stats.has("min_range"):
+				lines.append("Мёртвая зона: не стреляет ближе %d" % e.stats.min_range)
+			lines.append("Скорость %d" % e.stats.speed)
 		if e.carrying > 0:
 			lines.append("Несёт минералы: %d" % e.carrying)
 		for ck in Defs.COMBOS:  # how this unit can be merged
@@ -392,6 +396,7 @@ func _stats_text(e) -> String:
 	else:
 		if e.constructing:
 			lines.append("Строится: %d%%" % int(e.build_progress * 100.0))
+		lines.append("Броня %d" % e.stats.get("armor", 0))
 		if e.max_shield > 0.0:
 			lines.append("Щит: %d / %d (восстанавливается)" % [int(e.shield), int(e.max_shield)])
 		if e.kind == "cc" and e.team == 0:
