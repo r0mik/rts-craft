@@ -517,11 +517,21 @@ func on_building_complete(b) -> void:
 
 ## Damage of one hit: weapons upgrades add 20% per level (the last age +25% for units), then the
 ## target's armour (its own plus 1.5 per armour upgrade) is subtracted; every hit does at least 1.
+func armor_class(e) -> String:
+	return "building" if e.is_in_group("buildings") else Defs.ARMOR_CLASS.get(e.kind, "infantry")
+
+
+## Weapon effectiveness of the attacker against the target's class (Defs.DAMAGE_VS).
+func damage_vs(attacker, target) -> float:
+	return Defs.DAMAGE_VS.get(attacker.kind, {}).get(armor_class(target), 1.0)
+
+
 func scaled_damage(attacker, target, dmg: float) -> float:
 	var w: int = upgrades[attacker.team].weapons
 	var a: int = upgrades[target.team].armor
 	if attacker.is_in_group("units"):
 		dmg *= age_unit_mult(attacker.team)
+	dmg *= damage_vs(attacker, target)
 	var armor: float = float(target.stats.get("armor", 0)) + a * 1.5
 	return maxf(dmg * (1.0 + 0.2 * w) - armor, 1.0)
 

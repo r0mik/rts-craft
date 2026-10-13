@@ -381,6 +381,13 @@ func _stats_text(e) -> String:
 		else:
 			lines.append("Урон %d (+%d)   Броня %d (+%d)   Дальность %d" % [e.stats.damage, up.weapons,
 				e.stats.get("armor", 0), up.armor, e.stats.range])
+			var vs: Dictionary = Defs.DAMAGE_VS.get(e.kind, {})
+			if not vs.is_empty():
+				var parts := []
+				for c in vs:
+					parts.append("%s ×%s" % [Defs.CLASS_NAMES[c], str(vs[c])])
+				lines.append("Против: " + ", ".join(parts))
+			lines.append("Тип: %s" % Defs.CLASS_NAMES[game.armor_class(e)])
 			if e.stats.has("min_range"):
 				lines.append("Мёртвая зона: не стреляет ближе %d" % e.stats.min_range)
 			lines.append("Скорость %d" % e.stats.speed)

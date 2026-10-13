@@ -65,14 +65,14 @@ const UNITS := {
 	},
 	# Siege bomber: one huge bunker-buster missile at a time, only against buildings.
 	"devastator": {
-		"name": "Devastator (бомбардировщик)", "hp": 340, "armor": 3, "speed": 105.0, "radius": 20.0,
-		"damage": 260, "range": 270.0, "cooldown": 3.5, "sight": 340.0,
+		"name": "Devastator (бомбардировщик)", "hp": 280, "armor": 3, "speed": 105.0, "radius": 20.0,
+		"damage": 120, "range": 200.0, "cooldown": 4.5, "sight": 340.0,
 		"cost": 400, "supply": 5, "time": 50.0, "hotkey": KEY_N, "air": true, "buildings_only": true,
 	},
 	# Kamikaze drone: fast and fragile, dives into a building and explodes (dies on impact).
 	"drone": {
 		"name": "Kamikaze Drone (дрон-камикадзе)", "hp": 40, "armor": 0, "speed": 210.0, "radius": 9.0,
-		"damage": 380, "range": 8.0, "cooldown": 1.0, "sight": 280.0,
+		"damage": 250, "range": 8.0, "cooldown": 1.0, "sight": 280.0,
 		"cost": 100, "supply": 1, "time": 15.0, "hotkey": KEY_K, "air": true, "buildings_only": true,
 		"kamikaze": true,
 	},
@@ -154,6 +154,30 @@ const MISSILES := {
 
 ## Armour ("armor" on every unit and building) is subtracted from each hit, so light weapons barely
 ## scratch heavy targets (a marine's 6 does 2 to a tank with armour 4); every hit does at least 1.
+
+## Target classes and weapon effectiveness. Every hit is multiplied by DAMAGE_VS[attacker][class of
+## the target] (default 1.0) before armour is subtracted: tanks shred vehicles and buildings but are
+## poor against infantry, rifles are poor against buildings, and so on.
+const ARMOR_CLASS := {
+	"worker": "infantry", "marine": "infantry", "medic": "infantry", "scout": "infantry", "beacon": "infantry",
+	"battalion": "infantry",
+	"tank": "vehicle", "aa": "vehicle", "supertank": "vehicle", "titan": "vehicle",
+	"wraith": "air", "stormbird": "air", "devastator": "air", "drone": "air", "phantom": "air",
+}  # buildings are "building"
+const CLASS_NAMES := {"infantry": "пехота", "vehicle": "техника", "air": "авиация", "building": "здания"}
+const DAMAGE_VS := {
+	"worker": {"building": 0.5},
+	"marine": {"building": 0.8},
+	"battalion": {"vehicle": 1.2, "building": 0.7},
+	"tank": {"infantry": 0.5, "vehicle": 1.5, "building": 2.0},
+	"supertank": {"infantry": 0.5, "vehicle": 1.5, "building": 2.0},
+	"titan": {"infantry": 0.8, "vehicle": 1.3, "building": 1.5},
+	"wraith": {"vehicle": 0.8, "air": 1.4, "building": 0.5},
+	"phantom": {"vehicle": 0.8, "air": 1.4, "building": 0.5},
+	"stormbird": {"infantry": 1.2, "building": 0.7},
+	"bunker": {"infantry": 1.3, "vehicle": 0.6},
+	"turret": {"infantry": 0.5, "vehicle": 0.5, "air": 1.0},
+}
 
 ## Unit combinations: select the parts and press the key; they gather and merge into one super unit.
 ## Super units are always stronger than their parts together (more HP and more damage per second):
