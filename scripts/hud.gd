@@ -379,8 +379,10 @@ func _stats_text(e) -> String:
 			if e.kind == "beacon":
 				lines.append("Погаснет через %d с" % ceili(e.life_left))
 		else:
-			lines.append("Урон %d (+%d)   Броня %d (+%d)   Дальность %d" % [e.stats.damage, up.weapons,
-				e.stats.get("armor", 0), up.armor, e.stats.range])
+			var dmg_up: float = game.upgrade_bonus(e.stats.damage, up.weapons) if up.weapons > 0 else 0.0
+			var arm_up: float = game.upgrade_bonus(e.stats.get("armor", 0), up.armor) if up.armor > 0 else 0.0
+			lines.append("Урон %d (+%s)   Броня %d (+%s)   Дальность %d" % [e.stats.damage, str(snappedf(dmg_up, 0.1)),
+				e.stats.get("armor", 0), str(snappedf(arm_up, 0.1)), e.stats.range])
 			var vs: Dictionary = Defs.DAMAGE_VS.get(e.kind, {})
 			if not vs.is_empty():
 				var parts := []
@@ -414,7 +416,7 @@ func _stats_text(e) -> String:
 			lines.append("Ракета: " + ("%s — готова к пуску (L)" % Defs.MISSILES[e.missile_type].name if e.missile_ready
 				else "нет (M, J, N, K — собрать)"))
 		if e.stats.has("research"):
-			lines.append("Улучшения: Оружие +%d, Броня +%d" % [up.weapons, up.armor])
+			lines.append("Улучшения: Оружие ур. %d, Броня ур. %d (из 3)" % [up.weapons, up.armor])
 		if e.team == 0 and not e.stats.trains.is_empty() and not e.constructing:
 			lines.append("ПКМ — точка сбора")
 	return "\n".join(lines)

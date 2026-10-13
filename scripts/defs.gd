@@ -22,7 +22,7 @@ const UNITS := {
 	"battalion": {
 		"name": "Battalion (батальон)", "hp": 800, "armor": 3, "speed": 70.0, "radius": 22.0,
 		"damage": 22, "range": 170.0, "cooldown": 0.35, "sight": 300.0, "splash": 30.0,
-		"cost": 0, "supply": 7, "time": 0.0, "regen": 15.0, "combined": true,
+		"cost": 0, "supply": 7, "time": 0.0, "regen": 15.0, "combined": true, "anti_air": false,
 	},
 	"supertank": {
 		"name": "Supertank (супертанк)", "hp": 1500, "armor": 7, "speed": 48.0, "radius": 32.0,
@@ -186,7 +186,7 @@ const DAMAGE_VS := {
 ##   Phantom    600 HP / 55 dps            vs  3 wraiths 360 HP / 27 dps
 const COMBOS := {
 	"battalion": {"name": "Батальон", "key": KEY_Z, "parts": {"marine": 5, "medic": 2},
-		"desc": "5 пехотинцев + 2 медика: 800 HP, быстро лечится сам, пулемёт по площади, бьёт и по воздуху. Минус: медленный (70)"},
+		"desc": "5 пехотинцев + 2 медика: 800 HP, быстро лечится сам, пулемёт по площади. Минусы: медленный (70), не бьёт по воздуху"},
 	"supertank": {"name": "Супертанк", "key": KEY_C, "parts": {"tank": 4},
 		"desc": "4 танка: 1500 HP, сдвоенная пушка 150 урона по площади, дальность 300. Минусы: очень медленный (48), не стреляет ближе 90"},
 	"phantom": {"name": "Фантом", "key": KEY_V, "parts": {"wraith": 3},
@@ -212,8 +212,9 @@ const AGE_UNIT_BONUS := 1.25                    # unit HP and damage multiplier 
 
 ## Team-wide research done in the Engineering Bay.
 const UPGRADES := {
-	"weapons": {"name": "Оружие", "cost": [100, 175], "time": 40.0, "hotkey": KEY_G, "max": 2},
-	"armor": {"name": "Броня", "cost": [100, 175], "time": 40.0, "hotkey": KEY_R, "max": 2},
+	# Each level: +10% (at least +1) to damage / armour, stacking: level 2 = +20% (at least +2), ...
+	"weapons": {"name": "Оружие", "cost": [100, 175, 250], "time": 40.0, "hotkey": KEY_G, "max": 3},
+	"armor": {"name": "Броня", "cost": [100, 175, 250], "time": 40.0, "hotkey": KEY_R, "max": 3},
 }
 
 const WORKER_BUILDS := ["depot", "barracks", "bunker", "ebay", "turret", "factory", "starport", "silo", "cc"]

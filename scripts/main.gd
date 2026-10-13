@@ -515,8 +515,15 @@ func on_building_complete(b) -> void:
 		show_message("%s построен" % b.stats.name)
 
 
-## Damage of one hit: weapons upgrades add 20% per level (the last age +25% for units), then the
-## target's armour (its own plus 1.5 per armour upgrade) is subtracted; every hit does at least 1.
+## Upgrade bonus for level n of a stat: +10% per level, but at least +1 per level
+## (level 1: +10% or +1, level 2: +20% or +2, ...).
+func upgrade_bonus(base: float, level: int) -> float:
+	return maxf(base * 0.1 * level, float(level))
+
+
+## Damage of one hit: base damage plus the weapons upgrade bonus, times the age bonus (units) and
+## the weapon's effectiveness against the target class; then the target's armour (plus its armour
+## upgrade bonus) is subtracted. Every hit does at least 1.
 func armor_class(e) -> String:
 	return "building" if e.is_in_group("buildings") else Defs.ARMOR_CLASS.get(e.kind, "infantry")
 
@@ -529,11 +536,14 @@ func damage_vs(attacker, target) -> float:
 func scaled_damage(attacker, target, dmg: float) -> float:
 	var w: int = upgrades[attacker.team].weapons
 	var a: int = upgrades[target.team].armor
+	if w > 0:
+		dmg += upgrade_bonus(dmg, w)
 	if attacker.is_in_group("units"):
 		dmg *= age_unit_mult(attacker.team)
 	dmg *= damage_vs(attacker, target)
-	var armor: float = float(target.stats.get("armor", 0)) + a * 1.5
-	return maxf(dmg * (1.0 + 0.2 * w) - armor, 1.0)
+	var base_armor := float(target.stats.get("armor", 0))
+	var armor: float = base_armor + (upgrade_bonus(base_armor, a) if a > 0 else 0.0)
+	return maxf(dmg - armor, 1.0)
 
 
 func deal_damage(attacker, target, dmg: float, splash: float) -> void:
