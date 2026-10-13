@@ -25,6 +25,10 @@ var cooldown_left := 0.0
 var acquire_timer := 0.0
 var shot_flash := 0.0
 var shot_to := Vector2.ZERO
+# energy shield from the ages (absorbs damage first, recharges after a few quiet seconds)
+var shield := 0.0
+var max_shield := 0.0
+var since_hit := 99.0
 
 
 func setup(g, t: int, k: String, under_construction: bool) -> void:
@@ -32,12 +36,23 @@ func setup(g, t: int, k: String, under_construction: bool) -> void:
 	team = t
 	kind = k
 	stats = Defs.BUILDINGS[k]
-	max_hp = stats.hp
+	max_hp = stats.hp * game.age_hp_mult(t)
+	max_shield = max_hp * game.age_shield(t)
 	size = stats.size
 	radius = minf(size.x, size.y) / 2.0
 	constructing = under_construction
 	hp = max_hp * 0.1 if constructing else max_hp
+	shield = 0.0 if constructing else max_shield
 	add_to_group("buildings")
+
+
+## A new age started for this team: rescale durability (keeping the damage ratio) and the shield.
+func apply_age() -> void:
+	var f: float = stats.hp * game.age_hp_mult(team) / max_hp
+	max_hp *= f
+	hp *= f
+	max_shield = max_hp * game.age_shield(team)
+	shield = max_shield
 
 
 func is_alive() -> bool:
@@ -86,7 +101,10 @@ var seen_by_player := false   # fog of war: enemy buildings stay on the map once
 func take_damage(amount: float, _attacker) -> void:
 	if hp <= 0.0:
 		return
-	hp -= amount
+	since_hit = 0.0
+	var absorbed := minf(shield, amount)
+	shield -= absorbed
+	hp -= amount - absorbed
 	if hp <= 0.0:
 		game.kill(self)
 
@@ -103,6 +121,9 @@ func cancel_last() -> void:
 func _process(delta: float) -> void:
 	if hp <= 0.0:
 		return
+	since_hit += delta
+	if not constructing and max_shield > 0.0 and since_hit > 4.0:
+		shield = minf(max_shield, shield + max_shield * 0.06 * delta)
 	if constructing:
 		build_progress += delta / stats.time
 		hp = minf(max_hp, hp + max_hp * 0.9 * delta / stats.time)
@@ -113,14 +134,18 @@ func _process(delta: float) -> void:
 		var item: String = queue[0]
 		var is_upgrade := Defs.UPGRADES.has(item)
 		var is_missile := item.begins_with("missile:")
+		var is_age := item.begins_with("age:")
 		var t: float = Defs.MISSILES[item.get_slice(":", 1)].time if is_missile \
+				else Defs.AGES[int(item.get_slice(":", 1))].time if is_age \
 				else Defs.UPGRADES[item].time if is_upgrade else Defs.UNITS[item].time
 		prod_progress += delta / t
 		if prod_progress >= 1.0:
 			prod_progress = 0.0
 			queue.pop_front()
 			queue_costs.pop_front()
-			if is_missile:
+			if is_age:
+				game.complete_age(team, int(item.get_slice(":", 1)))
+			elif is_missile:
 				missile_type = item.get_slice(":", 1)
 				if team == game.PLAYER:
 					game.show_message("%s готова к пуску (L)" % Defs.MISSILES[missile_type].name)

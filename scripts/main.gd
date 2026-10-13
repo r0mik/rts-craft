@@ -18,6 +18,7 @@ const TEAM_COLORS := [Color(0.25, 0.55, 1.0), Color(0.95, 0.28, 0.22)]
 var map_size := MAP_SIZE
 var bank := [50, 50]
 var upgrades := [{"weapons": 0, "armor": 0}, {"weapons": 0, "armor": 0}]
+var ages := [1, 1]  # current age per team (see Defs.AGES)
 var entities: Node2D
 var view  # 3D presentation layer (scripts/view3d.gd)
 var hud
@@ -402,6 +403,65 @@ func try_research(b, key: String) -> bool:
 	return true
 
 
+# --- Ages ---------------------------------------------------------------------
+
+func age_hp_mult(t: int) -> float:
+	return pow(2.0, ages[maxi(t, 0)] - 1)
+
+
+func age_shield(t: int) -> float:
+	return Defs.AGE_SHIELD[ages[maxi(t, 0)]]
+
+
+func age_unit_mult(t: int) -> float:
+	return Defs.AGE_UNIT_BONUS if ages[maxi(t, 0)] >= 4 else 1.0
+
+
+func age_in_progress(t: int) -> bool:
+	for b in team_buildings(t):
+		for item in b.queue:
+			if String(item).begins_with("age:"):
+				return true
+	return false
+
+
+func try_age_up(cc) -> bool:
+	var t: int = cc.team
+	var n: int = ages[t] + 1
+	if cc.kind != "cc" or not cc.is_complete() or n >= Defs.AGES.size() or age_in_progress(t):
+		return false
+	var a: Dictionary = Defs.AGES[n]
+	if not has_completed(t, a.requires):
+		if t == PLAYER:
+			show_message("Для эпохи «%s» нужен %s" % [a.name, Defs.BUILDINGS[a.requires].name])
+		return false
+	if bank[t] < a.cost:
+		if t == PLAYER:
+			show_message("Недостаточно минералов")
+		return false
+	bank[t] -= a.cost
+	cc.queue.append("age:%d" % n)
+	cc.queue_costs.append(a.cost)
+	return true
+
+
+func complete_age(t: int, n: int) -> void:
+	if n <= ages[t]:
+		return
+	ages[t] = n
+	for b in team_buildings(t):
+		b.apply_age()
+	if n >= 4:
+		for u in team_units(t):
+			u.max_hp *= Defs.AGE_UNIT_BONUS
+			u.hp *= Defs.AGE_UNIT_BONUS
+	var a: Dictionary = Defs.AGES[n]
+	if t == PLAYER:
+		show_message("Наступила %s: %s" % [a.name, a.bonus])
+	else:
+		show_message("Противник перешёл в эпоху: %s" % a.name)
+
+
 func complete_upgrade(t: int, key: String) -> void:
 	upgrades[t][key] += 1
 	if t == PLAYER:
@@ -409,6 +469,8 @@ func complete_upgrade(t: int, key: String) -> void:
 
 
 func item_name(item: String) -> String:
+	if item.begins_with("age:"):
+		return Defs.AGES[int(item.get_slice(":", 1))].name
 	if item.begins_with("missile:"):
 		return Defs.MISSILES[item.get_slice(":", 1)].name
 	if Defs.UPGRADES.has(item):
@@ -454,6 +516,8 @@ func on_building_complete(b) -> void:
 func scaled_damage(attacker, target, dmg: float) -> float:
 	var w: int = upgrades[attacker.team].weapons
 	var a: int = upgrades[target.team].armor
+	if attacker.is_in_group("units"):
+		dmg *= age_unit_mult(attacker.team)
 	return maxf(dmg * (1.0 + 0.2 * w) - a * 1.5, dmg * 0.4)
 
 
@@ -528,6 +592,17 @@ func get_commands() -> Array:
 			var st: Dictionary = Defs.UNITS[uk]
 			cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [st.name, OS.get_keycode_string(st.hotkey), st.cost],
 				"fn": func(): train_selected(uk), "icon": uk, "cost": st.cost})
+		var cc = null
+		for b in blds:
+			if b.kind == "cc" and b.is_complete():
+				cc = b
+				break
+		var next_age: int = ages[PLAYER] + 1
+		if cc != null and next_age < Defs.AGES.size() and not age_in_progress(PLAYER):
+			var a: Dictionary = Defs.AGES[next_age]
+			cmds.append({"key": Defs.AGE_KEY, "label": "%s (E) %d: %s. Нужен %s" % [a.name, a.cost, a.bonus,
+				Defs.BUILDINGS[a.requires].name], "fn": func(): try_age_up(cc), "icon": "@age:%d" % next_age, "cost": a.cost,
+				"disabled": not has_completed(PLAYER, a.requires)})
 		var research := []
 		for b in blds:
 			for key in b.stats.get("research", []):

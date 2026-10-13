@@ -54,7 +54,7 @@ func setup(g, t: int, k: String) -> void:
 	stats = Defs.UNITS[k]
 	if stats.has("random"):
 		_roll_stats()
-	max_hp = stats.hp
+	max_hp = stats.hp * game.age_unit_mult(t)
 	hp = max_hp
 	life_left = stats.get("lifetime", 0.0)
 	radius = stats.radius

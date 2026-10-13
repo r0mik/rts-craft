@@ -136,6 +136,23 @@ const MISSILES := {
 		"radius": 210.0, "range": 1100.0, "flight": 5.0},
 }
 
+## Ages, advanced at the Command Center (E), one after another like in Age of Empires.
+## Index = age number (1 is the starting age). Every new age doubles building durability;
+## from age 3 buildings get a regenerating energy shield; age 4 also boosts units.
+const AGE_KEY := KEY_E
+const AGES := [
+	{},
+	{"name": "Эпоха колонии", "short": "I"},
+	{"name": "Индустриальная эпоха", "short": "II", "cost": 300, "time": 45.0, "requires": "barracks",
+		"bonus": "прочность зданий ×2"},
+	{"name": "Энергетическая эпоха", "short": "III", "cost": 500, "time": 60.0, "requires": "factory",
+		"bonus": "прочность зданий ×2, восстанавливающийся щит зданий (30% прочности)"},
+	{"name": "Звёздная эпоха", "short": "IV", "cost": 800, "time": 80.0, "requires": "starport",
+		"bonus": "прочность зданий ×2, щит 60%, юниты +25% HP и урона"},
+]
+const AGE_SHIELD := [0.0, 0.0, 0.0, 0.3, 0.6]  # building shield as a share of max HP, per age
+const AGE_UNIT_BONUS := 1.25                    # unit HP and damage multiplier in the last age
+
 ## Team-wide research done in the Engineering Bay.
 const UPGRADES := {
 	"weapons": {"name": "Оружие", "cost": [100, 175], "time": 40.0, "hotkey": KEY_G, "max": 2},

@@ -23,6 +23,7 @@ var game
 var res_minerals: Label
 var res_supply: Label
 var res_time: Label
+var res_age: Label
 var msg_label: Label
 var msg_time := 0.0
 var big_label: Label
@@ -109,7 +110,7 @@ func _build_top() -> void:
 	var top := PanelContainer.new()
 	top.anchor_left = 1.0
 	top.anchor_right = 1.0
-	top.offset_left = -470.0
+	top.offset_left = -600.0
 	top.offset_right = -8.0
 	top.offset_top = 6.0
 	top.add_theme_stylebox_override("panel", panel_style(BG, FRAME_DIM, 1, 6))
@@ -127,6 +128,10 @@ func _build_top() -> void:
 	res_supply = _label("0/0", 19)
 	res_supply.custom_minimum_size.x = 90
 	row.add_child(res_supply)
+	res_age = _label("I", 19, GOLD)
+	res_age.tooltip_text = "Текущая эпоха"
+	res_age.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(res_age)
 	row.add_child(ResIcon.new("time"))
 	res_time = _label("0:00", 19)
 	res_time.custom_minimum_size.x = 60
@@ -200,6 +205,9 @@ func _process(delta: float) -> void:
 	res_supply.text = "%d/%d" % [used, cap]
 	res_supply.add_theme_color_override("font_color", Color(1.0, 0.4, 0.35) if used >= cap else TEXT)
 	res_time.text = "%d:%02d" % [t / 60, t % 60]
+	var age: Dictionary = Defs.AGES[game.ages[0]]
+	res_age.text = "Эпоха %s" % age.short
+	res_age.tooltip_text = age.name
 	msg_time -= delta
 	msg_label.modulate.a = clampf(msg_time, 0.0, 1.0)
 	_update_selection(delta)
@@ -348,6 +356,10 @@ func _stats_text(e) -> String:
 	else:
 		if e.constructing:
 			lines.append("Строится: %d%%" % int(e.build_progress * 100.0))
+		if e.max_shield > 0.0:
+			lines.append("Щит: %d / %d (восстанавливается)" % [int(e.shield), int(e.max_shield)])
+		if e.kind == "cc" and e.team == 0:
+			lines.append("Эпоха: %s" % Defs.AGES[game.ages[0]].name)
 		if e.stats.has("damage"):
 			lines.append("Оборона: урон %d, дальность %d" % [e.stats.damage, e.stats.range])
 		if e.kind == "silo":
@@ -636,6 +648,17 @@ class Glyphs:
 		var red := Color(1.0, 0.35, 0.3) * tint
 		var cyan := Color(0.4, 0.85, 1.0) * tint
 		var green := Color(0.4, 1.0, 0.5) * tint
+		if name.begins_with("@age:"):  # age: a golden pillar with the roman numeral of the age
+			var roman: String = Defs.AGES[int(name.get_slice(":", 1))].short
+			var gold := Color(1.0, 0.82, 0.3) * tint
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.7, s * 0.55), Vector2(s * 1.4, s * 0.2)), gold)
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.6, -s * 0.75), Vector2(s * 1.2, s * 0.18)), gold)
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-s * 0.7, -s * 0.75), c + Vector2(0, -s * 1.0),
+				c + Vector2(s * 0.7, -s * 0.75)]), gold)
+			var font := ThemeDB.fallback_font
+			ci.draw_string(font, Vector2(r.position.x, c.y + s * 0.3), roman, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, int(s * 0.9),
+				Color(1.0, 0.95, 0.8) * tint)
+			return
 		if name.begins_with("@missile:"):  # missile types: rocket with a coloured warhead and a type mark
 			var mk := name.get_slice(":", 1)
 			var col: Color = {"tactical": Color(1.0, 0.3, 0.25), "cluster": Color(1.0, 0.8, 0.25),

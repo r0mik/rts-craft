@@ -134,6 +134,13 @@ func _find_spot(kind: String, center: Vector2):
 
 func _military(cc, army: Array, buildings: Array) -> void:
 	# Boss: one Titan once the base is established; minerals are held back for it.
+	# Ages: advance when the economy allows (the easy AI later); minerals are held back for it.
+	if cc != null and game.ages[team] + 1 < Defs.AGES.size() and not game.age_in_progress(team):
+		var n: int = game.ages[team] + 1
+		var at: float = [0.0, 0.0, 220.0, 400.0, 600.0][n] * (1.4 if easy else 1.0)
+		if elapsed > at and game.has_completed(team, Defs.AGES[n].requires):
+			if not game.try_age_up(cc):
+				reserve = maxi(reserve, int(Defs.AGES[n].cost))
 	if _wants_titan(cc):
 		if not game.try_train(cc, "titan"):
 			reserve = maxi(reserve, int(Defs.UNITS.titan.cost))

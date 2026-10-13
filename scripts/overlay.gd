@@ -37,6 +37,8 @@ func _draw() -> void:
 		var h := 5.0 if is_b else 4.0
 		if e.selected or damaged:
 			_bar(Vector2(sp.x - w / 2.0, sp.y - h), w, h, e.hp / e.max_hp, _hp_color(e.hp / e.max_hp), e.max_hp)
+			if is_b and e.max_shield > 0.0:  # energy shield from the ages, above the HP bar
+				_bar(Vector2(sp.x - w / 2.0, sp.y - h - 5.0), w, 3.0, e.shield / e.max_shield, Color(0.4, 0.8, 1.0), 0)
 		if is_b and e.constructing:
 			_bar(Vector2(sp.x - w / 2.0, sp.y + 3.0), w, 4.0, e.build_progress, Color(0.35, 0.8, 1.0), 0)
 		elif is_b and not e.queue.is_empty():

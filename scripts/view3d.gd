@@ -626,6 +626,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 	elif e.is_in_group("buildings"):
 		p3.y = _footprint_h(e.position, e.size)
 		root.position = p3
+		_sync_shield(e, root, delta)
 		var holo := root.get_node_or_null("Holo")
 		if e.constructing:
 			model.scale = Vector3(1.0, maxf(0.03, e.build_progress), 1.0)
@@ -653,6 +654,40 @@ func _sync(e, root: Node3D, delta: float) -> void:
 
 
 ## Lowest ground point under a footprint, so buildings never float on slopes.
+## Shield bubble around a building with an energy shield: shown while charged, flashes when hit.
+func _sync_shield(e, root: Node3D, delta: float) -> void:
+	var bubble: MeshInstance3D = root.get_node_or_null("ShieldBubble")
+	if e.max_shield <= 0.0 or e.constructing:
+		if bubble:
+			bubble.visible = false
+		return
+	if bubble == null:
+		bubble = MeshInstance3D.new()
+		bubble.name = "ShieldBubble"
+		var sm := SphereMesh.new()
+		sm.radius = 1.0
+		sm.height = 1.0
+		sm.is_hemisphere = true
+		sm.radial_segments = 40
+		sm.rings = 12
+		bubble.mesh = sm
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.albedo_color = Color(0.3, 0.7, 1.0, 0.12)
+		m.rim_enabled = true
+		bubble.material_override = m
+		bubble.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		bubble.scale = Vector3(e.size.x / PX * 0.75, top_of(e) * 1.15, e.size.y / PX * 0.75)
+		root.add_child(bubble)
+	var f: float = e.shield / e.max_shield
+	bubble.visible = f > 0.02
+	var flash := clampf(1.0 - e.since_hit * 3.0, 0.0, 1.0)  # brief flash right after a hit
+	(bubble.material_override as StandardMaterial3D).albedo_color.a = 0.05 + 0.1 * f + 0.35 * flash
+
+
 func _footprint_h(p: Vector2, size: Vector2) -> float:
 	var h := ground_h(p)
 	for sx in [-0.5, 0.5]:
