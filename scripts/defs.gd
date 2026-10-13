@@ -20,18 +20,18 @@ const UNITS := {
 	},
 	# --- Combined super units (made by merging regular units, see COMBOS; not trainable) ---
 	"battalion": {
-		"name": "Battalion (батальон)", "hp": 650, "speed": 95.0, "radius": 22.0,
-		"damage": 16, "range": 170.0, "cooldown": 0.4, "sight": 300.0, "splash": 25.0,
-		"cost": 0, "supply": 7, "time": 0.0, "regen": 4.0, "combined": true,
+		"name": "Battalion (батальон)", "hp": 800, "speed": 100.0, "radius": 22.0,
+		"damage": 22, "range": 170.0, "cooldown": 0.35, "sight": 300.0, "splash": 30.0,
+		"cost": 0, "supply": 7, "time": 0.0, "regen": 15.0, "combined": true,
 	},
 	"supertank": {
-		"name": "Supertank (супертанк)", "hp": 1200, "speed": 62.0, "radius": 32.0,
-		"damage": 85, "range": 300.0, "cooldown": 2.0, "sight": 340.0, "splash": 70.0,
+		"name": "Supertank (супертанк)", "hp": 1500, "speed": 70.0, "radius": 32.0,
+		"damage": 150, "range": 300.0, "cooldown": 2.0, "sight": 340.0, "splash": 80.0,
 		"cost": 0, "supply": 12, "time": 0.0, "anti_air": false, "combined": true,
 	},
 	"phantom": {
-		"name": "Phantom (фантом)", "hp": 480, "speed": 165.0, "radius": 20.0,
-		"damage": 28, "range": 210.0, "cooldown": 0.6, "sight": 340.0,
+		"name": "Phantom (фантом)", "hp": 600, "speed": 165.0, "radius": 20.0,
+		"damage": 30, "range": 210.0, "cooldown": 0.55, "sight": 340.0,
 		"cost": 0, "supply": 6, "time": 0.0, "air": true, "combined": true,
 	},
 	# Scout: unarmed, very fast hover drone with huge sight; drops sensor beacons (F).
@@ -153,13 +153,17 @@ const MISSILES := {
 }
 
 ## Unit combinations: select the parts and press the key; they gather and merge into one super unit.
+## Super units are always stronger than their parts together (more HP and more damage per second):
+##   Battalion 800 HP / 63 dps / regen 15  vs  5 marines + 2 medics 345 HP / 46 dps / heal 28
+##   Supertank 1500 HP / 75 dps            vs  4 tanks 640 HP / 55 dps
+##   Phantom    600 HP / 55 dps            vs  3 wraiths 360 HP / 27 dps
 const COMBOS := {
 	"battalion": {"name": "Батальон", "key": KEY_Z, "parts": {"marine": 5, "medic": 2},
-		"desc": "5 пехотинцев + 2 медика: 650 HP, сам лечится, бьёт и по воздуху"},
+		"desc": "5 пехотинцев + 2 медика: 800 HP, быстро лечится сам, пулемёт по площади, бьёт и по воздуху"},
 	"supertank": {"name": "Супертанк", "key": KEY_C, "parts": {"tank": 4},
-		"desc": "4 танка: 1200 HP, сдвоенная пушка 85 урона по площади, дальность 300"},
+		"desc": "4 танка: 1500 HP, сдвоенная пушка 150 урона по площади, дальность 300"},
 	"phantom": {"name": "Фантом", "key": KEY_V, "parts": {"wraith": 3},
-		"desc": "3 истребителя: 480 HP, скорострельный тяжёлый истребитель"},
+		"desc": "3 истребителя: 600 HP, вдвое больше огня, чем у трёх истребителей"},
 }
 
 ## Ages, advanced at the Command Center (E), one after another like in Age of Empires.

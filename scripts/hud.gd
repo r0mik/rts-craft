@@ -43,6 +43,8 @@ var _portrait_holder: Node3D
 var _portrait_cam: Camera3D
 var _portrait_kind := ""
 var _wire_cells: Array = []   # [{button, entity}]
+var _combo_label: RichTextLabel  # merge hints under the wireframes
+const PART_NAMES := {"marine": "пехотинцев", "medic": "медиков", "tank": "танков", "wraith": "истребителей"}
 
 
 func setup(g) -> void:
@@ -102,7 +104,8 @@ func _label(text: String, size: int, color := TEXT) -> Label:
 
 
 func _build_top() -> void:
-	var help := _label("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база", 13,
+	var help := _label("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база\n" +
+		"Объединение: 5 пехотинцев + 2 медика → батальон (Z), 4 танка → супертанк (C), 3 истребителя → фантом (V)", 13,
 		Color(0.8, 0.9, 1.0, 0.55))
 	help.position = Vector2(12, 8)
 	help.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -228,6 +231,8 @@ func _update_selection(delta: float) -> void:
 	if sel.size() == 1:
 		_refresh_single(sel[0], delta)
 	elif sel.size() > 1:
+		if _combo_label != null and is_instance_valid(_combo_label):
+			_combo_label.text = combo_hint(sel)
 		for cell in _wire_cells:
 			var b: Control = cell.button
 			b.queue_redraw()
@@ -237,6 +242,7 @@ func _clear_center() -> void:
 	for c in center.get_children():
 		c.queue_free()
 	_wire_cells.clear()
+	_combo_label = null
 	_name_label = null
 	_portrait_vp = null
 	_portrait_kind = ""
@@ -337,6 +343,29 @@ func _refresh_single(e, delta: float) -> void:
 		(c as Control).queue_redraw()
 
 
+## Merge hints for a selection: progress towards every recipe that uses a selected kind,
+## e.g. "Батальон (Z): пехотинцев 3/5, медиков 1/2" (green when ready).
+func combo_hint(sel: Array) -> String:
+	var lines := []
+	for ck in Defs.COMBOS:
+		var cd: Dictionary = Defs.COMBOS[ck]
+		var have_any := false
+		var ready := true
+		var parts := []
+		for part in cd.parts:
+			var n := sel.filter(func(u): return game.valid(u) and u.team == 0 and u.kind == part).size()
+			have_any = have_any or n > 0
+			ready = ready and n >= int(cd.parts[part])
+			parts.append("%s %d/%d" % [PART_NAMES.get(part, part), mini(n, cd.parts[part]), cd.parts[part]])
+		if not have_any:
+			continue
+		if ready:
+			lines.append("[color=#7dff8a]Можно объединить → %s: нажмите %s[/color]" % [cd.name, OS.get_keycode_string(cd.key)])
+		else:
+			lines.append("[color=#9cc8e8]%s (%s): нужно %s[/color]" % [cd.name, OS.get_keycode_string(cd.key), ", ".join(parts)])
+	return "\n".join(lines)
+
+
 func _stats_text(e) -> String:
 	var lines := []
 	var up: Dictionary = game.upgrades[maxi(e.team, 0)]
@@ -353,6 +382,13 @@ func _stats_text(e) -> String:
 			lines.append("Урон %d (+%d)   Броня +%d   Дальность %d" % [e.stats.damage, up.weapons, up.armor, e.stats.range])
 		if e.carrying > 0:
 			lines.append("Несёт минералы: %d" % e.carrying)
+		for ck in Defs.COMBOS:  # how this unit can be merged
+			var cd: Dictionary = Defs.COMBOS[ck]
+			if cd.parts.has(e.kind) and e.team == 0:
+				var recipe := []
+				for part in cd.parts:
+					recipe.append("%d %s" % [cd.parts[part], PART_NAMES.get(part, part)])
+				lines.append("Объединение: выделите %s → %s (%s)" % [" + ".join(recipe), cd.name, OS.get_keycode_string(cd.key)])
 	else:
 		if e.constructing:
 			lines.append("Строится: %d%%" % int(e.build_progress * 100.0))
@@ -373,11 +409,21 @@ func _stats_text(e) -> String:
 
 
 func _build_wireframes(sel: Array) -> void:
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	center.add_child(col)
 	var grid := GridContainer.new()
 	grid.columns = 10
 	grid.add_theme_constant_override("h_separation", 4)
 	grid.add_theme_constant_override("v_separation", 4)
-	center.add_child(grid)
+	col.add_child(grid)
+	_combo_label = RichTextLabel.new()
+	_combo_label.bbcode_enabled = true
+	_combo_label.fit_content = true
+	_combo_label.scroll_active = false
+	_combo_label.add_theme_font_size_override("normal_font_size", 14)
+	_combo_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(_combo_label)
 	for e in sel.slice(0, 30):
 		var b := WireCell.new()
 		b.hud = self
