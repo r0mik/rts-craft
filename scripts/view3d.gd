@@ -83,6 +83,22 @@ func set_fog(tex: Texture2D, size_px: Vector2) -> void:
 
 # --- World setup --------------------------------------------------------------
 
+var world_env: Environment
+var sun_light: DirectionalLight3D
+
+
+## Graphics quality from the settings: 0 low (no SSAO / glow, light shadows), 1 medium, 2 high.
+func apply_quality(q: int) -> void:
+	if world_env == null:
+		return
+	world_env.ssao_enabled = q >= 2
+	world_env.glow_enabled = q >= 1
+	sun_light.shadow_enabled = q >= 1
+	sun_light.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if q >= 2 \
+		else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	sun_light.directional_shadow_max_distance = 180.0 if q >= 2 else 120.0
+
+
 func _make_environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
 	sky_mat.sky_top_color = Color(0.22, 0.33, 0.55)
@@ -114,7 +130,9 @@ func _make_environment() -> void:
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+	world_env = env
 	var sun := DirectionalLight3D.new()
+	sun_light = sun
 	sun.rotation_degrees = Vector3(-50, -35, 0)
 	sun.light_energy = 1.2
 	sun.light_color = Color(1.0, 0.95, 0.86)

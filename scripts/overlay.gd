@@ -26,7 +26,7 @@ func _draw() -> void:
 		var is_b: bool = e.is_in_group("buildings")
 		var damaged: bool = e.hp < e.max_hp
 		var busy: bool = is_b and (e.constructing or not e.queue.is_empty())
-		if not (e.selected or damaged or busy):
+		if not (e.selected or damaged or busy or game.Settings.always_hp):
 			continue
 		var top: float = v.top_of(e)
 		var sp: Vector2 = v.to_screen(e.position, top + 0.5)
@@ -35,7 +35,7 @@ func _draw() -> void:
 		var w_world: float = (e.size.x * 0.75 if is_b else e.radius * 2.6) / v.PX
 		var w := clampf(v.px_size(e.position, w_world, top), 18.0, 220.0)
 		var h := 5.0 if is_b else 4.0
-		if e.selected or damaged:
+		if e.selected or damaged or game.Settings.always_hp:
 			_bar(Vector2(sp.x - w / 2.0, sp.y - h), w, h, e.hp / e.max_hp, _hp_color(e.hp / e.max_hp), e.max_hp)
 			if is_b and e.max_shield > 0.0:  # energy shield from the ages, above the HP bar
 				_bar(Vector2(sp.x - w / 2.0, sp.y - h - 5.0), w, 3.0, e.shield / e.max_shield, Color(0.4, 0.8, 1.0), 0)

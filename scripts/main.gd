@@ -4,6 +4,7 @@ extends Node2D
 const Defs = preload("res://scripts/defs.gd")
 const UnitScript = preload("res://scripts/unit.gd")
 const BuildingScript = preload("res://scripts/building.gd")
+const Settings = preload("res://scripts/settings.gd")
 const MineralScript = preload("res://scripts/mineral.gd")
 const AIScript = preload("res://scripts/ai.gd")
 const HUDScript = preload("res://scripts/hud.gd")
@@ -66,6 +67,7 @@ static var difficulty := "easy"
 ## Demo mode: AI vs AI battle behind the main menu (no HUD, no fog, no input, cinematic camera).
 var demo := false
 var demo_restart := 0.0
+var fog_enabled := true  # from the settings, fixed for the whole game
 ## A save read by load_slot(); main.tscn builds the world from it instead of a new map.
 static var pending_load := {}
 const SAVE_DIR := "user://saves"
@@ -76,6 +78,11 @@ var demo_cam_target := Vector2(450, 450)
 
 func _ready() -> void:
 	randomize()
+	Settings.load_settings()
+	Settings.apply_window()
+	Settings.apply_viewport(get_viewport())
+	Engine.time_scale = 1.0 if demo else Settings.game_speed
+	fog_enabled = Settings.fog
 	for h in hills:
 		obstacles.append({"pos": h.pos, "r": h.r * 0.92})
 	for l in lakes:
@@ -98,10 +105,11 @@ func _ready() -> void:
 	_add_ai(ENEMY)
 	if autotest or demo:
 		_add_ai(PLAYER)  # AI vs AI to exercise every system
+	view.apply_quality(Settings.quality)
 	if demo:
 		hud.visible = false
 		view.dist = 80.0
-	else:
+	elif fog_enabled:
 		_init_fog()
 	view.focus = start_positions[PLAYER] + Vector2(250, 120)
 	if not save.is_empty() and not demo:
@@ -1092,7 +1100,7 @@ func is_point_visible(p: Vector2) -> bool:
 ## Whether the player may see an entity: own things always, enemy units only inside vision,
 ## enemy buildings once spotted, minerals always.
 func visible_to_player(e) -> bool:
-	if e.team == PLAYER or e.team < 0 or demo:
+	if e.team == PLAYER or e.team < 0 or demo or not fog_enabled:
 		return true
 	if e.is_in_group("buildings"):
 		return e.seen_by_player
@@ -1468,7 +1476,7 @@ func _update_camera(delta: float) -> void:
 	if Input.is_physical_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): dir.x += 1
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): dir.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): dir.y += 1
-	if DisplayServer.window_is_focused() and not autotest:
+	if DisplayServer.window_is_focused() and not autotest and Settings.edge_scroll:
 		var mp := get_viewport().get_mouse_position()
 		var vs := get_viewport_rect().size
 		var edge := 12.0
@@ -1477,7 +1485,7 @@ func _update_camera(delta: float) -> void:
 			if mp.x > vs.x - edge: dir.x += 1
 			if mp.y < edge: dir.y -= 1
 			if mp.y > vs.y - edge: dir.y += 1
-	view.focus += dir.normalized() * 14.0 * view.dist * delta
+	view.focus += dir.normalized() * 14.0 * view.dist * delta * Settings.camera_speed / maxf(Engine.time_scale, 0.1)
 	view.focus = view.focus.clamp(Vector2.ZERO, MAP_SIZE)
 
 

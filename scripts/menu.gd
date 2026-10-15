@@ -16,6 +16,7 @@ var diff_index := 0
 var diff_button: Button
 var diff_label: Label
 var help_panel: Control
+var battle  # the AI-vs-AI demo game in the background
 
 
 func _ready() -> void:
@@ -26,7 +27,7 @@ func _ready() -> void:
 	for i in DIFFICULTIES.size():
 		if DIFFICULTIES[i][0] == MainScript.difficulty:
 			diff_index = i
-	var battle = MainScene.instantiate()
+	battle = MainScene.instantiate()
 	battle.demo = true
 	add_child(battle)
 	_build_ui()
@@ -78,6 +79,7 @@ func _build_ui() -> void:
 	diff_label = _label("", 15, Color(0.75, 0.85, 0.95, 0.8))
 	diff_label.custom_minimum_size = Vector2(560, 0)
 	col.add_child(diff_label)
+	col.add_child(_button("Настройки", _show_settings))
 	col.add_child(_button("Как играть", _show_help))
 	col.add_child(_button("Выход", func(): get_tree().quit()))
 	var spacer := Control.new()
@@ -138,6 +140,10 @@ func _new_game() -> void:
 	get_tree().change_scene_to_file("res://main.tscn")
 
 
+func _show_settings() -> void:
+	ui.add_child(HUD.SettingsMenu.make(HUD, battle))
+
+
 func _show_load() -> void:
 	ui.add_child(HUD.SlotMenu.make(HUD, MainScript, "load", null))
 
@@ -191,6 +197,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	if event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER:
 		_new_game()
-	elif event.keycode == KEY_ESCAPE and help_panel != null:
-		help_panel.queue_free()
-		help_panel = null
+	elif event.keycode == KEY_ESCAPE:
+		for n in ["SettingsMenu", "SlotMenu"]:
+			var w := ui.get_node_or_null(n)
+			if w != null:
+				w.queue_free()
+				return
+		if help_panel != null:
+			help_panel.queue_free()
+			help_panel = null

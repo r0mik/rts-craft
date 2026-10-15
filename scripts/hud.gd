@@ -7,6 +7,7 @@ extends CanvasLayer
 const Defs = preload("res://scripts/defs.gd")
 const MinimapScript = preload("res://scripts/minimap.gd")
 const OverlayScript = preload("res://scripts/overlay.gd")
+const Settings = preload("res://scripts/settings.gd")
 
 const FRAME := Color(0.3, 0.62, 0.85)
 const FRAME_DIM := Color(0.16, 0.32, 0.45)
@@ -24,6 +25,7 @@ var res_minerals: Label
 var res_supply: Label
 var res_time: Label
 var res_age: Label
+var fps_label: Label
 var msg_label: Label
 var msg_time := 0.0
 var big_label: Label
@@ -75,6 +77,10 @@ func setup(g) -> void:
 	big_label.add_theme_constant_override("outline_size", 10)
 	big_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(big_label)
+	fps_label = _label("", 14, Color(0.6, 1.0, 0.6))
+	fps_label.position = Vector2(12, 46)
+	fps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(fps_label)
 	_render_icons()
 
 
@@ -224,6 +230,9 @@ func _process(delta: float) -> void:
 	res_age.tooltip_text = age.name
 	msg_time -= delta
 	msg_label.modulate.a = clampf(msg_time, 0.0, 1.0)
+	fps_label.visible = Settings.show_fps
+	if Settings.show_fps:
+		fps_label.text = "FPS %d" % Engine.get_frames_per_second()
 	_update_selection(delta)
 	_update_commands()
 
@@ -613,7 +622,7 @@ class PauseMenu extends Control:
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(title)
 		for item in [["Продолжить", _resume], ["Сохранить игру", _save], ["Загрузить игру", _load],
-				["Главное меню", _to_menu], ["Выйти из игры", _quit]]:
+				["Настройки", _settings], ["Главное меню", _to_menu], ["Выйти из игры", _quit]]:
 			var b := Button.new()
 			b.text = item[0]
 			b.custom_minimum_size = Vector2(300, 52)
@@ -627,11 +636,16 @@ class PauseMenu extends Control:
 	func _unhandled_key_input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 			get_viewport().set_input_as_handled()
-			var sm := get_node_or_null("SlotMenu")
+			var sm: Node = get_node_or_null("SlotMenu")
+			if sm == null:
+				sm = get_node_or_null("SettingsMenu")
 			if sm != null:
 				sm.queue_free()
 			else:
 				_resume()
+
+	func _settings() -> void:
+		add_child(SettingsMenu.make(hud, hud.game))
 
 	func _save() -> void:
 		add_child(SlotMenu.make(hud, hud.game.get_script(), "save", hud.game))
@@ -649,6 +663,144 @@ class PauseMenu extends Control:
 
 	func _quit() -> void:
 		get_tree().quit()
+
+
+## Settings window (main menu and pause menu). Every change is applied at once and saved.
+class SettingsMenu extends Control:
+	var style_src
+	var game  # running game or the menu's demo battle (for graphics quality and game speed)
+	var _speed_label: Label
+
+	static func make(style_src_, game_) -> SettingsMenu:
+		var m := SettingsMenu.new()
+		m.name = "SettingsMenu"
+		m.style_src = style_src_
+		m.game = game_
+		return m
+
+	func _ready() -> void:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		var dim := ColorRect.new()
+		dim.color = Color(0, 0, 0, 0.5)
+		dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(dim)
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", style_src.panel_style(Color(0.03, 0.05, 0.08, 0.98), FRAME, 2, 6))
+		panel.set_anchors_preset(Control.PRESET_CENTER)
+		panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+		add_child(panel)
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 8)
+		panel.add_child(box)
+		box.add_child(_title("Настройки"))
+		box.add_child(_section("Экран и графика"))
+		box.add_child(_toggle("Полный экран", Settings.fullscreen, func(v): Settings.fullscreen = v))
+		box.add_child(_toggle("Вертикальная синхронизация", Settings.vsync, func(v): Settings.vsync = v))
+		box.add_child(_choice("Качество графики", Settings.QUALITY_NAMES, Settings.quality, func(i): Settings.quality = i))
+		box.add_child(_toggle("Показывать FPS", Settings.show_fps, func(v): Settings.show_fps = v))
+		box.add_child(_section("Камера"))
+		box.add_child(_slider("Скорость камеры", Settings.camera_speed, 0.4, 2.5, func(v): Settings.camera_speed = v))
+		box.add_child(_toggle("Прокрутка у края экрана", Settings.edge_scroll, func(v): Settings.edge_scroll = v))
+		box.add_child(_section("Игра"))
+		var speeds := Settings.SPEEDS.map(func(s): return "×%s" % str(s))
+		box.add_child(_choice("Скорость игры", speeds, maxi(0, Settings.SPEEDS.find(Settings.game_speed)),
+			func(i): Settings.game_speed = Settings.SPEEDS[i]))
+		box.add_child(_toggle("Туман войны (со следующей игры)", Settings.fog, func(v): Settings.fog = v))
+		box.add_child(_toggle("Полоски HP над всеми юнитами", Settings.always_hp, func(v): Settings.always_hp = v))
+		var back := Button.new()
+		back.text = "Готово"
+		back.custom_minimum_size = Vector2(0, 46)
+		back.focus_mode = Control.FOCUS_NONE
+		back.add_theme_font_size_override("font_size", 18)
+		back.add_theme_stylebox_override("normal", style_src.panel_style(Color(0.05, 0.09, 0.12), FRAME_DIM, 2, 4))
+		back.add_theme_stylebox_override("hover", style_src.panel_style(Color(0.08, 0.15, 0.2), ACCENT, 2, 4))
+		back.pressed.connect(queue_free)
+		box.add_child(back)
+
+	func _apply() -> void:
+		Settings.save_settings()
+		Settings.apply_window()
+		Settings.apply_viewport(get_viewport())
+		if game != null and is_instance_valid(game):
+			game.view.apply_quality(Settings.quality)
+			if not game.demo:
+				Engine.time_scale = Settings.game_speed
+
+	func _title(t: String) -> Label:
+		var l := Label.new()
+		l.text = t
+		l.add_theme_font_size_override("font_size", 28)
+		l.add_theme_color_override("font_color", ACCENT)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		return l
+
+	func _section(t: String) -> Label:
+		var l := Label.new()
+		l.text = t
+		l.add_theme_font_size_override("font_size", 15)
+		l.add_theme_color_override("font_color", GOLD)
+		return l
+
+	func _row(t: String) -> HBoxContainer:
+		var row := HBoxContainer.new()
+		row.custom_minimum_size = Vector2(560, 36)
+		var l := Label.new()
+		l.text = t
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.add_theme_font_size_override("font_size", 17)
+		l.add_theme_color_override("font_color", TEXT)
+		row.add_child(l)
+		return row
+
+	func _toggle(t: String, value: bool, setter: Callable) -> Control:
+		var row := _row(t)
+		var c := CheckButton.new()
+		c.button_pressed = value
+		c.focus_mode = Control.FOCUS_NONE
+		c.toggled.connect(func(v):
+			setter.call(v)
+			_apply())
+		row.add_child(c)
+		return row
+
+	func _choice(t: String, names: Array, index: int, setter: Callable) -> Control:
+		var row := _row(t)
+		var o := OptionButton.new()
+		for n in names:
+			o.add_item(n)
+		o.selected = index
+		o.custom_minimum_size = Vector2(170, 0)
+		o.focus_mode = Control.FOCUS_NONE
+		o.item_selected.connect(func(i):
+			setter.call(i)
+			_apply())
+		row.add_child(o)
+		return row
+
+	func _slider(t: String, value: float, lo: float, hi: float, setter: Callable) -> Control:
+		var row := _row(t)
+		var s := HSlider.new()
+		s.min_value = lo
+		s.max_value = hi
+		s.step = 0.1
+		s.value = value
+		s.custom_minimum_size = Vector2(170, 0)
+		s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		s.focus_mode = Control.FOCUS_NONE
+		var v := Label.new()
+		v.text = "×%.1f" % value
+		v.custom_minimum_size = Vector2(46, 0)
+		v.add_theme_color_override("font_color", TEXT)
+		s.value_changed.connect(func(x):
+			v.text = "×%.1f" % x
+			setter.call(x)
+			_apply())
+		row.add_child(s)
+		row.add_child(v)
+		return row
 
 
 ## Save / load slot picker, used by the pause menu and the main menu.
