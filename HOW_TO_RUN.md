@@ -34,18 +34,18 @@
 
 - **Архив из чата** `MiniCraft_RTS.zip` — распакуйте в любую папку.
 - **С GitHub:**
-  https://github.com/r0mik/bybit-openclaw-bot/archive/refs/heads/claude/trading-bot-bybit-u4vyv.zip
-  — распакуйте, игра лежит в папке `rts_prototype`.
+  https://github.com/r0mik/rts-craft/archive/refs/heads/main.zip
+  — распакуйте, игра лежит в папке `rts-craft-main`.
 - **Через git:**
   ```
-  git clone -b claude/trading-bot-bybit-u4vyv https://github.com/r0mik/bybit-openclaw-bot.git
+  git clone https://github.com/r0mik/rts-craft.git
   ```
 
 ## 3. Откройте и запустите
 
 1. Запустите Godot.
 2. В окне «Менеджер проектов» нажмите **Импорт** (Import).
-3. Укажите файл **`project.godot`** в папке игры (`MiniCraft_RTS` или `rts_prototype`) →
+3. Укажите файл **`project.godot`** в папке игры (`rts-craft`, `rts-craft-main` или `MiniCraft_RTS`) →
    **Импорт и редактирование**.
 4. Первый раз Godot ~10–30 секунд импортирует текстуры — подождите.
 5. Нажмите **F5** (или кнопку ▶ «Запустить проект» справа вверху). Игра откроется в окне.
@@ -97,7 +97,7 @@
 Снимите галочку «Экспорт в режиме отладки», чтобы получилась релизная сборка.
 Готовые файлы попадут в `build/windows/MiniCraft.exe` и `build/linux/MiniCraft.x86_64`.
 
-**Одной командой (Linux, macOS или Git Bash на Windows)** из папки `rts_prototype`:
+**Одной командой (Linux, macOS или Git Bash на Windows)** из папки игры:
 
 ```
 GODOT=/путь/к/Godot_v4.3-stable_linux.x86_64 tools/export.sh

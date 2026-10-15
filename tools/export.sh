@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds standalone Windows and Linux releases into build/ and zips them.
-# Usage: GODOT=/path/to/godot tools/export.sh   (run from rts_prototype/)
+# Usage: GODOT=/path/to/godot tools/export.sh   (run from the game folder)
 # Requires Godot 4.3+ and matching export templates (Editor > Manage Export Templates).
 set -euo pipefail
 cd "$(dirname "$0")/.."
