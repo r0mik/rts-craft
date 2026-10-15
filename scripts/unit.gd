@@ -235,11 +235,19 @@ func _heal(delta: float) -> void:
 		heal_target = null
 
 
+## The most damaged friendly target this healer can treat ("heals" lists target classes:
+## the medic heals infantry, the mechanic repairs vehicles, aircraft and buildings).
 func _wounded_ally(radius_px: float):
 	var best = null
 	var best_f := 1.0
-	for u in game.get_tree().get_nodes_in_group("units"):
+	var kinds: Array = stats.get("heals", ["infantry", "vehicle", "air"])
+	var pool: Array = game.get_tree().get_nodes_in_group("units")
+	if "building" in kinds:
+		pool = pool + game.get_tree().get_nodes_in_group("buildings")
+	for u in pool:
 		if u == self or u.team != team or not u.is_alive() or u.hp >= u.max_hp:
+			continue
+		if not game.armor_class(u) in kinds or (u.is_in_group("buildings") and not u.is_complete()):
 			continue
 		if game.edge_dist(self, u) <= radius_px and u.hp / u.max_hp < best_f:
 			best_f = u.hp / u.max_hp

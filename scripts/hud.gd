@@ -381,8 +381,10 @@ func _stats_text(e) -> String:
 	var lines := []
 	var up: Dictionary = game.upgrades[maxi(e.team, 0)]
 	if e.is_in_group("units"):
-		if e.stats.get("healer", false):
-			lines.append("Лечение %d HP/с   радиус %d" % [e.stats.heal_rate, e.stats.range])
+		if e.kind == "mechanic":
+			lines.append("Ремонт %d HP/с, радиус %d: техника, авиация, здания" % [e.stats.heal_rate, e.stats.range])
+		elif e.stats.get("healer", false):
+			lines.append("Лечение %d HP/с, радиус %d: пехота" % [e.stats.heal_rate, e.stats.range])
 		elif e.stats.get("unarmed", false):
 			lines.append("Без оружия   обзор %d" % e.stats.sight)
 			if e.kind == "scout":

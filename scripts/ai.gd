@@ -172,7 +172,11 @@ func _military(cc, army: Array, buildings: Array) -> void:
 			game.try_train(b, "medic" if medic else "marine")
 		elif b.kind == "factory" and b.queue.size() < 1:
 			# answer enemy flyers with AA Rovers, otherwise build tanks
-			game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")
+			var vehicles: int = game.count_units(team, "tank") + game.count_units(team, "aa") + game.count_units(team, "supertank") * 4
+			if game.count_units(team, "mechanic") * 4 < vehicles - 1:  # one mechanic per four vehicles
+				game.try_train(b, "mechanic")
+			else:
+				game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")
 		elif b.kind == "starport" and b.queue.size() < 1:
 			var spare: int = game.bank[team] - reserve
 			var kind := "wraith"

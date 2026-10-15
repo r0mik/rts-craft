@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3, "medic": 1.45, "scout": 1.4, "beacon": 1.4, "battalion": 2.4, "supertank": 1.55, "phantom": 1.35}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3, "medic": 1.45, "scout": 1.4, "beacon": 1.4, "battalion": 2.4, "supertank": 1.55, "phantom": 1.35, "mechanic": 1.2}
 
 var game
 var camera: Camera3D
@@ -595,6 +595,14 @@ func _sync(e, root: Node3D, delta: float) -> void:
 				var body: Node3D = model.get_node("Body")
 				body.position.y = 1.1 + sin(time * 3.0 + seed) * 0.12
 				body.rotation.z = lerpf(body.rotation.z, -0.3 if moved else 0.0, minf(1.0, delta * 6.0))
+			"mechanic":  # crane arm turns to the patient, welding sparks fly
+				var arm: Node3D = model.get_node("Arm")
+				var aim := 0.0
+				if game.valid(e.heal_target):
+					aim = -(e.heal_target.position - e.position).angle() - model.rotation.y
+					if randf() < delta * 10.0:
+						_heal_fx(e, e.heal_target, true)
+				arm.rotation.y = lerp_angle(arm.rotation.y, aim, minf(1.0, delta * 5.0))
 			"drone":  # cruises high, then dives onto its target building
 				var body: Node3D = model.get_node("Body")
 				var want := Models.FLY_HEIGHT - 1.0 + sin(time * 3.0 + seed) * 0.2
@@ -1037,14 +1045,18 @@ var _heal_ramp: Gradient
 
 
 ## Medic heal beam: a short green pulse from the emitter and sparkles on the patient.
-func _heal_fx(medic, patient) -> void:
+func _heal_fx(medic, patient, repair := false) -> void:
 	if _heal_ramp == null:
 		_heal_ramp = _ramp([Color(0.5, 1.0, 0.6, 0.9), Color(0.2, 1.0, 0.4, 0)])
 	if not game.visible_to_player(medic):
 		return
 	var dir: Vector2 = Vector2.from_angle(medic.facing)
-	var from := _world(medic.position + dir * 12.0, 1.75)
+	var from := _world(medic.position + dir * 12.0, 2.2 if repair else 1.75)
 	var to := _world(patient.position, mid_of(patient))
+	if repair:  # mechanic: orange welding beam and sparks
+		_tracer(from, to, Color(1.0, 0.7, 0.25), 0.05)
+		_burst(to, 5, _spark_ramp, _additive, 4.0, 0.25, 0.35, Vector3(0, -6, 0))
+		return
 	_tracer(from, to, Color(0.35, 1.0, 0.5), 0.05)
 	_burst(to, 3, _heal_ramp, _additive, 1.5, 0.35, 0.5, Vector3(0, 2.0, 0))
 

@@ -239,6 +239,7 @@ func build(kind: String) -> Node3D:
 		"devastator": return devastator()
 		"drone": return kamikaze_drone()
 		"medic": return medic()
+		"mechanic": return mechanic()
 		"scout": return seeker()
 		"battalion": return battalion()
 		"supertank": return supertank()
@@ -714,6 +715,34 @@ func phantom() -> Node3D:
 		cyl(body, 0.16, 0.2, 0.8, Vector3(-1.0, 0.3, sz * 0.9), "gunmetal", Vector3(0, 0, -90), 16)
 		cyl(body, 0.14, 0.14, 0.05, Vector3(-1.42, 0.3, sz * 0.9), "glow", Vector3(0, 0, -90), 16)
 		box(body, Vector3(0.6, 0.06, 0.6), Vector3(-0.6, 0.12, sz * 1.5), "yellow", Vector3(0, -sz * 30.0, 0))
+	return r
+
+
+## Mechanic: small tracked repair vehicle in hazard yellow with a toolbox body, a crane "Arm"
+## (turned towards the patient by view3d.gd) ending in a glowing welding torch, and a beacon light.
+func mechanic() -> Node3D:
+	var r := _root("Mechanic")
+	for sz in [-1, 1]:
+		box(r, Vector3(1.6, 0.4, 0.34), Vector3(0, 0.25, sz * 0.62), "rubber")
+		for ex in [-0.8, 0.8]:
+			cyl(r, 0.2, 0.2, 0.34, Vector3(ex, 0.25, sz * 0.62), "rubber", Vector3(90, 0, 0), 16)
+		box(r, Vector3(1.7, 0.06, 0.38), Vector3(0, 0.48, sz * 0.62), "team")
+	octa(r, 1.8, 1.1, 0.5, Vector3(0, 0.35, 0), "yellow", 0.85)
+	box(r, Vector3(1.0, 0.04, 1.0), Vector3(-0.2, 0.86, 0), "hazard")
+	box(r, Vector3(0.7, 0.5, 0.9), Vector3(-0.45, 1.1, 0), "gunmetal")  # toolbox / generator
+	for k in 3:  # cooling slats on the generator
+		box(r, Vector3(0.05, 0.06, 0.75), Vector3(-0.82, 0.95 + k * 0.15, 0), "dark")
+	sphere(r, 0.32, Vector3(0.45, 1.0, 0), "glass", Vector3(1.1, 0.8, 1.0))  # cab
+	anim(sphere(r, 0.09, Vector3(-0.45, 1.45, 0.3), "amber_glow"), "pulse", 5.0)  # beacon
+	var arm := Node3D.new()
+	arm.name = "Arm"
+	arm.position = Vector3(0.05, 1.0, -0.3)
+	r.add_child(arm)
+	cyl(arm, 0.14, 0.16, 0.2, Vector3.ZERO, "gunmetal", Vector3.ZERO, 12)
+	box(arm, Vector3(1.0, 0.12, 0.12), Vector3(0.45, 0.35, 0), "yellow", Vector3(0, 0, 35))
+	box(arm, Vector3(0.7, 0.1, 0.1), Vector3(1.05, 0.55, 0), "yellow", Vector3(0, 0, -20))
+	cyl(arm, 0.05, 0.08, 0.25, Vector3(1.4, 0.45, 0), "dark", Vector3(0, 0, -90), 8)
+	anim(sphere(arm, 0.07, Vector3(1.55, 0.45, 0), "amber_glow"), "pulse", 8.0)
 	return r
 
 

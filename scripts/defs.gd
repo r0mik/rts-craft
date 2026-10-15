@@ -17,6 +17,14 @@ const UNITS := {
 		"name": "Medic (медик)", "hp": 60, "armor": 0, "speed": 110.0, "radius": 10.0,
 		"damage": 0, "range": 130.0, "cooldown": 1.0, "sight": 260.0,
 		"cost": 75, "supply": 1, "time": 18.0, "hotkey": KEY_E, "healer": true, "heal_rate": 14.0,
+		"heals": ["infantry"],
+	},
+	# Mechanic: repair vehicle, no weapon; repairs vehicles, aircraft and buildings in "range".
+	"mechanic": {
+		"name": "Mechanic (механик)", "hp": 120, "armor": 2, "speed": 95.0, "radius": 13.0,
+		"damage": 0, "range": 140.0, "cooldown": 1.0, "sight": 280.0,
+		"cost": 100, "supply": 2, "time": 20.0, "hotkey": KEY_R, "healer": true, "heal_rate": 18.0,
+		"heals": ["vehicle", "air", "building"],
 	},
 	# --- Combined super units (made by merging regular units, see COMBOS; not trainable) ---
 	"battalion": {
@@ -109,7 +117,7 @@ const BUILDINGS := {
 	},
 	"factory": {
 		"name": "Factory", "short": "FACTORY", "hp": 1250, "armor": 2, "size": Vector2(120, 90),
-		"cost": 200, "time": 50.0, "trains": ["tank", "aa"], "hotkey": KEY_F, "requires": "barracks",
+		"cost": 200, "time": 50.0, "trains": ["tank", "aa", "mechanic"], "hotkey": KEY_F, "requires": "barracks",
 	},
 	"bunker": {
 		"name": "Bunker", "short": "BUNKER", "hp": 550, "armor": 4, "size": Vector2(80, 64),
@@ -161,7 +169,7 @@ const MISSILES := {
 const ARMOR_CLASS := {
 	"worker": "infantry", "marine": "infantry", "medic": "infantry", "scout": "infantry", "beacon": "infantry",
 	"battalion": "infantry",
-	"tank": "vehicle", "aa": "vehicle", "supertank": "vehicle", "titan": "vehicle",
+	"tank": "vehicle", "aa": "vehicle", "mechanic": "vehicle", "supertank": "vehicle", "titan": "vehicle",
 	"wraith": "air", "stormbird": "air", "devastator": "air", "drone": "air", "phantom": "air",
 }  # buildings are "building"
 const CLASS_NAMES := {"infantry": "пехота", "vehicle": "техника", "air": "авиация", "building": "здания"}
