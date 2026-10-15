@@ -1,6 +1,7 @@
 extends Node2D
 ## A static structure: produces units, provides supply, accepts minerals (CC).
 
+const I18N = preload("res://scripts/i18n.gd")
 const Defs = preload("res://scripts/defs.gd")
 
 var game
@@ -148,7 +149,7 @@ func _process(delta: float) -> void:
 			elif is_missile:
 				missile_type = item.get_slice(":", 1)
 				if team == game.PLAYER:
-					game.show_message("%s готова к пуску (L)" % Defs.MISSILES[missile_type].name)
+					game.show_message(I18N.t("%s готова к пуску (L)") % I18N.t(Defs.MISSILES[missile_type].name))
 			elif is_upgrade:
 				game.complete_upgrade(team, item)
 			else:
@@ -180,8 +181,8 @@ func _spawn(uk: String) -> void:
 	var p := position + Vector2(randf_range(-25.0, 25.0), size.y / 2.0 + r + 6.0)
 	var u = game.spawn_unit(team, uk, p)
 	if u.stats.has("random") and team == game.PLAYER:
-		game.show_message("%s готов: HP %d, урон %d, дальность %d, скорость %d" % [
-			u.stats.name, u.stats.hp, u.stats.damage, u.stats.range, u.stats.speed])
+		game.show_message(I18N.t("%s готов: HP %d, урон %d, дальность %d, скорость %d") % [
+			I18N.t(u.stats.name), u.stats.hp, u.stats.damage, u.stats.range, u.stats.speed])
 	if has_rally:
 		var m = game.entity_at(rally)
 		if uk == "worker" and m != null and m.is_in_group("minerals"):

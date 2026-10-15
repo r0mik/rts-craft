@@ -16,6 +16,7 @@ static var edge_scroll := true
 static var game_speed := 1.0
 static var fog := true           # fog of war (takes effect in the next game)
 static var always_hp := false    # health bars over every unit, not only damaged / selected
+static var lang := "ru" if OS.get_locale_language() == "ru" else "en"  # "ru" or "en"
 
 
 static func load_settings() -> void:
@@ -34,6 +35,7 @@ static func load_settings() -> void:
 	game_speed = cf.get_value("game", "speed", game_speed)
 	fog = cf.get_value("game", "fog", fog)
 	always_hp = cf.get_value("game", "always_hp", always_hp)
+	lang = cf.get_value("game", "language", lang)
 
 
 static func save_settings() -> void:
@@ -47,6 +49,7 @@ static func save_settings() -> void:
 	cf.set_value("game", "speed", game_speed)
 	cf.set_value("game", "fog", fog)
 	cf.set_value("game", "always_hp", always_hp)
+	cf.set_value("game", "language", lang)
 	cf.save(PATH)
 
 

@@ -1,225 +1,230 @@
 # MINI CRAFT
 
-**Стратегия в реальном времени в духе StarCraft — с эпохами из Age of Empires, супер-юнитами и ракетными шахтами.**
-Стройте базу, собирайте армию из пехоты, танков и авиации, сливайте отряды в супер-юнитов, ведите базу через четыре эпохи
-и сносите врага тактическими, кассетными и напалмовыми ракетами. Всё в настоящем 3D, бесплатно и с открытым кодом.
+**English** · [Русский](README.ru.md)
 
-![Бой: пехота с медиком и танки против красного батальона](docs/screenshots/battle.jpg)
+**A real-time strategy game in the spirit of StarCraft — with Age of Empires–style ages, merging super units and missile silos.**
+Build a base, raise an army of infantry, tanks and aircraft, fuse squads into super units, lead your base through four ages
+and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, free and open source.
+
+![Battle: marines with a medic and tanks against a red battalion](docs/screenshots/en/battle.jpg)
 
 <p align="center">
-  <b>Godot 4</b> · Windows · Linux · macOS · на русском языке · сохранения · бесплатно и с открытым кодом
+  <b>Godot 4</b> · Windows · Linux · macOS · English and Russian · save games · free and open source
 </p>
 
 ---
 
-## Почему стоит сыграть
+## Why play
 
-- ⚔️ **Классика RTS, которую узнаёшь с первой минуты.** Рабочие добывают минералы, вы строите казармы, завод и космопорт,
-  рамкой выделяете армию и правой кнопкой отправляете в бой. Интерфейс — как в StarCraft: миникарта, живой 3D-портрет,
-  командная карта с горячими клавишами.
-- 🧬 **Супер-юниты.** Пять пехотинцев и два медика сливаются в **батальон** с пулемётом, четыре танка — в **супертанк**
-  со сдвоенной пушкой, три истребителя — в **фантом**. Каждый сильнее своих частей, но у каждого есть слабое место.
-- 🏛️ **Эпохи, как в Age of Empires.** Ведите базу от Колонии к Звёздной эпохе: здания становятся вдвое прочнее,
-  получают восстанавливающиеся энергощиты, а армия — бонус к силе.
-- 🚀 **Ракетные шахты.** Четыре вида ракет: тактическая, кассетная, напалм и тяжёлая. Ракета летит по дуге, место удара
-  подсвечено заранее, взрыв задевает всех — и врагов, и своих.
-- 🤖 **Необычные юниты.** Титан-босс со случайным именем и характеристиками, бомбардировщик, бьющий только по зданиям,
-  дроны-камикадзе, разведчик с сенсорными маяками, медики и механики, которые лечат и чинят армию прямо в бою.
-- 🛡️ **Честная механика боя.** Броня и типы целей: пехота почти не царапает танки, танки громят технику и здания,
-  авиацию сбивают только ПВО, турели и истребители. Толпой одних пехотинцев базу не взять.
-- 🌫️ **Туман войны и разведка.** Видно только то, что видят ваши войска. Разведчик и его маяки открывают карту.
-- 🎨 **Живой 3D-мир.** Тени, свечение, взрывы, дым, ракеты с дымным следом, пальмы на ветру, озёра с анимированной водой,
-  здания строятся «голограммой» с искрами сварки, пехота шагает, а у танков башни следят за целью.
-- 💾 **Удобно.** Главное меню с боем на фоне, две сложности, пауза, три слота сохранений плюс быстрое сохранение (`F5` / `F9`)
-  и настройки графики, камеры и скорости игры.
+- ⚔️ **Classic RTS you know from the first minute.** Workers mine minerals, you build barracks, a factory and a starport,
+  drag-select your army and right-click it into battle. A StarCraft-style interface: minimap, live 3D portrait,
+  command card with hotkeys.
+- 🧬 **Super units.** Five marines and two medics fuse into a **Battalion** with a rotary cannon, four tanks into a
+  **Supertank** with a twin gun, three fighters into a **Phantom**. Each one beats its parts — and each has a weak spot.
+- 🏛️ **Ages, like in Age of Empires.** Lead your base from the Colony Age to the Stellar Age: buildings get twice as tough,
+  gain regenerating energy shields, and your army gets a power boost.
+- 🚀 **Missile silos.** Four kinds of missiles: tactical, cluster, napalm and heavy. The missile flies on an arc, the impact
+  zone is marked in advance, and the blast hits everyone — enemies and your own units alike.
+- 🤖 **Unusual units.** A Titan boss with a random name and stats, a bomber that only hits buildings, kamikaze drones,
+  a scout with sensor beacons, medics and mechanics that heal and repair your army mid-battle.
+- 🛡️ **Fair combat mechanics.** Armor and target classes: infantry barely scratches tanks, tanks crush vehicles and buildings,
+  and only AA, turrets and fighters can shoot down aircraft. A blob of marines alone won't take a base.
+- 🌫️ **Fog of war and scouting.** You only see what your troops see. The scout and its beacons reveal the map.
+- 🎨 **A living 3D world.** Shadows, glow, explosions, smoke, missiles with smoke trails, palms swaying in the wind, animated
+  lakes, buildings that rise as holograms with welding sparks, marching infantry and tank turrets tracking their targets.
+- 💾 **Comfortable.** A main menu with a live battle in the background, two difficulty levels, English and Russian, pause,
+  three save slots plus quick save (`F5` / `F9`), and settings for graphics, camera and game speed.
 
-## Скриншоты
+## Screenshots
 
 | | |
 |---|---|
-| ![Главное меню](docs/screenshots/menu.jpg) | ![Эпохи и энергощиты зданий](docs/screenshots/ages.jpg) |
-| **Главное меню** — на фоне идёт живой бой двух ИИ | **Энергетическая эпоха** — здания под щитами |
-| ![Прицеливание ракетой](docs/screenshots/missile_aim.jpg) | ![Подсказки объединения](docs/screenshots/merge_hints.jpg) |
-| **Пуск ракеты** — круг дальности шахты и радиус взрыва | **Объединение** — игра подсказывает, кого не хватает |
-| ![Супер-юниты](docs/screenshots/combos.jpg) | ![Титан](docs/screenshots/titan.jpg) |
-| **Супер-юниты** рядом с обычными: батальон, супертанк, фантом | **Титан** — босс со случайными параметрами |
+| ![Main menu](docs/screenshots/en/menu.jpg) | ![Ages and building shields](docs/screenshots/en/age.jpg) |
+| **Main menu** — a live AI battle plays in the background | **Energy Age** — buildings under shields |
+| ![Aiming a missile](docs/screenshots/en/aim.jpg) | ![Merge hints](docs/screenshots/en/hint_group.jpg) |
+| **Missile launch** — silo range circle and blast radius | **Merging** — the game tells you what's missing |
+| ![Super units](docs/screenshots/combos.jpg) | ![Titan](docs/screenshots/titan.jpg) |
+| **Super units** next to regular ones: Battalion, Supertank, Phantom | **Titan** — a boss with random stats |
 
-## Как начать играть
+## How to start
 
-**Через Godot (проще всего):**
+**With Godot (easiest):**
 
-1. Установите [Godot 4.3+](https://godotengine.org/download) (обычная версия, не .NET).
-2. Скачайте игру: `git clone https://github.com/r0mik/rts-craft.git`
-   (или [архивом](https://github.com/r0mik/rts-craft/archive/refs/heads/main.zip)).
-3. В Godot нажмите *Import*, выберите `project.godot` и нажмите **F5**.
+1. Install [Godot 4.3+](https://godotengine.org/download) (the standard version, not .NET).
+2. Get the game: `git clone https://github.com/r0mik/rts-craft.git`
+   (or as an [archive](https://github.com/r0mik/rts-craft/archive/refs/heads/main.zip)).
+3. In Godot, click *Import*, pick `project.godot` and press **F5**.
 
-**Отдельная сборка без Godot** (`.exe` для Windows или файл для Linux) собирается одной командой —
-пошагово в [HOW_TO_RUN.md](HOW_TO_RUN.md).
+**A standalone build without Godot** (a Windows `.exe` or a Linux binary) takes a single command —
+see [HOW_TO_RUN.md](HOW_TO_RUN.md) (in Russian).
 
-## Первые пять минут
+The game starts in English or Russian depending on your system language; switch it in the main menu
+(**Language / Язык**) or in the settings.
 
-1. В главном меню выберите сложность: **Лёгкий** — противник только обороняется, можно спокойно освоиться;
-   **Нормальный** — полноценный ИИ, который развивается и атакует волнами.
-2. Рабочие сами добывают минералы. Выделите рабочего и постройте **Supply Depot** (`V`) и **Barracks** (`B`).
-3. Выберите казарму и нанимайте пехоту (`Q`) и медиков (`E`). Наберите 5 + 2 — и нажмите `Z`: получится батальон.
-4. Постройте **Factory** (`F`) для танков, ПВО и механиков, затем **Starport** (`P`) для авиации.
-5. В командном центре нажмите `E`, чтобы перейти в новую эпоху и укрепить базу.
-6. Разведайте карту разведчиком (`R` в командном центре) и уничтожьте все здания красных.
+## Your first five minutes
 
-Застряли? В главном меню есть раздел «Как играть», а у каждой кнопки внизу экрана — подсказка при наведении.
+1. In the main menu, pick a difficulty: **Easy** — the enemy only defends, so you can learn in peace;
+   **Normal** — a full AI that grows its army and attacks in waves.
+2. Workers mine minerals on their own. Select a worker and build a **Supply Depot** (`V`) and **Barracks** (`B`).
+3. Select the barracks and train marines (`Q`) and medics (`E`). Once you have 5 + 2, press `Z` to get a Battalion.
+4. Build a **Factory** (`F`) for tanks, AA and mechanics, then a **Starport** (`P`) for aircraft.
+5. Press `E` at the Command Center to advance to a new age and harden your base.
+6. Scout the map with a Seeker (`R` at the Command Center) and destroy every red building.
 
-## Управление
+Stuck? The main menu has a "How to play" page, and every button at the bottom of the screen shows a tooltip.
 
-| Действие | Как |
+## Controls
+
+| Action | How |
 |---|---|
-| Выбрать | ЛКМ или рамка мышью, `Shift` — добавить к выбору |
-| Приказ: идти, атаковать, добывать | ПКМ |
-| Атака с продвижением / стоп / держать позицию | `G` + клик / `X` / `H` |
-| Группы | `Ctrl+1..9` — назначить, `1..9` — выбрать, двойное нажатие — к группе |
-| Камера | `WASD` или стрелки, край экрана, колесо — приближение, `Space` — к базе, клик по миникарте |
-| Объединить юнитов | `Z` батальон, `C` супертанк, `V` фантом |
-| Новая эпоха | Command Center → `E` |
-| Ракеты | шахта → `M` / `J` / `N` / `K` собрать, `L` + клик — пуск |
-| Быстрое сохранение / загрузка | `F5` / `F9` |
-| Пауза, сохранение, настройки, выход в меню | `Esc` |
+| Select | LMB or drag a box, `Shift` — add to selection |
+| Order: move, attack, mine | RMB |
+| Attack-move / stop / hold position | `G` + click / `X` / `H` |
+| Groups | `Ctrl+1..9` — assign, `1..9` — select, double press — jump to group |
+| Camera | `WASD` or arrows, screen edge, mouse wheel — zoom, `Space` — to base, click the minimap |
+| Merge units | `Z` battalion, `C` supertank, `V` phantom |
+| Next age | Command Center → `E` |
+| Missiles | silo → `M` / `J` / `N` / `K` to build, `L` + click to launch |
+| Quick save / load | `F5` / `F9` |
+| Pause, save, settings, back to menu | `Esc` |
 
-Все команды также есть на кнопках командной карты внизу справа.
+Every command is also on the command card buttons at the bottom right.
 
 ---
 
-## Всё об игре
+## Everything about the game
 
 <details>
-<summary><b>Здания</b></summary>
+<summary><b>Buildings</b></summary>
 
-Строит рабочий: выделите его и нажмите клавишу.
+Built by a worker: select it and press the key.
 
-| Клавиша | Здание | Цена | Требует | HP / броня | Что даёт |
+| Key | Building | Cost | Requires | HP / armor | Provides |
 |---|---|---|---|---|---|
-| `C` | Command Center | 400 | — | 1500 / 3 | рабочие, разведчик, Титан, эпохи, приём минералов, +10 supply |
-| `V` | Supply Depot | 100 | — | 400 / 1 | +8 supply (максимум 200) |
-| `B` | Barracks | 150 | — | 1000 / 2 | пехотинцы, медики |
-| `U` | Bunker | 100 | Barracks | 550 / 4 | огневая точка (7 урона, дальность 150); `R` — ремонт за минералы |
-| `E` | Engineering Bay | 125 | — | 850 / 1 | улучшения оружия (`G`) и брони (`R`), до 3 уровней |
-| `T` | Missile Turret | 100 | Engineering Bay | 300 / 2 | ПВО-оборона: ×2 урона по воздуху, дальность 230 |
-| `F` | Factory | 200 | Barracks | 1250 / 2 | танки, ПВО, механики |
-| `P` | Starport | 200 | Factory | 1300 / 2 | истребители, ракетоносцы, бомбардировщики, дроны |
-| `M` | Missile Silo | 200 | Engineering Bay | 600 / 3 | ракеты четырёх видов |
+| `C` | Command Center | 400 | — | 1500 / 3 | workers, Seeker, Titan, ages, mineral drop-off, +10 supply |
+| `V` | Supply Depot | 100 | — | 400 / 1 | +8 supply (max 200) |
+| `B` | Barracks | 150 | — | 1000 / 2 | marines, medics |
+| `U` | Bunker | 100 | Barracks | 550 / 4 | gun emplacement (7 damage, range 150); `R` — repair for minerals |
+| `E` | Engineering Bay | 125 | — | 850 / 1 | weapons (`G`) and armor (`R`) upgrades, up to 3 levels |
+| `T` | Missile Turret | 100 | Engineering Bay | 300 / 2 | air defense: ×2 damage against air, range 230 |
+| `F` | Factory | 200 | Barracks | 1250 / 2 | tanks, AA, mechanics |
+| `P` | Starport | 200 | Factory | 1300 / 2 | fighters, missile bombers, bombers, drones |
+| `M` | Missile Silo | 200 | Engineering Bay | 600 / 3 | four kinds of missiles |
 </details>
 
 <details>
-<summary><b>Юниты</b></summary>
+<summary><b>Units</b></summary>
 
-| Юнит | Где / клавиша | Цена | HP / броня | Тип | Урон / дальность | Особенности |
+| Unit | Where / key | Cost | HP / armor | Class | Damage / range | Notes |
 |---|---|---|---|---|---|---|
-| SCV (рабочий) | CC `Q` | 50 | 45 / 0 | пехота | 5 / вплотную | добывает минералы, строит |
-| Seeker (разведчик) | CC `R` | 60 | 55 / 0 | пехота | — | без оружия, очень быстрый, обзор 460; `F` — маяк, который 90 с видит всё вокруг |
-| Marine (пехотинец) | Barracks `Q` | 50 | 45 / 0 | пехота | 6 / 130 | основа армии, не бьёт по воздуху |
-| Medic (медик) | Barracks `E` | 75 | 60 / 0 | пехота | — | лечит пехоту на 14 HP/с, сам подходит к раненым |
-| Siege Tank (танк) | Factory `T` | 150 | 160 / 4 | техника | 30 / 240, по площади | громит технику и здания, слаб против пехоты |
-| AA Rover (ПВО) | Factory `Y` | 125 | 140 / 3 | техника | 20 / 280 | бьёт только по воздуху |
-| Mechanic (механик) | Factory `R` | 100 | 120 / 2 | техника | — | чинит технику, авиацию и здания на 18 HP/с |
-| Wraith (истребитель) | Starport `V` | 150 | 120 / 1 | авиация | 10 / 150 | летает высоко, пехота и танки его не достают |
-| Stormbird (ракетоносец) | Starport `B` | 300 | 280 / 2 | авиация | 32 / 240, по площади | залпы ракет по земле и воздуху |
-| Devastator (бомбардировщик) | Starport `N` | 400 | 280 / 3 | авиация | 120 / 200 | атакует только здания |
-| Kamikaze Drone (дрон) | Starport `K` | 100 | 40 / 0 | авиация | 250 | пикирует в здание и взрывается |
-| Titan (босс) | CC `Y` | 500 | ~1400 / 6 | техника | ~40 / 220, по площади | один на сторону; имя и все параметры случайные |
+| SCV (worker) | CC `Q` | 50 | 45 / 0 | infantry | 5 / melee | mines minerals, builds |
+| Seeker (scout) | CC `R` | 60 | 55 / 0 | infantry | — | unarmed, very fast, sight 460; `F` — a beacon that sees everything around for 90 s |
+| Marine | Barracks `Q` | 50 | 45 / 0 | infantry | 6 / 130 | the backbone of the army, can't hit air |
+| Medic | Barracks `E` | 75 | 60 / 0 | infantry | — | heals infantry for 14 HP/s, walks up to the wounded |
+| Siege Tank | Factory `T` | 150 | 160 / 4 | vehicle | 30 / 240, splash | crushes vehicles and buildings, weak against infantry |
+| AA Rover | Factory `Y` | 125 | 140 / 3 | vehicle | 20 / 280 | hits air only |
+| Mechanic | Factory `R` | 100 | 120 / 2 | vehicle | — | repairs vehicles, aircraft and buildings for 18 HP/s |
+| Wraith (fighter) | Starport `V` | 150 | 120 / 1 | air | 10 / 150 | flies high; infantry and tanks can't reach it |
+| Stormbird (missile bomber) | Starport `B` | 300 | 280 / 2 | air | 32 / 240, splash | missile salvos against ground and air |
+| Devastator (bomber) | Starport `N` | 400 | 280 / 3 | air | 120 / 200 | attacks buildings only |
+| Kamikaze Drone | Starport `K` | 100 | 40 / 0 | air | 250 | dives into a building and explodes |
+| Titan (boss) | CC `Y` | 500 | ~1400 / 6 | vehicle | ~40 / 220, splash | one per side; random name and stats |
 </details>
 
 <details>
-<summary><b>Супер-юниты</b></summary>
+<summary><b>Super units</b></summary>
 
-Выделите нужных юнитов и нажмите «Объединить» — они сходятся и со вспышкой сливаются в одного. Supply сохраняется.
+Select the right units and press "Merge" — they gather and fuse into one with a flash. Supply is kept.
 
-| Клавиша | Супер-юнит | Из чего | HP / броня | Сила | Слабость |
+| Key | Super unit | Made from | HP / armor | Strength | Weakness |
 |---|---|---|---|---|---|
-| `Z` | Батальон | 5 пехотинцев + 2 медика | 800 / 3 | пулемёт по площади, сам восстанавливает 15 HP/с | медленный, не бьёт по воздуху |
-| `C` | Супертанк | 4 танка | 1500 / 7 | 150 урона по площади, дальность 300 | очень медленный, не стреляет ближе 90 |
-| `V` | Фантом | 3 истребителя | 600 / 2 | вдвое больше огня, чем у трёх истребителей | медленнее истребителя |
+| `Z` | Battalion | 5 marines + 2 medics | 800 / 3 | splash rotary cannon, self-repairs 15 HP/s | slow, can't hit air |
+| `C` | Supertank | 4 tanks | 1500 / 7 | 150 splash damage, range 300 | very slow, can't fire closer than 90 |
+| `V` | Phantom | 3 fighters | 600 / 2 | twice the firepower of three fighters | slower than a fighter |
 </details>
 
 <details>
-<summary><b>Механика боя</b></summary>
+<summary><b>Combat</b></summary>
 
-- **Броня** вычитается из каждого попадания (минимум 1 урона): пехотинец снимает с танка 2 за выстрел, с супертанка — 1.
-- **Типы целей** — пехота, техника, авиация, здания. Оружие по-разному эффективно против них:
+- **Armor** is subtracted from every hit (at least 1 damage): a marine does 2 per shot to a tank and 1 to a supertank.
+- **Target classes** — infantry, vehicles, air, buildings. Weapons are more or less effective against each:
 
-  | Кто бьёт | пехота | техника | авиация | здания |
+  | Attacker | infantry | vehicles | air | buildings |
   |---|---|---|---|---|
-  | танк, супертанк | ×0.5 | ×1.5 | — | ×2 |
-  | Титан | ×0.8 | ×1.3 | ×1 | ×1.5 |
-  | пехотинец | ×1 | ×1 | — | ×0.8 |
-  | батальон | ×1 | ×1.2 | — | ×0.7 |
-  | истребитель, фантом | ×1 | ×0.8 | ×1.4 | ×0.5 |
-  | ракетоносец | ×1.2 | ×1 | ×1 | ×0.7 |
-  | бункер | ×1.3 | ×0.6 | — | — |
-  | ракетная турель | ×0.5 | ×0.5 | ×1 (и бонус ×2 по воздуху) | — |
+  | tank, supertank | ×0.5 | ×1.5 | — | ×2 |
+  | Titan | ×0.8 | ×1.3 | ×1 | ×1.5 |
+  | marine | ×1 | ×1 | — | ×0.8 |
+  | battalion | ×1 | ×1.2 | — | ×0.7 |
+  | fighter, phantom | ×1 | ×0.8 | ×1.4 | ×0.5 |
+  | missile bomber | ×1.2 | ×1 | ×1 | ×0.7 |
+  | bunker | ×1.3 | ×0.6 | — | — |
+  | missile turret | ×0.5 | ×0.5 | ×1 (plus ×2 bonus against air) | — |
 
-- **Улучшения** в Engineering Bay, 3 уровня (100 / 175 / 250): +10% к урону или броне за уровень, но не меньше +1.
+- **Upgrades** at the Engineering Bay, 3 levels (100 / 175 / 250): +10% damage or armor per level, but at least +1.
 </details>
 
 <details>
-<summary><b>Эпохи</b></summary>
+<summary><b>Ages</b></summary>
 
-| Эпоха | Цена / время | Требует | Бонус |
+| Age | Cost / time | Requires | Bonus |
 |---|---|---|---|
-| I Колония | — | — | стартовая |
-| II Индустриальная | 300 / 45 с | Barracks | прочность всех зданий ×2 |
-| III Энергетическая | 500 / 60 с | Factory | прочность ×2 и энергощит зданий (30% прочности) |
-| IV Звёздная | 800 / 80 с | Starport | прочность ×2, щит 60%, юниты +25% HP и урона |
+| I Colony | — | — | starting age |
+| II Industrial | 300 / 45 s | Barracks | building durability ×2 |
+| III Energy | 500 / 60 s | Factory | durability ×2 and building energy shields (30% of durability) |
+| IV Stellar | 800 / 80 s | Starport | durability ×2, shields 60%, units +25% HP and damage |
 
-Щит принимает урон первым и заряжается через 4 с без попаданий — виден голубым куполом.
+Shields absorb damage first and recharge after 4 s without hits — shown as a blue dome.
 </details>
 
 <details>
-<summary><b>Ракеты</b></summary>
+<summary><b>Missiles</b></summary>
 
-| Клавиша | Ракета | Цена | Эффект | Дальность |
+| Key | Missile | Cost | Effect | Range |
 |---|---|---|---|---|
-| `M` | тактическая | 100 | 220 урона, радиус 120 | 1500 |
-| `J` | кассетная | 175 | 7 кассет по 110 урона на площади 220 | 1500 |
-| `N` | напалм | 150 | горящая земля радиусом 160 на 8 с, 35 урона/с | 1500 |
-| `K` | тяжёлая | 300 | 600 урона, радиус 210 | 1100 |
+| `M` | tactical | 100 | 220 damage, radius 120 | 1500 |
+| `J` | cluster | 175 | 7 bomblets of 110 damage over radius 220 | 1500 |
+| `N` | napalm | 150 | burning ground in radius 160 for 8 s, 35 damage/s | 1500 |
+| `K` | heavy | 300 | 600 damage, radius 210 | 1100 |
 
-Пуск — `L` + клик в пределах жёлтого круга дальности шахты. Взрыв бьёт всех, включая своих.
+Launch with `L` + click inside the silo's yellow range circle. The blast hits everyone, including your own units.
 </details>
 
 <details>
-<summary><b>Противник, туман войны, сохранения и настройки</b></summary>
+<summary><b>Enemy, fog of war, saves and settings</b></summary>
 
-- **Противник.** На «Лёгком» красный только обороняет базу (но переходит в новые эпохи, объединяет войска и стреляет
-  ракетами по тому, что подойдёт близко). На «Нормальном» — полноценный ИИ: техника, авиация, Титан и атаки волнами.
-- **Туман войны.** Разведанная местность затемнена, неразведанная почти чёрная; вражеские юниты в тумане не видны,
-  а здания остаются на карте, если их уже видели. Туман можно выключить в настройках.
-- **Сохранения.** Три слота и быстрое сохранение (`F5` / `F9`), загрузка — из паузы или главного меню. Сохраняется вся
-  партия: ресурсы, эпохи, улучшения, юниты, стройка, очереди, заряженные ракеты и разведанная карта.
-- **Настройки** (главное меню или пауза): полный экран, вертикальная синхронизация, качество графики (низкое / среднее /
-  высокое), счётчик FPS, скорость камеры, прокрутка у края экрана, скорость игры (×0.75–×1.5), туман войны и полоски HP
-  над всеми юнитами.
+- **Enemy.** On Easy, red only defends its base (but still advances through the ages, merges troops and fires missiles
+  at anything that comes close). On Normal it plays the full AI: vehicles, aircraft, the Titan and attack waves.
+- **Fog of war.** Explored ground is darkened, unexplored ground is almost black; enemy units in the fog are hidden,
+  while buildings you've seen stay on the map. The fog can be turned off in the settings.
+- **Saves.** Three slots plus quick save (`F5` / `F9`); load from the pause menu or the main menu. The whole match is saved:
+  resources, ages, upgrades, units, construction, queues, loaded missiles and the explored map.
+- **Settings** (main menu or pause): language, fullscreen, v-sync, graphics quality (low / medium / high), FPS counter,
+  camera speed, edge scrolling, game speed (×0.75–×1.5), fog of war and health bars over every unit.
 </details>
 
 ---
 
-## Для разработчиков
+## For developers
 
-Игра написана на GDScript; логика (ИИ, бой, экономика) двумерная, а 3D-слой (`scripts/view3d.gd`) её отображает.
-Все модели собраны из примитивов прямо в коде, так что ассетов почти нет. Баланс правится в одном файле — `scripts/defs.gd`.
+The game is written in GDScript; the logic (AI, combat, economy) is 2D, and a 3D layer (`scripts/view3d.gd`) renders it.
+All models are built from primitives in code, so there are almost no assets. Balance lives in one file — `scripts/defs.gd`.
+Texts are written in Russian and translated by `scripts/i18n.gd`.
 
-| Файл | Назначение |
+| File | Purpose |
 |---|---|
-| `menu.tscn`, `scripts/menu.gd` | главное меню (стартовая сцена) с боем ИИ на фоне |
-| `main.tscn`, `scripts/main.gd` | партия: карта, ввод, приказы, бой, ракеты, эпохи, объединение, туман, сохранения |
-| `scripts/defs.gd` | характеристики юнитов, зданий, улучшений, ракет, эпох, рецептов, брони и множителей урона |
-| `scripts/unit.gd`, `scripts/building.gd` | юнит (машина состояний) и здание (стройка, очереди, щит, оборона) |
-| `scripts/ai.gd` | компьютерный противник |
-| `scripts/view3d.gd`, `scripts/models.gd` | 3D-отображение, анимации, эффекты и модели из примитивов |
-| `scripts/hud.gd`, `scripts/overlay.gd`, `scripts/minimap.gd` | интерфейс, пауза, сохранения, настройки, миникарта |
-| `scripts/settings.gd` | настройки игрока (`user://settings.cfg`) |
-| `scripts/terrain.gd`, `scripts/doodads.gd`, `scripts/*.gdshader` | рельеф, растительность, шейдеры земли, воды и тумана |
-| `tools/export.sh` | сборка готовых версий для Windows и Linux |
+| `menu.tscn`, `scripts/menu.gd` | main menu (start scene) with an AI battle in the background |
+| `main.tscn`, `scripts/main.gd` | a match: map, input, orders, combat, missiles, ages, merging, fog, saves |
+| `scripts/defs.gd` | stats of units, buildings, upgrades, missiles, ages, recipes, armor and damage multipliers |
+| `scripts/unit.gd`, `scripts/building.gd` | a unit (state machine) and a building (construction, queues, shields, defense) |
+| `scripts/ai.gd` | the computer opponent |
+| `scripts/view3d.gd`, `scripts/models.gd` | 3D view, animations, effects and models built from primitives |
+| `scripts/hud.gd`, `scripts/overlay.gd`, `scripts/minimap.gd` | interface, pause, saves, settings, minimap |
+| `scripts/settings.gd`, `scripts/i18n.gd` | player settings (`user://settings.cfg`) and the English translation |
+| `scripts/terrain.gd`, `scripts/doodads.gd`, `scripts/*.gdshader` | terrain, vegetation, ground / water / fog shaders |
+| `tools/export.sh` | builds standalone Windows and Linux versions |
 
-**Автотест:** `godot --headless --path . --fixed-fps 30 --quit-after 20000 -- --autotest` — матч «ИИ против ИИ»
-со статистикой каждые 30 секунд.
+**Autotest:** `godot --headless --path . --fixed-fps 30 --quit-after 20000 -- --autotest` runs an AI-vs-AI match
+and prints stats every 30 seconds.
 
-**Идеи на будущее:** поиск пути по навигационной сетке, пандусы на холмы, газ, расширения у ИИ, больше карт, звук и музыка.
-Предложения и пулреквесты приветствуются!
+**Ideas for the future:** navmesh pathfinding, ramps onto plateaus, gas, AI expansions, more maps, sound and music.
+Suggestions and pull requests are welcome!

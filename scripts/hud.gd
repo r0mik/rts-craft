@@ -4,6 +4,7 @@ extends CanvasLayer
 ## a 5x3 command card of square icon buttons with hotkeys and costs (right).
 ## Unit and building icons are rendered from the 3D models at startup (skipped when headless).
 
+const I18N = preload("res://scripts/i18n.gd")
 const Defs = preload("res://scripts/defs.gd")
 const MinimapScript = preload("res://scripts/minimap.gd")
 const OverlayScript = preload("res://scripts/overlay.gd")
@@ -26,6 +27,8 @@ var res_supply: Label
 var res_time: Label
 var res_age: Label
 var fps_label: Label
+var help_label: Label
+var _lang_shown := ""
 var msg_label: Label
 var msg_time := 0.0
 var big_label: Label
@@ -110,9 +113,8 @@ func _label(text: String, size: int, color := TEXT) -> Label:
 
 
 func _build_top() -> void:
-	var help := _label("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база\n" +
-		"Объединение: 5 пехотинцев + 2 медика → батальон (Z), 4 танка → супертанк (C), 3 истребителя → фантом (V)", 13,
-		Color(0.8, 0.9, 1.0, 0.55))
+	help_label = _label("", 13, Color(0.8, 0.9, 1.0, 0.55))
+	var help := help_label
 	help.position = Vector2(12, 8)
 	help.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(help)
@@ -138,7 +140,7 @@ func _build_top() -> void:
 	res_supply.custom_minimum_size.x = 90
 	row.add_child(res_supply)
 	res_age = _label("I", 19, GOLD)
-	res_age.tooltip_text = "Текущая эпоха"
+	res_age.tooltip_text = I18N.t("Текущая эпоха")
 	res_age.mouse_filter = Control.MOUSE_FILTER_PASS
 	row.add_child(res_age)
 	row.add_child(ResIcon.new("time"))
@@ -211,7 +213,7 @@ func show_message(text: String) -> void:
 
 
 func show_big(text: String, color: Color) -> void:
-	big_label.text = text + "\n[R] — заново    [Esc] — меню"
+	big_label.text = text + I18N.t("\n[R] — заново    [Esc] — меню")
 	big_label.add_theme_color_override("font_color", color)
 
 
@@ -226,10 +228,14 @@ func _process(delta: float) -> void:
 	res_supply.add_theme_color_override("font_color", Color(1.0, 0.4, 0.35) if used >= cap else TEXT)
 	res_time.text = "%d:%02d" % [t / 60, t % 60]
 	var age: Dictionary = Defs.AGES[game.ages[0]]
-	res_age.text = "Эпоха %s" % age.short
-	res_age.tooltip_text = age.name
+	res_age.text = I18N.t("Эпоха %s") % age.short
+	res_age.tooltip_text = I18N.t(age.name)
 	msg_time -= delta
 	msg_label.modulate.a = clampf(msg_time, 0.0, 1.0)
+	if _lang_shown != Settings.lang:  # (re)write the help line in the current language
+		_lang_shown = Settings.lang
+		help_label.text = I18N.t("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база\n") + \
+			I18N.t("Объединение: 5 пехотинцев + 2 медика → батальон (Z), 4 танка → супертанк (C), 3 истребителя → фантом (V)")
 	fps_label.visible = Settings.show_fps
 	if Settings.show_fps:
 		fps_label.text = "FPS %d" % Engine.get_frames_per_second()
@@ -271,7 +277,7 @@ func _clear_center() -> void:
 func _rebuild_selection(sel: Array) -> void:
 	_clear_center()
 	if sel.is_empty():
-		var hint := _label("Ничего не выбрано.\n\nВыдели рабочих и строй здания,\nвыдели Command Center или Barracks и нанимай юнитов.", 15,
+		var hint := _label(I18N.t("Ничего не выбрано.\n\nВыдели рабочих и строй здания,\nвыдели Command Center или Barracks и нанимай юнитов."), 15,
 			Color(0.75, 0.85, 0.95, 0.7))
 		hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		center.add_child(hint)
@@ -326,7 +332,7 @@ func _refresh_single(e, delta: float) -> void:
 	if _name_label == null:
 		return
 	var mine: bool = e.team == 0
-	_name_label.text = "%s%s" % [e.stats.name, "" if mine else "  — противник"]
+	_name_label.text = "%s%s" % [I18N.t(e.stats.name), "" if mine else I18N.t("  — противник")]
 	_name_label.add_theme_color_override("font_color", ACCENT if mine else Color(1.0, 0.5, 0.45))
 	_hp_bar.set_meta("f", e.hp / e.max_hp)
 	_hp_bar.set_meta("text", "%d / %d" % [ceili(e.hp), int(e.max_hp)])
@@ -376,13 +382,13 @@ func combo_hint(sel: Array) -> String:
 			var n := sel.filter(func(u): return game.valid(u) and u.team == 0 and u.kind == part).size()
 			have_any = have_any or n > 0
 			ready = ready and n >= int(cd.parts[part])
-			parts.append("%s %d/%d" % [PART_NAMES.get(part, part), mini(n, cd.parts[part]), cd.parts[part]])
+			parts.append("%s %d/%d" % [I18N.t(PART_NAMES.get(part, part)), mini(n, cd.parts[part]), cd.parts[part]])
 		if not have_any:
 			continue
 		if ready:
-			lines.append("[color=#7dff8a]Можно объединить → %s: нажмите %s[/color]" % [cd.name, OS.get_keycode_string(cd.key)])
+			lines.append(I18N.t("[color=#7dff8a]Можно объединить → %s: нажмите %s[/color]") % [I18N.t(cd.name), OS.get_keycode_string(cd.key)])
 		else:
-			lines.append("[color=#9cc8e8]%s (%s): нужно %s[/color]" % [cd.name, OS.get_keycode_string(cd.key), ", ".join(parts)])
+			lines.append(I18N.t("[color=#9cc8e8]%s (%s): нужно %s[/color]") % [I18N.t(cd.name), OS.get_keycode_string(cd.key), ", ".join(parts)])
 	return "\n".join(lines)
 
 
@@ -391,56 +397,56 @@ func _stats_text(e) -> String:
 	var up: Dictionary = game.upgrades[maxi(e.team, 0)]
 	if e.is_in_group("units"):
 		if e.kind == "mechanic":
-			lines.append("Ремонт %d HP/с, радиус %d: техника, авиация, здания" % [e.stats.heal_rate, e.stats.range])
+			lines.append(I18N.t("Ремонт %d HP/с, радиус %d: техника, авиация, здания") % [e.stats.heal_rate, e.stats.range])
 		elif e.stats.get("healer", false):
-			lines.append("Лечение %d HP/с, радиус %d: пехота" % [e.stats.heal_rate, e.stats.range])
+			lines.append(I18N.t("Лечение %d HP/с, радиус %d: пехота") % [e.stats.heal_rate, e.stats.range])
 		elif e.stats.get("unarmed", false):
-			lines.append("Без оружия   обзор %d" % e.stats.sight)
+			lines.append(I18N.t("Без оружия   обзор %d") % e.stats.sight)
 			if e.kind == "scout":
-				lines.append("Маяк: " + ("готов (F)" if e.ability_cd <= 0.0 else "через %d с" % ceili(e.ability_cd)))
+				lines.append(I18N.t("Маяк: ") + (I18N.t("готов (F)") if e.ability_cd <= 0.0 else I18N.t("через %d с") % ceili(e.ability_cd)))
 			if e.kind == "beacon":
-				lines.append("Погаснет через %d с" % ceili(e.life_left))
+				lines.append(I18N.t("Погаснет через %d с") % ceili(e.life_left))
 		else:
 			var dmg_up: float = game.upgrade_bonus(e.stats.damage, up.weapons) if up.weapons > 0 else 0.0
 			var arm_up: float = game.upgrade_bonus(e.stats.get("armor", 0), up.armor) if up.armor > 0 else 0.0
-			lines.append("Урон %d (+%s)   Броня %d (+%s)   Дальность %d" % [e.stats.damage, str(snappedf(dmg_up, 0.1)),
+			lines.append(I18N.t("Урон %d (+%s)   Броня %d (+%s)   Дальность %d") % [e.stats.damage, str(snappedf(dmg_up, 0.1)),
 				e.stats.get("armor", 0), str(snappedf(arm_up, 0.1)), e.stats.range])
 			var vs: Dictionary = Defs.DAMAGE_VS.get(e.kind, {})
 			if not vs.is_empty():
 				var parts := []
 				for c in vs:
-					parts.append("%s ×%s" % [Defs.CLASS_NAMES[c], str(vs[c])])
-				lines.append("Против: " + ", ".join(parts))
-			lines.append("Тип: %s" % Defs.CLASS_NAMES[game.armor_class(e)])
+					parts.append("%s ×%s" % [I18N.t(Defs.CLASS_NAMES[c]), str(vs[c])])
+				lines.append(I18N.t("Против: ") + ", ".join(parts))
+			lines.append(I18N.t("Тип: %s") % I18N.t(Defs.CLASS_NAMES[game.armor_class(e)]))
 			if e.stats.has("min_range"):
-				lines.append("Мёртвая зона: не стреляет ближе %d" % e.stats.min_range)
-			lines.append("Скорость %d" % e.stats.speed)
+				lines.append(I18N.t("Мёртвая зона: не стреляет ближе %d") % e.stats.min_range)
+			lines.append(I18N.t("Скорость %d") % e.stats.speed)
 		if e.carrying > 0:
-			lines.append("Несёт минералы: %d" % e.carrying)
+			lines.append(I18N.t("Несёт минералы: %d") % e.carrying)
 		for ck in Defs.COMBOS:  # how this unit can be merged
 			var cd: Dictionary = Defs.COMBOS[ck]
 			if cd.parts.has(e.kind) and e.team == 0:
 				var recipe := []
 				for part in cd.parts:
-					recipe.append("%d %s" % [cd.parts[part], PART_NAMES.get(part, part)])
-				lines.append("Объединение: выделите %s → %s (%s)" % [" + ".join(recipe), cd.name, OS.get_keycode_string(cd.key)])
+					recipe.append("%d %s" % [cd.parts[part], I18N.t(PART_NAMES.get(part, part))])
+				lines.append(I18N.t("Объединение: выделите %s → %s (%s)") % [" + ".join(recipe), I18N.t(cd.name), OS.get_keycode_string(cd.key)])
 	else:
 		if e.constructing:
-			lines.append("Строится: %d%%" % int(e.build_progress * 100.0))
-		lines.append("Броня %d" % e.stats.get("armor", 0))
+			lines.append(I18N.t("Строится: %d%%") % int(e.build_progress * 100.0))
+		lines.append(I18N.t("Броня %d") % e.stats.get("armor", 0))
 		if e.max_shield > 0.0:
-			lines.append("Щит: %d / %d (восстанавливается)" % [int(e.shield), int(e.max_shield)])
+			lines.append(I18N.t("Щит: %d / %d (восстанавливается)") % [int(e.shield), int(e.max_shield)])
 		if e.kind == "cc" and e.team == 0:
-			lines.append("Эпоха: %s" % Defs.AGES[game.ages[0]].name)
+			lines.append(I18N.t("Эпоха: %s") % I18N.t(Defs.AGES[game.ages[0]].name))
 		if e.stats.has("damage"):
-			lines.append("Оборона: урон %d, дальность %d" % [e.stats.damage, e.stats.range])
+			lines.append(I18N.t("Оборона: урон %d, дальность %d") % [e.stats.damage, e.stats.range])
 		if e.kind == "silo":
-			lines.append("Ракета: " + ("%s — готова к пуску (L)" % Defs.MISSILES[e.missile_type].name if e.missile_ready
-				else "нет (M, J, N, K — собрать)"))
+			lines.append(I18N.t("Ракета: ") + (I18N.t("%s — готова к пуску (L)") % I18N.t(Defs.MISSILES[e.missile_type].name) if e.missile_ready
+				else I18N.t("нет (M, J, N, K — собрать)")))
 		if e.stats.has("research"):
-			lines.append("Улучшения: Оружие ур. %d, Броня ур. %d (из 3)" % [up.weapons, up.armor])
+			lines.append(I18N.t("Улучшения: Оружие ур. %d, Броня ур. %d (из 3)") % [up.weapons, up.armor])
 		if e.team == 0 and not e.stats.trains.is_empty() and not e.constructing:
-			lines.append("ПКМ — точка сбора")
+			lines.append(I18N.t("ПКМ — точка сбора"))
 	return "\n".join(lines)
 
 
@@ -466,7 +472,7 @@ func _build_wireframes(sel: Array) -> void:
 		b.entity = e
 		b.custom_minimum_size = Vector2(52, 52)
 		b.focus_mode = Control.FOCUS_NONE
-		b.tooltip_text = e.stats.name
+		b.tooltip_text = I18N.t(e.stats.name)
 		b.add_theme_stylebox_override("normal", panel_style(Color(0.04, 0.08, 0.1), FRAME_DIM, 1, 2))
 		b.add_theme_stylebox_override("hover", panel_style(Color(0.06, 0.12, 0.16), ACCENT, 1, 2))
 		b.add_theme_stylebox_override("pressed", panel_style(Color(0.1, 0.18, 0.22), ACCENT, 1, 2))
@@ -618,11 +624,11 @@ class PauseMenu extends Control:
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 12)
 		panel.add_child(box)
-		var title: Label = hud._label("ПАУЗА", 32, ACCENT)
+		var title: Label = hud._label(I18N.t("ПАУЗА"), 32, ACCENT)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(title)
-		for item in [["Продолжить", _resume], ["Сохранить игру", _save], ["Загрузить игру", _load],
-				["Настройки", _settings], ["Главное меню", _to_menu], ["Выйти из игры", _quit]]:
+		for item in [[I18N.t("Продолжить"), _resume], [I18N.t("Сохранить игру"), _save], [I18N.t("Загрузить игру"), _load],
+				[I18N.t("Настройки"), _settings], [I18N.t("Главное меню"), _to_menu], [I18N.t("Выйти из игры"), _quit]]:
 			var b := Button.new()
 			b.text = item[0]
 			b.custom_minimum_size = Vector2(300, 52)
@@ -695,23 +701,26 @@ class SettingsMenu extends Control:
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 8)
 		panel.add_child(box)
-		box.add_child(_title("Настройки"))
-		box.add_child(_section("Экран и графика"))
-		box.add_child(_toggle("Полный экран", Settings.fullscreen, func(v): Settings.fullscreen = v))
-		box.add_child(_toggle("Вертикальная синхронизация", Settings.vsync, func(v): Settings.vsync = v))
-		box.add_child(_choice("Качество графики", Settings.QUALITY_NAMES, Settings.quality, func(i): Settings.quality = i))
-		box.add_child(_toggle("Показывать FPS", Settings.show_fps, func(v): Settings.show_fps = v))
-		box.add_child(_section("Камера"))
-		box.add_child(_slider("Скорость камеры", Settings.camera_speed, 0.4, 2.5, func(v): Settings.camera_speed = v))
-		box.add_child(_toggle("Прокрутка у края экрана", Settings.edge_scroll, func(v): Settings.edge_scroll = v))
-		box.add_child(_section("Игра"))
+		box.add_child(_title(I18N.t("Настройки")))
+		var langs := ["ru", "en"]
+		box.add_child(_choice("Язык / Language", langs.map(func(l): return I18N.NAMES[l]), langs.find(Settings.lang),
+			func(i): _set_language(langs[i])))
+		box.add_child(_section(I18N.t("Экран и графика")))
+		box.add_child(_toggle(I18N.t("Полный экран"), Settings.fullscreen, func(v): Settings.fullscreen = v))
+		box.add_child(_toggle(I18N.t("Вертикальная синхронизация"), Settings.vsync, func(v): Settings.vsync = v))
+		box.add_child(_choice(I18N.t("Качество графики"), Settings.QUALITY_NAMES.map(func(q): return I18N.t(q)), Settings.quality, func(i): Settings.quality = i))
+		box.add_child(_toggle(I18N.t("Показывать FPS"), Settings.show_fps, func(v): Settings.show_fps = v))
+		box.add_child(_section(I18N.t("Камера")))
+		box.add_child(_slider(I18N.t("Скорость камеры"), Settings.camera_speed, 0.4, 2.5, func(v): Settings.camera_speed = v))
+		box.add_child(_toggle(I18N.t("Прокрутка у края экрана"), Settings.edge_scroll, func(v): Settings.edge_scroll = v))
+		box.add_child(_section(I18N.t("Игра")))
 		var speeds := Settings.SPEEDS.map(func(s): return "×%s" % str(s))
-		box.add_child(_choice("Скорость игры", speeds, maxi(0, Settings.SPEEDS.find(Settings.game_speed)),
+		box.add_child(_choice(I18N.t("Скорость игры"), speeds, maxi(0, Settings.SPEEDS.find(Settings.game_speed)),
 			func(i): Settings.game_speed = Settings.SPEEDS[i]))
-		box.add_child(_toggle("Туман войны (со следующей игры)", Settings.fog, func(v): Settings.fog = v))
-		box.add_child(_toggle("Полоски HP над всеми юнитами", Settings.always_hp, func(v): Settings.always_hp = v))
+		box.add_child(_toggle(I18N.t("Туман войны (со следующей игры)"), Settings.fog, func(v): Settings.fog = v))
+		box.add_child(_toggle(I18N.t("Полоски HP над всеми юнитами"), Settings.always_hp, func(v): Settings.always_hp = v))
 		var back := Button.new()
-		back.text = "Готово"
+		back.text = I18N.t("Готово")
 		back.custom_minimum_size = Vector2(0, 46)
 		back.focus_mode = Control.FOCUS_NONE
 		back.add_theme_font_size_override("font_size", 18)
@@ -719,6 +728,19 @@ class SettingsMenu extends Control:
 		back.add_theme_stylebox_override("hover", style_src.panel_style(Color(0.08, 0.15, 0.2), ACCENT, 2, 4))
 		back.pressed.connect(queue_free)
 		box.add_child(back)
+
+	## A new language: rebuild this window (and the main menu, if we are in it) in that language.
+	func _set_language(l: String) -> void:
+		if l == Settings.lang:
+			return
+		Settings.lang = l
+		Settings.save_settings()
+		if game == null or game.demo:
+			get_tree().reload_current_scene.call_deferred()
+		else:
+			var again := SettingsMenu.make(style_src, game)
+			get_parent().add_child(again)
+			queue_free()
 
 	func _apply() -> void:
 		Settings.save_settings()
@@ -837,7 +859,7 @@ class SlotMenu extends Control:
 		box.add_theme_constant_override("separation", 10)
 		panel.add_child(box)
 		var title := Label.new()
-		title.text = "Сохранить игру" if mode == "save" else "Загрузить игру"
+		title.text = I18N.t("Сохранить игру") if mode == "save" else I18N.t("Загрузить игру")
 		title.add_theme_font_size_override("font_size", 28)
 		title.add_theme_color_override("font_color", ACCENT)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -849,7 +871,7 @@ class SlotMenu extends Control:
 			b.disabled = mode == "load" and main_script.read_slot(slot).is_empty()
 			b.pressed.connect(func(): _pick(slot))
 			box.add_child(b)
-		var back := _button("Назад")
+		var back := _button(I18N.t("Назад"))
 		back.pressed.connect(queue_free)
 		box.add_child(back)
 
@@ -922,7 +944,7 @@ class WireCell extends Button:
 		if tex != null:
 			draw_texture_rect(tex, r, false, Color.WHITE.lerp(col, 0.35))
 		else:
-			draw_string(get_theme_default_font(), Vector2(0, size.y * 0.55), String(entity.stats.name).substr(0, 3),
+			draw_string(get_theme_default_font(), Vector2(0, size.y * 0.55), String(I18N.t(entity.stats.name)).substr(0, 3),
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 14, col)
 		draw_rect(Rect2(4, size.y - 8, size.x - 8, 4), Color(0, 0, 0, 0.8))
 		draw_rect(Rect2(4, size.y - 8, (size.x - 8) * f, 4), col)

@@ -2,6 +2,7 @@ extends Control
 ## Screen-space overlay on top of the 3D view: health bars, progress bars, selection box,
 ## rally lines and the attack cursor.
 
+const I18N = preload("res://scripts/i18n.gd")
 var game
 
 
@@ -64,7 +65,7 @@ func _draw() -> void:
 		_ground_circle(wp, md.radius, c, 2.0)
 		draw_circle(mp, 4.0, c)
 		if not ok:
-			draw_string(get_theme_default_font(), mp + Vector2(12, -10), "слишком далеко", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, c)
+			draw_string(get_theme_default_font(), mp + Vector2(12, -10), I18N.t("слишком далеко"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, c)
 	else:
 		v.set_range_ring(Vector2.ZERO, 0.0)
 	if game.attack_mode:

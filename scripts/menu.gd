@@ -2,9 +2,26 @@ extends Node
 ## Main menu: a live AI-vs-AI battle flies by in the background (main.gd in demo mode) behind
 ## the title, difficulty choice, "how to play" and quit.
 
+const I18N = preload("res://scripts/i18n.gd")
 const MainScene = preload("res://main.tscn")
 const MainScript = preload("res://scripts/main.gd")
 const HUD = preload("res://scripts/hud.gd")
+const Settings = preload("res://scripts/settings.gd")
+
+const HELP_EN := """[b]Goal:[/b] mine minerals, build an army and destroy every building of the red enemy.
+
+[b]Getting started:[/b] workers mine minerals by themselves. Select a worker and build a Supply Depot ([b]V[/b]) and Barracks ([b]B[/b]), then train marines ([b]Q[/b]) and medics ([b]E[/b]). Next come the Factory ([b]F[/b]) with tanks and the Starport ([b]P[/b]) with aircraft.
+
+[b]Controls:[/b] LMB / drag — select, RMB — move, attack, mine. [b]G[/b] + click — attack-move, [b]X[/b] — stop, [b]H[/b] — hold position, [b]Ctrl+1..9[/b] — groups. Camera — [b]WASD[/b], mouse wheel, [b]Space[/b] — to your base. Every command is also on the buttons at the bottom right, with tooltips.
+
+[b]Tips:[/b]
+• Infantry barely scratches vehicles and buildings (armor), tanks are the opposite. Only AA, turrets and fighters can shoot down aircraft.
+• Merge your troops: 5 marines + 2 medics → battalion ([b]Z[/b]), 4 tanks → supertank ([b]C[/b]), 3 wraiths → phantom ([b]V[/b]).
+• Command Center, [b]E[/b] — a new age: buildings get twice as tough, later energy shields.
+• The Seeker ([b]R[/b] at the Command Center) and its beacons ([b]F[/b]) lift the fog of war.
+• The Missile Silo ([b]M[/b]) strikes from afar, but the blast hits your own units too.
+
+[b]Esc[/b] in game — pause, save, settings and exit to the menu."""
 
 const DIFFICULTIES := [
 	["easy", "Лёгкий", "Противник только обороняет базу: войсками не нападает и не строит Титана.\nЕго ракетная шахта всё же бьёт по тем, кто подойдёт близко."],
@@ -20,6 +37,7 @@ var battle  # the AI-vs-AI demo game in the background
 
 
 func _ready() -> void:
+	Settings.load_settings()
 	if "--autotest" in OS.get_cmdline_user_args():  # the autotest skips the menu
 		get_tree().change_scene_to_file.call_deferred("res://main.tscn")
 		return
@@ -64,12 +82,12 @@ func _build_ui() -> void:
 	title.add_theme_constant_override("outline_size", 12)
 	title.add_theme_color_override("font_outline_color", Color(0.02, 0.1, 0.2))
 	col.add_child(title)
-	col.add_child(_label("стратегия в реальном времени в духе StarCraft", 22, Color(0.75, 0.88, 1.0, 0.85)))
+	col.add_child(_label(I18N.t("стратегия в реальном времени в духе StarCraft"), 22, Color(0.75, 0.88, 1.0, 0.85)))
 	var gap := Control.new()
-	gap.custom_minimum_size = Vector2(0, 40)
+	gap.custom_minimum_size = Vector2(0, 14)
 	col.add_child(gap)
-	col.add_child(_button("Новая игра", _new_game))
-	var load_btn := _button("Загрузить игру", _show_load)
+	col.add_child(_button(I18N.t("Новая игра"), _new_game))
+	var load_btn := _button(I18N.t("Загрузить игру"), _show_load)
 	load_btn.disabled = MainScript.SAVE_SLOTS.all(func(s): return MainScript.read_slot(s).is_empty())
 	load_btn.add_theme_stylebox_override("disabled", _style(Color(0.03, 0.05, 0.07, 0.6), Color(0.1, 0.15, 0.2)))
 	load_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.55, 0.6, 0.6))
@@ -79,13 +97,14 @@ func _build_ui() -> void:
 	diff_label = _label("", 15, Color(0.75, 0.85, 0.95, 0.8))
 	diff_label.custom_minimum_size = Vector2(560, 0)
 	col.add_child(diff_label)
-	col.add_child(_button("Настройки", _show_settings))
-	col.add_child(_button("Как играть", _show_help))
-	col.add_child(_button("Выход", func(): get_tree().quit()))
+	col.add_child(_button(I18N.t("Язык / Language: %s  ▸") % I18N.NAMES[Settings.lang], _next_language))
+	col.add_child(_button(I18N.t("Настройки"), _show_settings))
+	col.add_child(_button(I18N.t("Как играть"), _show_help))
+	col.add_child(_button(I18N.t("Выход"), func(): get_tree().quit()))
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(spacer)
-	col.add_child(_label("Enter — начать игру   ·   Godot 4   ·   github.com/r0mik/rts-craft", 14, Color(0.7, 0.8, 0.9, 0.5)))
+	col.add_child(_label(I18N.t("Enter — начать игру   ·   Godot 4   ·   github.com/r0mik/rts-craft"), 14, Color(0.7, 0.8, 0.9, 0.5)))
 	_update_difficulty()
 
 
@@ -125,8 +144,8 @@ func _style(bg: Color, border: Color) -> StyleBoxFlat:
 
 func _update_difficulty() -> void:
 	var d: Array = DIFFICULTIES[diff_index]
-	diff_button.text = "Сложность: %s  ▸" % d[1]
-	diff_label.text = d[2]
+	diff_button.text = I18N.t("Сложность: %s  ▸") % I18N.t(d[1])
+	diff_label.text = I18N.t(d[2])
 	MainScript.difficulty = d[0]
 
 
@@ -138,6 +157,12 @@ func _next_difficulty() -> void:
 func _new_game() -> void:
 	MainScript.difficulty = DIFFICULTIES[diff_index][0]
 	get_tree().change_scene_to_file("res://main.tscn")
+
+
+func _next_language() -> void:
+	Settings.lang = "en" if Settings.lang == "ru" else "ru"
+	Settings.save_settings()
+	get_tree().reload_current_scene()
 
 
 func _show_settings() -> void:
@@ -165,13 +190,13 @@ func _show_help() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	panel.add_child(box)
-	box.add_child(_label("Как играть", 32, HUD.ACCENT))
+	box.add_child(_label(I18N.t("Как играть"), 32, HUD.ACCENT))
 	var text := RichTextLabel.new()
 	text.bbcode_enabled = true
 	text.custom_minimum_size = Vector2(980, 540)
 	text.add_theme_font_size_override("normal_font_size", 17)
 	text.add_theme_font_size_override("bold_font_size", 17)
-	text.text = """[b]Цель:[/b] добывайте минералы, стройте армию и уничтожьте все здания красного противника.
+	text.text = HELP_EN if Settings.lang == "en" else """[b]Цель:[/b] добывайте минералы, стройте армию и уничтожьте все здания красного противника.
 
 [b]Начало:[/b] рабочие сами добывают минералы. Выделите рабочего и постройте Supply Depot ([b]V[/b]) и Barracks ([b]B[/b]), затем нанимайте пехоту ([b]Q[/b]) и медиков ([b]E[/b]). Дальше — Factory ([b]F[/b]) с танками и Starport ([b]P[/b]) с авиацией.
 
@@ -186,7 +211,7 @@ func _show_help() -> void:
 
 [b]Esc[/b] в игре — пауза и выход в меню."""
 	box.add_child(text)
-	var back := _button("Назад", func():
+	var back := _button(I18N.t("Назад"), func():
 		help_panel.queue_free()
 		help_panel = null)
 	box.add_child(back)

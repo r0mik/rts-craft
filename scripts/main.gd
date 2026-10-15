@@ -1,6 +1,7 @@
 extends Node2D
 ## Game controller: map, player input, selection, orders, combat, collisions.
 
+const I18N = preload("res://scripts/i18n.gd")
 const Defs = preload("res://scripts/defs.gd")
 const UnitScript = preload("res://scripts/unit.gd")
 const BuildingScript = preload("res://scripts/building.gd")
@@ -114,9 +115,9 @@ func _ready() -> void:
 	view.focus = start_positions[PLAYER] + Vector2(250, 120)
 	if not save.is_empty() and not demo:
 		_load_state(save)
-		show_message("Игра загружена")
+		show_message(I18N.t("Игра загружена"))
 	else:
-		show_message("Добывай минералы, строй армию и уничтожь красную базу!")
+		show_message(I18N.t("Добывай минералы, строй армию и уничтожь красную базу!"))
 
 
 func _add_ai(t: int) -> void:
@@ -379,19 +380,19 @@ func try_train(b, uk: String) -> bool:
 		return false
 	if st.has("requires") and not has_completed(b.team, st.requires):
 		if b.team == PLAYER:
-			show_message("Сначала нужен %s" % Defs.BUILDINGS[st.requires].name)
+			show_message(I18N.t("Сначала нужен %s") % I18N.t(Defs.BUILDINGS[st.requires].name))
 		return false
 	if st.has("limit") and count_units(b.team, uk) >= int(st.limit):
 		if b.team == PLAYER:
-			show_message("%s может быть только один" % st.name)
+			show_message(I18N.t("%s может быть только один") % I18N.t(st.name))
 		return false
 	if bank[b.team] < st.cost:
 		if b.team == PLAYER:
-			show_message("Недостаточно минералов")
+			show_message(I18N.t("Недостаточно минералов"))
 		return false
 	if supply_used(b.team) + int(st.supply) > supply_cap(b.team):
 		if b.team == PLAYER:
-			show_message("Нужно больше Supply Depot (V рабочим)")
+			show_message(I18N.t("Нужно больше Supply Depot (V рабочим)"))
 		return false
 	bank[b.team] -= st.cost
 	b.queue.append(uk)
@@ -428,12 +429,12 @@ func try_research(b, key: String) -> bool:
 		return false
 	if upgrade_level(b.team, key) >= up.max:
 		if b.team == PLAYER:
-			show_message("%s: максимальный уровень" % up.name)
+			show_message(I18N.t("%s: максимальный уровень") % I18N.t(up.name))
 		return false
 	var cost := upgrade_cost(b.team, key)
 	if bank[b.team] < cost:
 		if b.team == PLAYER:
-			show_message("Недостаточно минералов")
+			show_message(I18N.t("Недостаточно минералов"))
 		return false
 	bank[b.team] -= cost
 	b.queue.append(key)
@@ -451,7 +452,7 @@ static func slot_path(slot: String) -> String:
 
 
 static func slot_name(slot: String) -> String:
-	return "Быстрое сохранение" if slot == "quick" else "Слот %s" % slot
+	return I18N.t("Быстрое сохранение") if slot == "quick" else I18N.t("Слот %s") % slot
 
 
 ## Reads a save file (or {} if the slot is empty or unreadable).
@@ -469,11 +470,11 @@ static func read_slot(slot: String) -> Dictionary:
 static func slot_summary(slot: String) -> String:
 	var d := read_slot(slot)
 	if d.is_empty():
-		return "%s — пусто" % slot_name(slot)
+		return I18N.t("%s — пусто") % slot_name(slot)
 	var t := int(d.get("elapsed", 0.0))
 	var age: int = d.get("ages", [1, 1])[0]
-	return "%s — %s, игра %d:%02d, эпоха %s, %s" % [slot_name(slot), d.get("saved_at", "?"), t / 60, t % 60,
-		Defs.AGES[age].short, "нормальный" if d.get("difficulty", "easy") == "normal" else "лёгкий"]
+	return I18N.t("%s — %s, игра %d:%02d, эпоха %s, %s") % [slot_name(slot), d.get("saved_at", "?"), t / 60, t % 60,
+		Defs.AGES[age].short, I18N.t("нормальный") if d.get("difficulty", "easy") == "normal" else I18N.t("лёгкий")]
 
 
 ## Loads a slot: the next main.tscn rebuilds the world from it.
@@ -522,10 +523,10 @@ func save_game(slot: String) -> bool:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
 	var f := FileAccess.open(slot_path(slot), FileAccess.WRITE)
 	if f == null:
-		show_message("Не удалось сохранить игру")
+		show_message(I18N.t("Не удалось сохранить игру"))
 		return false
 	f.store_string(var_to_str(data))
-	show_message("Игра сохранена: %s" % slot_name(slot))
+	show_message(I18N.t("Игра сохранена: %s") % slot_name(slot))
 	return true
 
 
@@ -597,11 +598,11 @@ func try_age_up(cc) -> bool:
 	var a: Dictionary = Defs.AGES[n]
 	if not has_completed(t, a.requires):
 		if t == PLAYER:
-			show_message("Для эпохи «%s» нужен %s" % [a.name, Defs.BUILDINGS[a.requires].name])
+			show_message(I18N.t("Для эпохи «%s» нужен %s") % [I18N.t(a.name), I18N.t(Defs.BUILDINGS[a.requires].name)])
 		return false
 	if bank[t] < a.cost:
 		if t == PLAYER:
-			show_message("Недостаточно минералов")
+			show_message(I18N.t("Недостаточно минералов"))
 		return false
 	bank[t] -= a.cost
 	cc.queue.append("age:%d" % n)
@@ -621,25 +622,25 @@ func complete_age(t: int, n: int) -> void:
 			u.hp *= Defs.AGE_UNIT_BONUS
 	var a: Dictionary = Defs.AGES[n]
 	if t == PLAYER:
-		show_message("Наступила %s: %s" % [a.name, a.bonus])
+		show_message(I18N.t("Наступила %s: %s") % [I18N.t(a.name), I18N.t(a.bonus)])
 	else:
-		show_message("Противник перешёл в эпоху: %s" % a.name)
+		show_message(I18N.t("Противник перешёл в эпоху: %s") % I18N.t(a.name))
 
 
 func complete_upgrade(t: int, key: String) -> void:
 	upgrades[t][key] += 1
 	if t == PLAYER:
-		show_message("Исследование завершено: %s +%d" % [Defs.UPGRADES[key].name, upgrades[t][key]])
+		show_message(I18N.t("Исследование завершено: %s +%d") % [I18N.t(Defs.UPGRADES[key].name), upgrades[t][key]])
 
 
 func item_name(item: String) -> String:
 	if item.begins_with("age:"):
-		return Defs.AGES[int(item.get_slice(":", 1))].name
+		return I18N.t(Defs.AGES[int(item.get_slice(":", 1))].name)
 	if item.begins_with("missile:"):
-		return Defs.MISSILES[item.get_slice(":", 1)].name
+		return I18N.t(Defs.MISSILES[item.get_slice(":", 1)].name)
 	if Defs.UPGRADES.has(item):
-		return "%s +%d" % [Defs.UPGRADES[item].name, upgrades[PLAYER][item] + 1]
-	return Defs.UNITS[item].name
+		return "%s +%d" % [I18N.t(Defs.UPGRADES[item].name), upgrades[PLAYER][item] + 1]
+	return I18N.t(Defs.UNITS[item].name)
 
 
 func try_order_build(w, kind: String, pos: Vector2) -> bool:
@@ -647,15 +648,15 @@ func try_order_build(w, kind: String, pos: Vector2) -> bool:
 	var t: int = w.team
 	if st.has("requires") and not has_completed(t, st.requires):
 		if t == PLAYER:
-			show_message("Сначала нужен %s" % Defs.BUILDINGS[st.requires].name)
+			show_message(I18N.t("Сначала нужен %s") % I18N.t(Defs.BUILDINGS[st.requires].name))
 		return false
 	if bank[t] < st.cost:
 		if t == PLAYER:
-			show_message("Недостаточно минералов")
+			show_message(I18N.t("Недостаточно минералов"))
 		return false
 	if not can_place(kind, pos):
 		if t == PLAYER:
-			show_message("Здесь строить нельзя")
+			show_message(I18N.t("Здесь строить нельзя"))
 		return false
 	bank[t] -= st.cost
 	w.order_build(kind, pos)
@@ -668,12 +669,12 @@ func worker_build(w) -> void:
 	else:
 		refund(w.team, Defs.BUILDINGS[w.build_kind].cost)
 		if w.team == PLAYER:
-			show_message("Место занято — строительство отменено")
+			show_message(I18N.t("Место занято — строительство отменено"))
 
 
 func on_building_complete(b) -> void:
 	if b.team == PLAYER:
-		show_message("%s построен" % b.stats.name)
+		show_message(I18N.t("%s построен") % I18N.t(b.stats.name))
 
 
 ## Upgrade bonus for level n of a stat: +10% per level, but at least +1 per level
@@ -766,22 +767,22 @@ func get_commands() -> Array:
 	var units := selected_units()
 	var blds := selected_buildings()
 	if not units.is_empty():
-		cmds.append({"key": KEY_G, "label": "Атака (G)", "fn": cmd_attack, "icon": "@attack"})
-		cmds.append({"key": KEY_X, "label": "Стоп (X)", "fn": cmd_stop, "icon": "@stop"})
-		cmds.append({"key": KEY_H, "label": "Держать позицию (H)", "fn": cmd_hold, "icon": "@hold"})
+		cmds.append({"key": KEY_G, "label": I18N.t("Атака (G)"), "fn": cmd_attack, "icon": "@attack"})
+		cmds.append({"key": KEY_X, "label": I18N.t("Стоп (X)"), "fn": cmd_stop, "icon": "@stop"})
+		cmds.append({"key": KEY_H, "label": I18N.t("Держать позицию (H)"), "fn": cmd_hold, "icon": "@hold"})
 		for ck in Defs.COMBOS:
 			if not combo_parts(units, ck).is_empty():
 				var cd: Dictionary = Defs.COMBOS[ck]
-				cmds.append({"key": cd.key, "label": "Объединить: %s (%s) — %s" % [cd.name, OS.get_keycode_string(cd.key), cd.desc],
+				cmds.append({"key": cd.key, "label": I18N.t("Объединить: %s (%s) — %s") % [I18N.t(cd.name), OS.get_keycode_string(cd.key), I18N.t(cd.desc)],
 					"fn": func(): start_combine(PLAYER, ck, selected_units()), "icon": ck})
 		if units.any(func(u): return u.kind == "scout"):
 			var ready := units.any(func(u): return u.kind == "scout" and u.ability_cd <= 0.0)
-			cmds.append({"key": KEY_F, "label": "Сбросить маяк (F): видит всё вокруг 90 с" if ready else "Маяк перезаряжается",
+			cmds.append({"key": KEY_F, "label": I18N.t("Сбросить маяк (F): видит всё вокруг 90 с") if ready else I18N.t("Маяк перезаряжается"),
 				"fn": cmd_beacon, "icon": "beacon", "disabled": not ready})
 		if units.any(func(u): return u.is_worker()):
 			for bk in Defs.WORKER_BUILDS:
 				var st: Dictionary = Defs.BUILDINGS[bk]
-				cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [st.name, OS.get_keycode_string(st.hotkey), st.cost],
+				cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [I18N.t(st.name), OS.get_keycode_string(st.hotkey), st.cost],
 					"fn": func(): start_placing(bk), "icon": bk, "cost": st.cost})
 	elif not blds.is_empty():
 		var kinds := []
@@ -791,7 +792,7 @@ func get_commands() -> Array:
 					kinds.append(uk)
 		for uk in kinds:
 			var st: Dictionary = Defs.UNITS[uk]
-			cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [st.name, OS.get_keycode_string(st.hotkey), st.cost],
+			cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [I18N.t(st.name), OS.get_keycode_string(st.hotkey), st.cost],
 				"fn": func(): train_selected(uk), "icon": uk, "cost": st.cost})
 		var cc = null
 		for b in blds:
@@ -801,8 +802,8 @@ func get_commands() -> Array:
 		var next_age: int = ages[PLAYER] + 1
 		if cc != null and next_age < Defs.AGES.size() and not age_in_progress(PLAYER):
 			var a: Dictionary = Defs.AGES[next_age]
-			cmds.append({"key": Defs.AGE_KEY, "label": "%s (E) %d: %s. Нужен %s" % [a.name, a.cost, a.bonus,
-				Defs.BUILDINGS[a.requires].name], "fn": func(): try_age_up(cc), "icon": "@age:%d" % next_age, "cost": a.cost,
+			cmds.append({"key": Defs.AGE_KEY, "label": I18N.t("%s (E) %d: %s. Нужен %s") % [I18N.t(a.name), a.cost, I18N.t(a.bonus),
+				I18N.t(Defs.BUILDINGS[a.requires].name)], "fn": func(): try_age_up(cc), "icon": "@age:%d" % next_age, "cost": a.cost,
 				"disabled": not has_completed(PLAYER, a.requires)})
 		var research := []
 		for b in blds:
@@ -812,30 +813,30 @@ func get_commands() -> Array:
 		for key in research:
 			var up: Dictionary = Defs.UPGRADES[key]
 			var lvl := upgrade_level(PLAYER, key)
-			var label := "%s +%d (%s) %d" % [up.name, lvl + 1, OS.get_keycode_string(up.hotkey), upgrade_cost(PLAYER, key)]
+			var label := "%s +%d (%s) %d" % [I18N.t(up.name), lvl + 1, OS.get_keycode_string(up.hotkey), upgrade_cost(PLAYER, key)]
 			if lvl >= up.max:
-				label = "%s: макс." % up.name
+				label = I18N.t("%s: макс.") % I18N.t(up.name)
 			cmds.append({"key": up.hotkey, "label": label, "fn": func(): research_selected(key), "icon": "@" + key,
 				"cost": upgrade_cost(PLAYER, key) if lvl < up.max else 0, "disabled": lvl >= up.max})
 		if blds.any(func(b): return not b.queue.is_empty()):
-			cmds.append({"key": KEY_X, "label": "Отмена (X)", "fn": cmd_cancel, "icon": "@cancel"})
+			cmds.append({"key": KEY_X, "label": I18N.t("Отмена (X)"), "fn": cmd_cancel, "icon": "@cancel"})
 		var silos := blds.filter(func(b): return b.kind == "silo" and b.is_complete())
 		var ready_silo = missile_silo()
 		if ready_silo != null:
 			var rm: Dictionary = Defs.MISSILES[ready_silo.missile_type]
-			cmds.append({"key": Defs.MISSILE_LAUNCH_KEY, "label": "Пуск: %s (L), дальность %d" % [rm.name, rm.range],
+			cmds.append({"key": Defs.MISSILE_LAUNCH_KEY, "label": I18N.t("Пуск: %s (L), дальность %d") % [rm.name, rm.range],
 				"fn": cmd_launch, "icon": "@launch"})
 		if silos.any(func(b): return not b.missile_ready and b.queue.is_empty()):
 			for mk in Defs.MISSILES:
 				var md: Dictionary = Defs.MISSILES[mk]
-				cmds.append({"key": md.key, "label": "%s (%s) %d: %s" % [md.name, OS.get_keycode_string(md.key), md.cost, _missile_tip(mk)],
+				cmds.append({"key": md.key, "label": "%s (%s) %d: %s" % [I18N.t(md.name), OS.get_keycode_string(md.key), md.cost, _missile_tip(mk)],
 					"fn": func(): arm_selected(mk), "icon": "@missile:" + mk, "cost": md.cost})
 		var damaged := _damaged_bunkers()
 		if not damaged.is_empty():
 			var cost := 0
 			for b in damaged:
 				cost += repair_cost(b)
-			cmds.append({"key": KEY_R, "label": "Чинить (R) %d" % cost, "fn": cmd_repair, "icon": "@repair", "cost": cost})
+			cmds.append({"key": KEY_R, "label": I18N.t("Чинить (R) %d") % cost, "fn": cmd_repair, "icon": "@repair", "cost": cost})
 	return cmds
 
 
@@ -881,7 +882,7 @@ func start_combine(t: int, ck: String, candidates: Array) -> bool:
 		u.order_move(c)
 	merges.append({"kind": ck, "team": t, "units": parts, "center": c, "t": 0.0})
 	if t == PLAYER:
-		show_message("Собираются в %s…" % Defs.COMBOS[ck].name.to_lower())
+		show_message(I18N.t("Собираются в %s…") % I18N.t(Defs.COMBOS[ck].name).to_lower())
 		add_marker(c, Color(0.6, 0.8, 1.0))
 	return true
 
@@ -892,7 +893,7 @@ func _update_merges(delta: float) -> void:
 		if m.units.any(func(u): return not valid(u)) or m.t > 20.0:
 			merges.erase(m)
 			if m.team == PLAYER:
-				show_message("Объединение сорвано")
+				show_message(I18N.t("Объединение сорвано"))
 			continue
 		var far := 0.0
 		for u in m.units:
@@ -907,7 +908,7 @@ func _update_merges(delta: float) -> void:
 		var su = spawn_unit(m.team, m.kind, m.center)
 		view.fx_merge(m.center)
 		if m.team == PLAYER:
-			show_message("%s готов!" % Defs.COMBOS[m.kind].name)
+			show_message(I18N.t("%s готов!") % I18N.t(Defs.COMBOS[m.kind].name))
 			if was_selected:
 				set_selection(selection + [su])
 
@@ -918,7 +919,7 @@ func cmd_beacon() -> void:
 		if u.kind == "scout" and u.ability_cd <= 0.0:
 			u.ability_cd = u.stats.beacon_cooldown
 			spawn_unit(u.team, "beacon", u.position)
-			show_message("Маяк установлен")
+			show_message(I18N.t("Маяк установлен"))
 			return
 
 
@@ -926,7 +927,7 @@ func cmd_launch() -> void:
 	missile_mode = true
 	attack_mode = false
 	placing = ""
-	show_message("Выберите цель для ракеты (ЛКМ), ПКМ — отмена")
+	show_message(I18N.t("Выберите цель для ракеты (ЛКМ), ПКМ — отмена"))
 
 
 # --- Missiles ---------------------------------------------------------------
@@ -935,10 +936,10 @@ func _missile_tip(mk: String) -> String:
 	var md: Dictionary = Defs.MISSILES[mk]
 	match mk:
 		"cluster":
-			return "%d кассет по %d урона на площади %d" % [md.bomblets, md.damage, md.radius]
+			return I18N.t("%d кассет по %d урона на площади %d") % [md.bomblets, md.damage, md.radius]
 		"napalm":
-			return "поджигает землю радиусом %d на %d с (%d урона/с)" % [md.radius, md.burn_time, md.burn_dps]
-	return "%d урона, радиус %d, дальность %d" % [md.damage, md.radius, md.range]
+			return I18N.t("поджигает землю радиусом %d на %d с (%d урона/с)") % [md.radius, md.burn_time, md.burn_dps]
+	return I18N.t("%d урона, радиус %d, дальность %d") % [md.damage, md.radius, md.range]
 
 
 ## The first selected silo with a loaded missile (null if none).
@@ -961,7 +962,7 @@ func try_arm_missile(b, mk: String) -> bool:
 	var md: Dictionary = Defs.MISSILES[mk]
 	if bank[b.team] < md.cost:
 		if b.team == PLAYER:
-			show_message("Недостаточно минералов")
+			show_message(I18N.t("Недостаточно минералов"))
 		return false
 	bank[b.team] -= md.cost
 	b.queue.append("missile:" + mk)
@@ -977,14 +978,14 @@ func launch_missile(silo, target: Vector2) -> bool:
 	target = target.clamp(Vector2.ZERO, map_size)
 	if silo.position.distance_to(target) > md.range:
 		if silo.team == PLAYER:
-			show_message("Слишком далеко: %s бьёт не дальше %d" % [md.name, md.range])
+			show_message(I18N.t("Слишком далеко: %s бьёт не дальше %d") % [I18N.t(md.name), md.range])
 		return false
 	silo.missile_type = ""
 	var m := {"team": silo.team, "type": mk, "from": silo.position, "to": target, "t": 0.0}
 	m["node"] = view.add_missile(silo.position, target, mk)
 	missiles.append(m)
 	if silo.team != PLAYER:
-		show_message("Внимание! Пуск вражеской ракеты: %s!" % md.name)
+		show_message(I18N.t("Внимание! Пуск вражеской ракеты: %s!") % I18N.t(md.name))
 	return true
 
 
@@ -1146,7 +1147,7 @@ func repair_cost(b) -> int:
 func cmd_repair() -> void:
 	for b in _damaged_bunkers():
 		if bank[PLAYER] <= 0:
-			show_message("Недостаточно минералов")
+			show_message(I18N.t("Недостаточно минералов"))
 			return
 		var cost := repair_cost(b)
 		if bank[PLAYER] >= cost:
@@ -1169,10 +1170,10 @@ func train_selected(uk: String) -> void:
 func start_placing(kind: String) -> void:
 	var st: Dictionary = Defs.BUILDINGS[kind]
 	if st.has("requires") and not has_completed(PLAYER, st.requires):
-		show_message("Сначала нужен %s" % Defs.BUILDINGS[st.requires].name)
+		show_message(I18N.t("Сначала нужен %s") % I18N.t(Defs.BUILDINGS[st.requires].name))
 		return
 	if bank[PLAYER] < st.cost:
-		show_message("Недостаточно минералов")
+		show_message(I18N.t("Недостаточно минералов"))
 		return
 	attack_mode = false
 	placing = kind
@@ -1340,7 +1341,7 @@ func _handle_key(event: InputEventKey) -> void:
 		var n := int(key - KEY_0)
 		if event.ctrl_pressed:
 			control_groups[n] = selection.duplicate()
-			show_message("Группа %d назначена" % n)
+			show_message(I18N.t("Группа %d назначена") % n)
 		elif control_groups.has(n):
 			set_selection(control_groups[n])
 			var now := Time.get_ticks_msec() / 1000.0
@@ -1357,7 +1358,7 @@ func _handle_key(event: InputEventKey) -> void:
 		return
 	if key == KEY_F9:
 		if not load_slot(get_tree(), "quick"):
-			show_message("Быстрого сохранения нет")
+			show_message(I18N.t("Быстрого сохранения нет"))
 		return
 	for c in get_commands():
 		if c.key == key:
@@ -1414,12 +1415,12 @@ func _process(delta: float) -> void:
 		win_check = 1.0
 		if team_buildings(PLAYER).is_empty():
 			game_over = true
-			hud.show_big("ПОРАЖЕНИЕ", Color(1.0, 0.3, 0.25))
+			hud.show_big(I18N.t("ПОРАЖЕНИЕ"), Color(1.0, 0.3, 0.25))
 			if autotest:
 				print("[result] RED wins at %.0fs" % elapsed)
 		elif team_buildings(ENEMY).is_empty():
 			game_over = true
-			hud.show_big("ПОБЕДА!", Color(0.4, 1.0, 0.4))
+			hud.show_big(I18N.t("ПОБЕДА!"), Color(0.4, 1.0, 0.4))
 			if autotest:
 				print("[result] BLUE wins at %.0fs" % elapsed)
 	if autotest:
