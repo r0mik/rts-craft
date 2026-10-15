@@ -66,6 +66,10 @@ static var difficulty := "easy"
 ## Demo mode: AI vs AI battle behind the main menu (no HUD, no fog, no input, cinematic camera).
 var demo := false
 var demo_restart := 0.0
+## A save read by load_slot(); main.tscn builds the world from it instead of a new map.
+static var pending_load := {}
+const SAVE_DIR := "user://saves"
+const SAVE_SLOTS := ["quick", "1", "2", "3"]
 var demo_cam_timer := 0.0
 var demo_cam_target := Vector2(450, 450)
 
@@ -82,7 +86,12 @@ func _ready() -> void:
 	view.setup(self, [Color(0.27, 0.57, 1.0), Color(0.94, 0.29, 0.23)])
 	entities = Node2D.new()  # logic-only nodes; everything visible lives in the 3D view
 	add_child(entities)
-	_setup_map()
+	var save: Dictionary = pending_load
+	pending_load = {}
+	if save.is_empty() or demo:
+		_setup_map()
+	else:
+		_load_world(save)
 	hud = HUDScript.new()
 	add_child(hud)
 	hud.setup(self)
@@ -95,7 +104,11 @@ func _ready() -> void:
 	else:
 		_init_fog()
 	view.focus = start_positions[PLAYER] + Vector2(250, 120)
-	show_message("Добывай минералы, строй армию и уничтожь красную базу!")
+	if not save.is_empty() and not demo:
+		_load_state(save)
+		show_message("Игра загружена")
+	else:
+		show_message("Добывай минералы, строй армию и уничтожь красную базу!")
 
 
 func _add_ai(t: int) -> void:
@@ -149,10 +162,12 @@ func spawn_building(t: int, kind: String, pos: Vector2, constructing: bool):
 	return b
 
 
-func spawn_mineral(pos: Vector2):
+func spawn_mineral(pos: Vector2, variant := -1):
 	var m = MineralScript.new()
 	m.position = pos
 	m.setup(self)
+	if variant >= 0:
+		m.variant = variant
 	entities.add_child(m)
 	view.add_entity(m)
 	return m
@@ -416,6 +431,132 @@ func try_research(b, key: String) -> bool:
 	b.queue.append(key)
 	b.queue_costs.append(cost)
 	return true
+
+
+# --- Save / load ------------------------------------------------------------------
+# A save is a text file (var_to_str) in user://saves/<slot>.sav with the economy, research, ages,
+# every unit, building and mineral patch, the explored fog and the AI timers. Orders in progress,
+# missiles in flight and napalm fields are not kept: units resume from idle (workers go back to mining).
+
+static func slot_path(slot: String) -> String:
+	return "%s/%s.sav" % [SAVE_DIR, slot]
+
+
+static func slot_name(slot: String) -> String:
+	return "Быстрое сохранение" if slot == "quick" else "Слот %s" % slot
+
+
+## Reads a save file (or {} if the slot is empty or unreadable).
+static func read_slot(slot: String) -> Dictionary:
+	if not FileAccess.file_exists(slot_path(slot)):
+		return {}
+	var f := FileAccess.open(slot_path(slot), FileAccess.READ)
+	if f == null:
+		return {}
+	var data = str_to_var(f.get_as_text())
+	return data if data is Dictionary else {}
+
+
+## Short description of a slot for the save/load menus.
+static func slot_summary(slot: String) -> String:
+	var d := read_slot(slot)
+	if d.is_empty():
+		return "%s — пусто" % slot_name(slot)
+	var t := int(d.get("elapsed", 0.0))
+	var age: int = d.get("ages", [1, 1])[0]
+	return "%s — %s, игра %d:%02d, эпоха %s, %s" % [slot_name(slot), d.get("saved_at", "?"), t / 60, t % 60,
+		Defs.AGES[age].short, "нормальный" if d.get("difficulty", "easy") == "normal" else "лёгкий"]
+
+
+## Loads a slot: the next main.tscn rebuilds the world from it.
+static func load_slot(tree: SceneTree, slot: String) -> bool:
+	var d := read_slot(slot)
+	if d.is_empty():
+		return false
+	pending_load = d
+	difficulty = d.get("difficulty", "easy")
+	tree.paused = false
+	tree.change_scene_to_file("res://main.tscn")
+	return true
+
+
+func save_game(slot: String) -> bool:
+	var units := []
+	for u in get_tree().get_nodes_in_group("units"):
+		if not u.is_alive():
+			continue
+		var ud := {"team": u.team, "kind": u.kind, "pos": u.position, "hp": u.hp, "max_hp": u.max_hp,
+			"carrying": u.carrying, "ability_cd": u.ability_cd, "life_left": u.life_left, "facing": u.facing}
+		if u.stats.has("random"):
+			ud["stats"] = u.stats  # the Titan's rolled stats
+		units.append(ud)
+	var blds := []
+	for b in get_tree().get_nodes_in_group("buildings"):
+		if not b.is_alive():
+			continue
+		blds.append({"team": b.team, "kind": b.kind, "pos": b.position, "hp": b.hp, "max_hp": b.max_hp,
+			"constructing": b.constructing, "build_progress": b.build_progress, "queue": b.queue,
+			"queue_costs": b.queue_costs, "prod_progress": b.prod_progress, "rally": b.rally, "has_rally": b.has_rally,
+			"missile_type": b.missile_type, "shield": b.shield, "max_shield": b.max_shield,
+			"seen_by_player": b.seen_by_player})
+	var mins := []
+	for m in get_tree().get_nodes_in_group("minerals"):
+		if m.is_alive():
+			mins.append({"pos": m.position, "amount": m.amount, "variant": m.variant})
+	var ai_state := []
+	for ai in ais:
+		ai_state.append({"team": ai.team, "elapsed": ai.elapsed, "wave_size": ai.wave_size})
+	var data := {
+		"version": 1, "saved_at": Time.get_datetime_string_from_system().replace("T", " ").left(16),
+		"difficulty": difficulty, "elapsed": elapsed, "bank": bank, "upgrades": upgrades, "ages": ages,
+		"fog_seen": fog_seen, "focus": view.focus, "units": units, "buildings": blds, "minerals": mins, "ais": ai_state,
+	}
+	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
+	var f := FileAccess.open(slot_path(slot), FileAccess.WRITE)
+	if f == null:
+		show_message("Не удалось сохранить игру")
+		return false
+	f.store_string(var_to_str(data))
+	show_message("Игра сохранена: %s" % slot_name(slot))
+	return true
+
+
+## Spawns the saved minerals, buildings and units (instead of a fresh map).
+func _load_world(d: Dictionary) -> void:
+	for m in d.minerals:
+		var mm = spawn_mineral(m.pos, m.variant)
+		mm.amount = m.amount
+	for bd in d.buildings:
+		var b = spawn_building(bd.team, bd.kind, bd.pos, bd.constructing)
+		for key in ["hp", "max_hp", "build_progress", "queue", "queue_costs", "prod_progress", "rally", "has_rally",
+				"missile_type", "shield", "max_shield", "seen_by_player"]:
+			b.set(key, bd[key])
+	for ud in d.units:
+		var u = spawn_unit(ud.team, ud.kind, ud.pos)
+		if ud.has("stats"):
+			u.stats = ud.stats
+			u.speed = u.stats.speed
+		for key in ["hp", "max_hp", "carrying", "ability_cd", "life_left", "facing"]:
+			u.set(key, ud[key])
+		if u.is_worker():
+			u.order_gather(best_mineral(u.position))
+
+
+## Restores economy, research, ages, explored fog, camera and AI timers after the world is built.
+func _load_state(d: Dictionary) -> void:
+	elapsed = d.elapsed
+	bank = d.bank
+	upgrades = d.upgrades
+	ages = d.ages
+	view.focus = d.focus
+	if fog_seen.size() == d.fog_seen.size():
+		fog_seen = d.fog_seen
+		_update_fog()
+	for st in d.ais:
+		for ai in ais:
+			if ai.team == st.team:
+				ai.elapsed = st.elapsed
+				ai.wave_size = st.wave_size
 
 
 # --- Ages ---------------------------------------------------------------------
@@ -1202,6 +1343,13 @@ func _handle_key(event: InputEventKey) -> void:
 		return
 	if key == KEY_SPACE:
 		view.focus = start_positions[PLAYER]
+		return
+	if key == KEY_F5:  # quick save / quick load
+		save_game("quick")
+		return
+	if key == KEY_F9:
+		if not load_slot(get_tree(), "quick"):
+			show_message("Быстрого сохранения нет")
 		return
 	for c in get_commands():
 		if c.key == key:

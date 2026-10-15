@@ -612,7 +612,8 @@ class PauseMenu extends Control:
 		var title: Label = hud._label("ПАУЗА", 32, ACCENT)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		box.add_child(title)
-		for item in [["Продолжить", _resume], ["Главное меню", _to_menu], ["Выйти из игры", _quit]]:
+		for item in [["Продолжить", _resume], ["Сохранить игру", _save], ["Загрузить игру", _load],
+				["Главное меню", _to_menu], ["Выйти из игры", _quit]]:
 			var b := Button.new()
 			b.text = item[0]
 			b.custom_minimum_size = Vector2(300, 52)
@@ -626,7 +627,17 @@ class PauseMenu extends Control:
 	func _unhandled_key_input(event: InputEvent) -> void:
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 			get_viewport().set_input_as_handled()
-			_resume()
+			var sm := get_node_or_null("SlotMenu")
+			if sm != null:
+				sm.queue_free()
+			else:
+				_resume()
+
+	func _save() -> void:
+		add_child(SlotMenu.make(hud, hud.game.get_script(), "save", hud.game))
+
+	func _load() -> void:
+		add_child(SlotMenu.make(hud, hud.game.get_script(), "load", null))
 
 	func _resume() -> void:
 		get_tree().paused = false
@@ -638,6 +649,77 @@ class PauseMenu extends Control:
 
 	func _quit() -> void:
 		get_tree().quit()
+
+
+## Save / load slot picker, used by the pause menu and the main menu.
+class SlotMenu extends Control:
+	var main_script  # scripts/main.gd (static save helpers)
+	var mode := "load"
+	var game          # running game, for saving
+	var style_src     # anything with panel_style()
+
+	static func make(style_src_, main_script_, mode_: String, game_) -> SlotMenu:
+		var m := SlotMenu.new()
+		m.name = "SlotMenu"
+		m.style_src = style_src_
+		m.main_script = main_script_
+		m.mode = mode_
+		m.game = game_
+		return m
+
+	func _ready() -> void:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		var dim := ColorRect.new()
+		dim.color = Color(0, 0, 0, 0.5)
+		dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(dim)
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", style_src.panel_style(Color(0.03, 0.05, 0.08, 0.98), FRAME, 2, 6))
+		panel.set_anchors_preset(Control.PRESET_CENTER)
+		panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+		add_child(panel)
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 10)
+		panel.add_child(box)
+		var title := Label.new()
+		title.text = "Сохранить игру" if mode == "save" else "Загрузить игру"
+		title.add_theme_font_size_override("font_size", 28)
+		title.add_theme_color_override("font_color", ACCENT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		box.add_child(title)
+		for slot in main_script.SAVE_SLOTS:
+			if mode == "save" and slot == "quick":
+				continue  # quick save is F5
+			var b := _button(main_script.slot_summary(slot))
+			b.disabled = mode == "load" and main_script.read_slot(slot).is_empty()
+			b.pressed.connect(func(): _pick(slot))
+			box.add_child(b)
+		var back := _button("Назад")
+		back.pressed.connect(queue_free)
+		box.add_child(back)
+
+	func _button(text: String) -> Button:
+		var b := Button.new()
+		b.text = text
+		b.custom_minimum_size = Vector2(640, 48)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_size_override("font_size", 17)
+		b.add_theme_stylebox_override("normal", style_src.panel_style(Color(0.05, 0.09, 0.12), FRAME_DIM, 2, 4))
+		b.add_theme_stylebox_override("hover", style_src.panel_style(Color(0.08, 0.15, 0.2), ACCENT, 2, 4))
+		b.add_theme_stylebox_override("pressed", style_src.panel_style(Color(0.14, 0.24, 0.3), Color.WHITE, 2, 4))
+		b.add_theme_stylebox_override("disabled", style_src.panel_style(Color(0.03, 0.04, 0.05), Color(0.1, 0.14, 0.18), 1, 4))
+		return b
+
+	func _pick(slot: String) -> void:
+		if mode == "save":
+			game.save_game(slot)
+			queue_free()
+		else:
+			main_script.load_slot(get_tree(), slot)
 
 
 ## Square command button: icon (model render or vector glyph), hotkey letter, cost.

@@ -68,6 +68,11 @@ func _build_ui() -> void:
 	gap.custom_minimum_size = Vector2(0, 40)
 	col.add_child(gap)
 	col.add_child(_button("Новая игра", _new_game))
+	var load_btn := _button("Загрузить игру", _show_load)
+	load_btn.disabled = MainScript.SAVE_SLOTS.all(func(s): return MainScript.read_slot(s).is_empty())
+	load_btn.add_theme_stylebox_override("disabled", _style(Color(0.03, 0.05, 0.07, 0.6), Color(0.1, 0.15, 0.2)))
+	load_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.55, 0.6, 0.6))
+	col.add_child(load_btn)
 	diff_button = _button("", _next_difficulty)
 	col.add_child(diff_button)
 	diff_label = _label("", 15, Color(0.75, 0.85, 0.95, 0.8))
@@ -131,6 +136,10 @@ func _next_difficulty() -> void:
 func _new_game() -> void:
 	MainScript.difficulty = DIFFICULTIES[diff_index][0]
 	get_tree().change_scene_to_file("res://main.tscn")
+
+
+func _show_load() -> void:
+	ui.add_child(HUD.SlotMenu.make(HUD, MainScript, "load", null))
 
 
 func _show_help() -> void:
