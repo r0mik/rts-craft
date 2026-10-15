@@ -186,6 +186,17 @@ func _build_console() -> void:
 	card_frame.add_child(card)
 
 
+## Esc in game: pauses the battle and shows Continue / Main menu / Quit.
+func open_pause_menu() -> void:
+	if get_node_or_null("PauseMenu") != null:
+		return
+	var pm := PauseMenu.new()
+	pm.name = "PauseMenu"
+	pm.hud = self
+	add_child(pm)
+	get_tree().paused = true
+
+
 func show_message(text: String) -> void:
 	if msg_label == null:
 		return
@@ -194,7 +205,7 @@ func show_message(text: String) -> void:
 
 
 func show_big(text: String, color: Color) -> void:
-	big_label.text = text + "\n[R] — заново"
+	big_label.text = text + "\n[R] — заново    [Esc] — меню"
 	big_label.add_theme_color_override("font_color", color)
 
 
@@ -574,6 +585,58 @@ func _render_icons() -> void:
 
 
 # --- Widgets --------------------------------------------------------------------
+
+## Pause overlay. Runs while the tree is paused; Esc or "Продолжить" resumes.
+class PauseMenu extends Control:
+	var hud
+
+	func _ready() -> void:
+		process_mode = Node.PROCESS_MODE_ALWAYS
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+		var dim := ColorRect.new()
+		dim.color = Color(0, 0, 0, 0.55)
+		dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(dim)
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", hud.panel_style(Color(0.03, 0.05, 0.08, 0.97), FRAME, 2, 6))
+		panel.set_anchors_preset(Control.PRESET_CENTER)
+		panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+		add_child(panel)
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 12)
+		panel.add_child(box)
+		var title: Label = hud._label("ПАУЗА", 32, ACCENT)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		box.add_child(title)
+		for item in [["Продолжить", _resume], ["Главное меню", _to_menu], ["Выйти из игры", _quit]]:
+			var b := Button.new()
+			b.text = item[0]
+			b.custom_minimum_size = Vector2(300, 52)
+			b.add_theme_font_size_override("font_size", 20)
+			b.add_theme_stylebox_override("normal", hud.panel_style(Color(0.05, 0.09, 0.12), FRAME_DIM, 2, 4))
+			b.add_theme_stylebox_override("hover", hud.panel_style(Color(0.08, 0.15, 0.2), ACCENT, 2, 4))
+			b.add_theme_stylebox_override("pressed", hud.panel_style(Color(0.14, 0.24, 0.3), Color.WHITE, 2, 4))
+			b.pressed.connect(item[1])
+			box.add_child(b)
+
+	func _unhandled_key_input(event: InputEvent) -> void:
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+			get_viewport().set_input_as_handled()
+			_resume()
+
+	func _resume() -> void:
+		get_tree().paused = false
+		queue_free()
+
+	func _to_menu() -> void:
+		get_tree().paused = false
+		get_tree().change_scene_to_file("res://menu.tscn")
+
+	func _quit() -> void:
+		get_tree().quit()
+
 
 ## Square command button: icon (model render or vector glyph), hotkey letter, cost.
 class CmdButton extends Button:

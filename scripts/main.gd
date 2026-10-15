@@ -61,6 +61,13 @@ var lakes := [{"pos": Vector2(2550, 760), "r": 210.0}, {"pos": Vector2(1450, 224
 var obstacles: Array = []  # {pos, r} circles derived from hills and lakes
 var autotest := false
 var report_timer := 0.0
+## Chosen in the main menu: "easy" — red only defends; "normal" — red plays the full AI and attacks.
+static var difficulty := "easy"
+## Demo mode: AI vs AI battle behind the main menu (no HUD, no fog, no input, cinematic camera).
+var demo := false
+var demo_restart := 0.0
+var demo_cam_timer := 0.0
+var demo_cam_target := Vector2(450, 450)
 
 
 func _ready() -> void:
@@ -80,9 +87,13 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup(self)
 	_add_ai(ENEMY)
-	if autotest:
+	if autotest or demo:
 		_add_ai(PLAYER)  # AI vs AI to exercise every system
-	_init_fog()
+	if demo:
+		hud.visible = false
+		view.dist = 80.0
+	else:
+		_init_fog()
 	view.focus = start_positions[PLAYER] + Vector2(250, 120)
 	show_message("Добывай минералы, строй армию и уничтожь красную базу!")
 
@@ -91,7 +102,8 @@ func _add_ai(t: int) -> void:
 	var ai = AIScript.new()
 	ai.game = self
 	ai.team = t
-	ai.easy = t == ENEMY  # the red opponent plays on easy; in AI-vs-AI tests blue uses the full build
+	# the red opponent plays on easy unless "normal" was chosen; AI-vs-AI tests and the menu demo use the full AI
+	ai.easy = t == ENEMY and difficulty == "easy" and not demo
 	add_child(ai)
 	ais.append(ai)
 
@@ -939,7 +951,7 @@ func is_point_visible(p: Vector2) -> bool:
 ## Whether the player may see an entity: own things always, enemy units only inside vision,
 ## enemy buildings once spotted, minerals always.
 func visible_to_player(e) -> bool:
-	if e.team == PLAYER or e.team < 0:
+	if e.team == PLAYER or e.team < 0 or demo:
 		return true
 	if e.is_in_group("buildings"):
 		return e.seen_by_player
@@ -1110,6 +1122,8 @@ func show_message(text: String) -> void:
 # --- Input ------------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	if demo:
+		return
 	if event is InputEventMouseButton:
 		var sp: Vector2 = event.position
 		var wp: Vector2 = view.screen_to_ground(sp)
@@ -1167,6 +1181,8 @@ func _handle_key(event: InputEventKey) -> void:
 		get_tree().reload_current_scene()
 		return
 	if key == KEY_ESCAPE:
+		if placing == "" and not attack_mode and not missile_mode:
+			hud.open_pause_menu()  # nothing to cancel: open the pause menu
 		placing = ""
 		attack_mode = false
 		missile_mode = false
@@ -1223,7 +1239,7 @@ func _finish_selection(a: Vector2, b: Vector2, add: bool) -> void:
 func _process(delta: float) -> void:
 	elapsed += delta
 	fog_timer -= delta
-	if fog_timer <= 0.0:
+	if fog_timer <= 0.0 and fog_cols > 0:
 		fog_timer = 0.2
 		_update_fog()
 	_update_missiles(delta)
@@ -1233,6 +1249,10 @@ func _process(delta: float) -> void:
 	if dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		dragging = false
 		_finish_selection(drag_start, get_viewport().get_mouse_position(), Input.is_key_pressed(KEY_SHIFT))
+	if demo and game_over:  # the menu battle starts over a few seconds after it ends
+		demo_restart += delta
+		if demo_restart > 6.0:
+			get_tree().reload_current_scene()
 	win_check -= delta
 	if win_check <= 0.0 and not game_over:
 		win_check = 1.0
@@ -1283,6 +1303,17 @@ func _autotest_screenshot() -> void:
 
 
 func _update_camera(delta: float) -> void:
+	if demo:  # cinematic camera: glides to a new point of interest (an army, a base) every few seconds
+		demo_cam_timer -= delta
+		if demo_cam_timer <= 0.0:
+			demo_cam_timer = 9.0
+			var army := get_tree().get_nodes_in_group("units").filter(func(u): return u.is_alive() and not u.is_worker())
+			if army.is_empty() or randf() < 0.3:
+				demo_cam_target = start_positions[randi() % 2] + Vector2(randf_range(-150, 250), randf_range(-100, 250))
+			else:
+				demo_cam_target = army.pick_random().position
+		view.focus = view.focus.lerp(demo_cam_target, minf(1.0, delta * 0.6))
+		return
 	var dir := Vector2.ZERO
 	# WASD by physical position, so it works with any keyboard layout; arrows kept as a fallback.
 	if Input.is_physical_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT): dir.x -= 1
