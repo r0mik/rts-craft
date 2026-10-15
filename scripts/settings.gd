@@ -7,7 +7,12 @@ const QUALITY_NAMES := ["Низкое", "Среднее", "Высокое"]
 const SPEEDS := [0.75, 1.0, 1.25, 1.5]
 
 static var loaded := false
-static var fullscreen := false
+const WINDOW_MODES := ["Окно", "Полный экран", "Окно без рамки на весь экран"]
+const RESOLUTIONS := [Vector2i(1280, 720), Vector2i(1366, 768), Vector2i(1600, 900), Vector2i(1920, 1080),
+	Vector2i(2560, 1440), Vector2i(3840, 2160)]
+
+static var window_mode := 0      # 0 window, 1 exclusive fullscreen, 2 borderless window over the whole screen
+static var resolution := 2       # index in RESOLUTIONS, used in window mode
 static var vsync := true
 static var quality := 2          # 0 low, 1 medium, 2 high
 static var show_fps := false
@@ -26,7 +31,8 @@ static func load_settings() -> void:
 	var cf := ConfigFile.new()
 	if cf.load(PATH) != OK:
 		return
-	fullscreen = cf.get_value("display", "fullscreen", fullscreen)
+	window_mode = clampi(cf.get_value("display", "window_mode", 1 if cf.get_value("display", "fullscreen", false) else 0), 0, 2)
+	resolution = clampi(cf.get_value("display", "resolution", resolution), 0, RESOLUTIONS.size() - 1)
 	vsync = cf.get_value("display", "vsync", vsync)
 	quality = clampi(cf.get_value("display", "quality", quality), 0, 2)
 	show_fps = cf.get_value("display", "show_fps", show_fps)
@@ -40,7 +46,8 @@ static func load_settings() -> void:
 
 static func save_settings() -> void:
 	var cf := ConfigFile.new()
-	cf.set_value("display", "fullscreen", fullscreen)
+	cf.set_value("display", "window_mode", window_mode)
+	cf.set_value("display", "resolution", resolution)
 	cf.set_value("display", "vsync", vsync)
 	cf.set_value("display", "quality", quality)
 	cf.set_value("display", "show_fps", show_fps)
@@ -53,13 +60,31 @@ static func save_settings() -> void:
 	cf.save(PATH)
 
 
-## Window mode and v-sync (not in headless runs).
+## Window mode, resolution (window mode only) and v-sync (not in headless runs).
 static func apply_window() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
-	var want := DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
-	if DisplayServer.window_get_mode() != want:
+	var modes := [DisplayServer.WINDOW_MODE_WINDOWED, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
+		DisplayServer.WINDOW_MODE_FULLSCREEN]
+	var want: int = modes[window_mode]
+	var was: int = DisplayServer.window_get_mode()
+	if was != want:
 		DisplayServer.window_set_mode(want)
+	if window_mode == 0:
+		_apply_size()
+		if was != DisplayServer.WINDOW_MODE_WINDOWED:  # leaving fullscreen is animated on some systems: size again
+			(Engine.get_main_loop() as SceneTree).create_timer(0.8, true).timeout.connect(func(): _apply_size())
+
+
+static func _apply_size() -> void:
+	if window_mode != 0:
+		return
+	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+	var size: Vector2i = RESOLUTIONS[resolution]
+	size = Vector2i(mini(size.x, screen.size.x), mini(size.y, screen.size.y))
+	if DisplayServer.window_get_size() != size:
+		DisplayServer.window_set_size(size)
+		DisplayServer.window_set_position(screen.position + (screen.size - size) / 2)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
 
 

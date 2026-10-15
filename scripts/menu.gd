@@ -97,7 +97,6 @@ func _build_ui() -> void:
 	diff_label = _label("", 15, Color(0.75, 0.85, 0.95, 0.8))
 	diff_label.custom_minimum_size = Vector2(560, 0)
 	col.add_child(diff_label)
-	col.add_child(_button(I18N.t("Язык / Language: %s  ▸") % I18N.NAMES[Settings.lang], _next_language))
 	col.add_child(_button(I18N.t("Настройки"), _show_settings))
 	col.add_child(_button(I18N.t("Как играть"), _show_help))
 	col.add_child(_button(I18N.t("Выход"), func(): get_tree().quit()))
@@ -157,12 +156,6 @@ func _next_difficulty() -> void:
 func _new_game() -> void:
 	MainScript.difficulty = DIFFICULTIES[diff_index][0]
 	get_tree().change_scene_to_file("res://main.tscn")
-
-
-func _next_language() -> void:
-	Settings.lang = "en" if Settings.lang == "ru" else "ru"
-	Settings.save_settings()
-	get_tree().reload_current_scene()
 
 
 func _show_settings() -> void:

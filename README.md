@@ -58,8 +58,7 @@ and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, fre
 **A standalone build without Godot** (a Windows `.exe` or a Linux binary) takes a single command —
 see [HOW_TO_RUN.md](HOW_TO_RUN.md) (in Russian).
 
-The game starts in English or Russian depending on your system language; switch it in the main menu
-(**Language / Язык**) or in the settings.
+The game starts in English or Russian depending on your system language; switch it in **Settings → Language / Язык**.
 
 ## Your first five minutes
 
@@ -198,7 +197,8 @@ Launch with `L` + click inside the silo's yellow range circle. The blast hits ev
   while buildings you've seen stay on the map. The fog can be turned off in the settings.
 - **Saves.** Three slots plus quick save (`F5` / `F9`); load from the pause menu or the main menu. The whole match is saved:
   resources, ages, upgrades, units, construction, queues, loaded missiles and the explored map.
-- **Settings** (main menu or pause): language, fullscreen, v-sync, graphics quality (low / medium / high), FPS counter,
+- **Settings** (main menu or pause): language, display mode (window, fullscreen or borderless full screen), window
+  resolution (1280×720 to 3840×2160), v-sync, graphics quality (low / medium / high), FPS counter,
   camera speed, edge scrolling, game speed (×0.75–×1.5), fog of war and health bars over every unit.
 </details>
 

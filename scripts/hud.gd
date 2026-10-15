@@ -706,7 +706,10 @@ class SettingsMenu extends Control:
 		box.add_child(_choice("Язык / Language", langs.map(func(l): return I18N.NAMES[l]), langs.find(Settings.lang),
 			func(i): _set_language(langs[i])))
 		box.add_child(_section(I18N.t("Экран и графика")))
-		box.add_child(_toggle(I18N.t("Полный экран"), Settings.fullscreen, func(v): Settings.fullscreen = v))
+		box.add_child(_choice(I18N.t("Режим экрана"), Settings.WINDOW_MODES.map(func(m): return I18N.t(m)), Settings.window_mode,
+			func(i): Settings.window_mode = i))
+		box.add_child(_choice(I18N.t("Разрешение (в окне)"), Settings.RESOLUTIONS.map(func(r): return "%d × %d" % [r.x, r.y]),
+			Settings.resolution, func(i): Settings.resolution = i))
 		box.add_child(_toggle(I18N.t("Вертикальная синхронизация"), Settings.vsync, func(v): Settings.vsync = v))
 		box.add_child(_choice(I18N.t("Качество графики"), Settings.QUALITY_NAMES.map(func(q): return I18N.t(q)), Settings.quality, func(i): Settings.quality = i))
 		box.add_child(_toggle(I18N.t("Показывать FPS"), Settings.show_fps, func(v): Settings.show_fps = v))

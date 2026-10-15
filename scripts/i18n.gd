@@ -179,6 +179,10 @@ const EN := {
 	"Титан «%s»": "Titan “%s”",
 	"Язык": "Language",
 	"Язык / Language: %s  ▸": "Language / Язык: %s  ▸",
+	"Режим экрана": "Display mode",
+	"Окно": "Window",
+	"Окно без рамки на весь экран": "Borderless window, full screen",
+	"Разрешение (в окне)": "Resolution (window)",
 }
 
 
