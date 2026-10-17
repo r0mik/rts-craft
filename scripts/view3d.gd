@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3, "medic": 1.45, "scout": 1.4, "beacon": 1.4, "officer": 1.5, "command_vehicle": 1.1, "command_ship": 1.05, "mechanic": 1.2}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3, "medic": 1.45, "mlrs": 1.05, "scout": 1.4, "beacon": 1.4, "officer": 1.5, "command_vehicle": 1.1, "command_ship": 1.05, "mechanic": 1.2}
 
 var game
 var camera: Camera3D
@@ -647,7 +647,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 			"marine", "worker", "medic", "officer":
 				var bob := absf(sin(time * 11.0 + seed)) * 0.12 if moved else 0.0
 				model.position.y = lerpf(model.position.y, bob, minf(1.0, delta * 15.0))
-				if e.kind != "worker":  # infantry walk cycle: legs swing, the forward leg bends at the knee
+				if model.has_node("Leg0"):  # walk cycle: legs swing, the forward leg bends at the knee
 					var ph := time * 11.0 + seed
 					var amt := 1.0 if moved else 0.0
 					var k := minf(1.0, delta * 14.0)
@@ -694,23 +694,25 @@ func _sync(e, root: Node3D, delta: float) -> void:
 					dive = (1.0 - k) * 0.9
 				body.position.y = lerpf(body.position.y, want, minf(1.0, delta * 8.0))
 				body.rotation.z = lerpf(body.rotation.z, -dive, minf(1.0, delta * 8.0))
-			"titan":  # walking legs and a torso that turns towards the target
-				var swing := sin(time * 4.0 + seed) * 0.35 if moved else 0.0
-				for i in 2:
-					var leg: Node3D = model.get_node("Leg%d" % i)
-					leg.rotation.z = lerpf(leg.rotation.z, swing if i == 0 else -swing, minf(1.0, delta * 8.0))
-				model.position.y = absf(sin(time * 4.0 + seed)) * 0.15 if moved else 0.0
+			"titan":  # heavy tank (turret only) or the Fog's Executioner (walking legs)
+				if model.has_node("Leg0"):
+					var swing := sin(time * 4.0 + seed) * 0.35 if moved else 0.0
+					for i in 2:
+						var leg: Node3D = model.get_node("Leg%d" % i)
+						leg.rotation.z = lerpf(leg.rotation.z, swing if i == 0 else -swing, minf(1.0, delta * 8.0))
+					model.position.y = absf(sin(time * 4.0 + seed)) * 0.15 if moved else 0.0
 				var torso: Node3D = model.get_node("Turret")
 				var aim := 0.0
 				if game.valid(e.target):
 					aim = -(e.target.position - e.position).angle() - model.rotation.y
 				torso.rotation.y = lerp_angle(torso.rotation.y, aim, minf(1.0, delta * 4.0))
-			"tank", "aa":
-				var tur: Node3D = model.get_node("Turret")
-				var want := 0.0
-				if game.valid(e.target):
-					want = -(e.target.position - e.position).angle() - model.rotation.y
-				tur.rotation.y = lerp_angle(tur.rotation.y, want, minf(1.0, delta * 6.0))
+			"tank", "aa", "mlrs":
+				var tur: Node3D = model.get_node_or_null("Turret")
+				if tur != null:
+					var want := 0.0
+					if game.valid(e.target):
+						want = -(e.target.position - e.position).angle() - model.rotation.y
+					tur.rotation.y = lerp_angle(tur.rotation.y, want, minf(1.0, delta * 6.0))
 	elif e.is_in_group("buildings"):
 		p3.y = _footprint_h(e.position, e.size)
 		root.position = p3
@@ -1025,7 +1027,7 @@ func fx_shot(attacker, target, splash: bool) -> void:
 	if not game.visible_to_player(attacker) and not game.visible_to_player(target):
 		return  # fight hidden in the fog
 	var a_h := top_of(attacker)
-	var rockets := false
+	var rockets := 0
 	var dir: Vector2 = (target.position - attacker.position).normalized()
 	var muzzle: Vector3
 	var color := Color(1.0, 0.85, 0.4)
@@ -1047,7 +1049,10 @@ func fx_shot(attacker, target, splash: bool) -> void:
 				color = game.team_color(attacker.team).lightened(0.4)
 				width = 0.09
 			"stormbird":
-				rockets = true
+				rockets = 2
+			"mlrs":  # a ripple of rockets from the launcher box
+				muzzle = _world(attacker.position, 2.4)
+				rockets = 6
 			"devastator":  # one huge bunker-buster from the belly
 				var hit_b := _world(target.position, top_of(target) * 0.5)
 				_rocket(muzzle + Vector3(0, -1.2, 0), hit_b, 2.2, 0.9)
@@ -1057,7 +1062,7 @@ func fx_shot(attacker, target, splash: bool) -> void:
 				color = Color(1.0, 0.95, 0.8)
 				width = 0.1
 			"titan":
-				muzzle = _world(attacker.position + dir * 3.0 * PX, 3.9)
+				muzzle = _world(attacker.position + dir * 4.5 * PX, top_of(attacker) * 0.65)
 				color = game.team_color(attacker.team).lerp(Color(1.0, 0.7, 0.3), 0.5)
 				width = 0.22
 			"worker":
@@ -1066,10 +1071,13 @@ func fx_shot(attacker, target, splash: bool) -> void:
 		color = Color(0.72, 0.85, 0.28)  # the Fog spits acid
 	var t_h: float = mid_of(target) if target.is_air() else top_of(target) * 0.45 if not target.is_in_group("buildings") else top_of(target) * 0.5
 	var hit := _world(target.position, t_h) + Vector3(randf_range(-0.3, 0.3), 0, randf_range(-0.3, 0.3))
-	if rockets:  # a salvo of two missiles from the wing pylons
+	if rockets > 0:  # a salvo: wing pylons (2) or an MLRS ripple (6) landing around the target
 		var side := Vector3(-dir.y, 0, dir.x)
-		for s in [-1.0, 1.0]:
-			_rocket(muzzle + side * s * 1.6 + Vector3(0, -0.4, 0), hit + side * s * 0.3)
+		for i in rockets:
+			var s := -1.0 + 2.0 * i / maxf(rockets - 1, 1)
+			var spread := Vector3(randf_range(-1.2, 1.2), 0, randf_range(-1.2, 1.2)) if rockets > 2 else side * s * 0.3
+			_rocket(muzzle + side * s * (1.6 if rockets == 2 else 0.5) + Vector3(0, -0.4 if rockets == 2 else 0.0, 0),
+				hit + spread, 1.0, ROCKET_TIME * (1.0 if rockets == 2 else 2.4 + i * 0.12))
 		return
 	_tracer(muzzle, hit, color, width)
 	_burst(muzzle, 3, _fire_ramp, _additive, 0.5, 0.5 if width < 0.1 else 1.2, 0.08, Vector3.ZERO)

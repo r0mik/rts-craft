@@ -19,7 +19,8 @@ and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, fre
 Pick your side in the main menu (**Faction**); the enemy plays the other one.
 
 - **Humans** — soldiers in helmets and uniforms, workers in hard hats, medics and officers, backed by tanks, AA
-  vehicles, jets and a giant Walker; their base is hastily bolted together from salvaged modules.
+  vehicles, APCs, rocket artillery, jets and a heavy tank; their base is a field camp of concrete, sandbags,
+  Quonset huts, containers and hangars.
 - **The Fog** — a Silent Hill–like faction living in a rotting town of its own: a chapel-like Altar with a bell
   tower, a boarded-up Asylum, a Slaughterhouse with smoking chimneys, a Crypt, a Cage, a Nest of girders and bones,
   a Well, an air-raid Siren — all rusted, blood-stained and hung with chains — and twisted creatures — Gatherers, straitjacketed Cocoons spitting acid, faceless Sisters,
@@ -42,7 +43,7 @@ The whole world is wrapped in thick white fog with falling ash, flat grey light,
   gain regenerating energy shields, and your army gets a power boost.
 - 🚀 **Missile silos.** Four kinds of missiles: tactical, cluster, napalm and heavy. The missile flies on an arc, the impact
   zone is marked in advance, and the blast hits everyone — enemies and your own units alike.
-- 🤖 **Unusual units.** A giant Walker (or the Fog's Executioner) boss with a random name and stats, a bomber that only hits buildings, kamikaze drones,
+- 🤖 **Unusual units.** A heavy tank (or the Fog's Executioner) boss with a random name and stats, a bomber that only hits buildings, kamikaze drones,
   a scout with sensor beacons, medics and mechanics that heal and repair your army mid-battle.
 - 🛡️ **Fair combat mechanics.** Armor and target classes: infantry barely scratches tanks, tanks crush vehicles and buildings,
   and only AA, turrets and fighters can shoot down aircraft. A blob of marines alone won't take a base.
@@ -117,13 +118,13 @@ Built by a worker: select it and press the key.
 
 | Key | Building | Cost | Requires | HP / armor | Provides |
 |---|---|---|---|---|---|
-| `C` | Headquarters | 400 | — | 1500 / 3 | workers, Recon Drone, Walker, ages, mineral drop-off, +10 supply |
+| `C` | Headquarters | 400 | — | 1500 / 3 | workers, Recon Drone, Heavy Tank, ages, mineral drop-off, +10 supply |
 | `V` | Supply Depot | 100 | — | 400 / 1 | +8 supply (max 200) |
 | `B` | Barracks | 150 | — | 1000 / 2 | marines, medics |
 | `U` | Bunker | 100 | Barracks | 550 / 4 | gun emplacement (7 damage, range 150); `R` — repair for minerals |
 | `E` | Workshop | 125 | — | 850 / 1 | weapons (`G`) and armor (`R`) upgrades, up to 3 levels |
 | `T` | AA Turret | 100 | Workshop | 300 / 2 | air defense: ×2 damage against air, range 230 |
-| `F` | Factory | 200 | Barracks | 1250 / 2 | tanks, AA, mechanics |
+| `F` | Factory | 200 | Barracks | 1250 / 2 | APCs, AA, engineers, MLRS |
 | `P` | Airfield | 200 | Factory | 1300 / 2 | fighters, missile bombers, bombers, drones |
 | `M` | Missile Silo | 200 | Workshop | 600 / 3 | four kinds of missiles |
 </details>
@@ -137,7 +138,8 @@ Built by a worker: select it and press the key.
 | Recon Drone | CC `R` | 60 | 55 / 0 | infantry | — | unarmed, very fast, sight 460; `F` — a beacon that sees everything around for 90 s |
 | Soldier | Barracks `Q` | 50 | 45 / 0 | infantry | 6 / 130 | the backbone of the army, can't hit air |
 | Medic | Barracks `E` | 75 | 60 / 0 | infantry | — | heals infantry for 14 HP/s, walks up to the wounded |
-| Tank | Factory `T` | 150 | 160 / 4 | vehicle | 30 / 240, splash | crushes vehicles and buildings, weak against infantry |
+| APC | Factory `T` | 150 | 160 / 4 | vehicle | 30 / 240, splash | eight-wheeled carrier with an autocannon; crushes vehicles and buildings, weak against infantry |
+| MLRS | Factory `V` | 225 | 130 / 1 | vehicle | 40 / 420, splash, every 6 s | rocket artillery: a ripple of six rockets, outranges everything; can't hit air |
 | AA Vehicle | Factory `Y` | 125 | 140 / 3 | vehicle | 20 / 280 | hits air only |
 | Engineer | Factory `R` | 100 | 120 / 2 | vehicle | — | repairs vehicles, aircraft and buildings for 18 HP/s |
 | Fighter | Airfield `V` | 150 | 120 / 1 | air | 10 / 150 | flies high; infantry and tanks can't reach it |
@@ -145,7 +147,7 @@ Built by a worker: select it and press the key.
 | Bomber | Airfield `N` | 400 | 280 / 3 | air | 120 / 200 | attacks buildings only |
 | Kamikaze Drone | Airfield `K` | 100 | 40 / 0 | air | 250 | dives into a building and explodes |
 | Officer, Command APC, Command Aircraft | Barracks / Factory / Airfield `C` | 100 / 175 / 200 | 130 / 320 / 260 | by class | — | unarmed squad leaders, see Squads |
-| Walker (boss) | CC `Y` | 500 | ~1400 / 6 | vehicle | ~40 / 220, splash | one per side; random name and stats |
+| Heavy Tank (boss) | CC `Y` | 500 | ~1400 / 6 | vehicle | ~40 / 220, splash | one per side; random name and stats |
 </details>
 
 <details>
@@ -171,7 +173,7 @@ but it sees far like a scout. Members within 380 of their commander get the bonu
   | Attacker | infantry | vehicles | air | buildings |
   |---|---|---|---|---|
   | tank | ×0.5 | ×1.5 | — | ×2 |
-  | Walker | ×0.8 | ×1.3 | ×1 | ×1.5 |
+  | Heavy Tank | ×0.8 | ×1.3 | ×1 | ×1.5 |
   | marine | ×1 | ×1 | — | ×0.8 |
   | fighter | ×1 | ×0.8 | ×1.4 | ×0.5 |
   | missile bomber | ×1.2 | ×1 | ×1 | ×0.7 |
@@ -211,7 +213,7 @@ Launch with `L` + click inside the silo's yellow range circle. The blast hits ev
 <summary><b>Enemy, fog of war, saves and settings</b></summary>
 
 - **Enemy.** On Easy, red only defends its base (but still advances through the ages, forms squads and fires missiles
-  at anything that comes close). On Normal it plays the full AI: vehicles, aircraft, the Walker and attack waves.
+  at anything that comes close). On Normal it plays the full AI: vehicles, aircraft, the Heavy Tank and attack waves.
 - **Fog of war.** Explored ground is darkened, unexplored ground is almost black; enemy units in the fog are hidden,
   while buildings you've seen stay on the map. The fog can be turned off in the settings.
 - **Saves.** Three slots plus quick save (`F5` / `F9`); load from the pause menu or the main menu. The whole match is saved:

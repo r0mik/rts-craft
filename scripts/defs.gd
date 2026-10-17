@@ -57,7 +57,7 @@ const UNITS := {
 		"cost": 0, "supply": 0, "time": 0.0, "unarmed": true, "static": true, "lifetime": 90.0,
 	},
 	"tank": {
-		"name": "Танк", "hp": 160, "armor": 4, "speed": 75.0, "radius": 16.0,
+		"name": "БТР", "hp": 160, "armor": 4, "speed": 75.0, "radius": 16.0,
 		"damage": 30, "range": 240.0, "cooldown": 2.2, "sight": 300.0, "splash": 40.0,
 		"cost": 150, "supply": 3, "time": 25.0, "hotkey": KEY_T, "anti_air": false,
 	},
@@ -86,6 +86,12 @@ const UNITS := {
 		"kamikaze": true,
 	},
 	# Anti-air vehicle: long-range missiles that hit only flyers.
+	# MLRS: long-range rocket artillery, splash; can't hit air.
+	"mlrs": {
+		"name": "РСЗО", "hp": 130, "armor": 1, "speed": 70.0, "radius": 16.0,
+		"damage": 40, "range": 420.0, "cooldown": 6.0, "sight": 440.0, "splash": 75.0,
+		"cost": 225, "supply": 3, "time": 32.0, "hotkey": KEY_V, "anti_air": false,
+	},
 	"aa": {
 		"name": "Зенитная установка", "hp": 140, "armor": 3, "speed": 95.0, "radius": 15.0,
 		"damage": 20, "range": 280.0, "cooldown": 0.9, "sight": 330.0,
@@ -93,9 +99,9 @@ const UNITS := {
 	},
 	# Boss unit: one per side, trained at the Command Center once a Barracks is up.
 	"titan": {
-		"name": "Шагоход", "hp": 1400, "armor": 6, "speed": 50.0, "radius": 30.0,
+		"name": "Тяжёлый танк", "hp": 1400, "armor": 6, "speed": 50.0, "radius": 30.0,
 		"damage": 40, "range": 220.0, "cooldown": 1.6, "sight": 320.0, "splash": 60.0,
-		"cost": 500, "supply": 6, "time": 45.0, "hotkey": KEY_Y, "requires": "barracks", "limit": 1,
+		"cost": 500, "supply": 6, "time": 45.0, "hotkey": KEY_Y, "requires": "barracks", "anti_air": false, "limit": 1,
 		# every Titan rolls its own stats: each value is multiplied by a random factor from [min, max]
 		"random": {"hp": [0.7, 1.4], "damage": [0.6, 1.6], "range": [0.8, 1.3], "speed": [0.7, 1.4],
 			"cooldown": [0.7, 1.4], "splash": [0.6, 1.6]},
@@ -118,7 +124,7 @@ const BUILDINGS := {
 	},
 	"factory": {
 		"name": "Завод", "short": "FACTORY", "hp": 1250, "armor": 2, "size": Vector2(120, 90),
-		"cost": 200, "time": 50.0, "trains": ["tank", "aa", "mechanic", "command_vehicle"], "hotkey": KEY_F, "requires": "barracks",
+		"cost": 200, "time": 50.0, "trains": ["tank", "aa", "mechanic", "command_vehicle", "mlrs"], "hotkey": KEY_F, "requires": "barracks",
 	},
 	"bunker": {
 		"name": "Бункер", "short": "BUNKER", "hp": 550, "armor": 4, "size": Vector2(80, 64),
@@ -170,7 +176,7 @@ const MISSILES := {
 const ARMOR_CLASS := {
 	"worker": "infantry", "marine": "infantry", "medic": "infantry", "scout": "infantry", "beacon": "infantry",
 	"officer": "infantry",
-	"tank": "vehicle", "aa": "vehicle", "mechanic": "vehicle", "titan": "vehicle", "command_vehicle": "vehicle",
+	"tank": "vehicle", "aa": "vehicle", "mechanic": "vehicle", "titan": "vehicle", "mlrs": "vehicle", "command_vehicle": "vehicle",
 	"wraith": "air", "stormbird": "air", "devastator": "air", "drone": "air", "command_ship": "air",
 }  # buildings are "building"
 const CLASS_NAMES := {"infantry": "пехота", "vehicle": "техника", "air": "авиация", "building": "здания"}
@@ -178,6 +184,7 @@ const DAMAGE_VS := {
 	"worker": {"building": 0.5},
 	"marine": {"building": 0.8},
 	"tank": {"infantry": 0.5, "vehicle": 1.5, "building": 2.0},
+	"mlrs": {"infantry": 1.2, "vehicle": 0.9, "building": 1.3},
 	"titan": {"infantry": 0.8, "vehicle": 1.3, "building": 1.5},
 	"wraith": {"vehicle": 0.8, "air": 1.4, "building": 0.5},
 	"stormbird": {"infantry": 1.2, "building": 0.7},
@@ -206,7 +213,7 @@ const FOG_REGEN := 1.5  # HP per second for Fog units and finished buildings
 const FOG_NAMES := {
 	"worker": "Сборщик", "marine": "Кокон", "medic": "Сиделка", "officer": "Вестник", "scout": "Глаз",
 	"beacon": "Ржавый колокол", "tank": "Зверь", "aa": "Крикун", "mechanic": "Ткач",
-	"command_vehicle": "Пастырь", "wraith": "Летун", "stormbird": "Рой", "devastator": "Чрево",
+	"command_vehicle": "Пастырь", "mlrs": "Плеватель", "wraith": "Летун", "stormbird": "Рой", "devastator": "Чрево",
 	"drone": "Мотылёк", "command_ship": "Проводник", "titan": "Палач",
 	"cc": "Алтарь", "depot": "Склеп", "barracks": "Лечебница", "bunker": "Клетка", "ebay": "Мастерская плоти",
 	"turret": "Сирена", "factory": "Скотобойня", "starport": "Гнездо", "silo": "Колодец",

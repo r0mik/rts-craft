@@ -176,13 +176,13 @@ const EN := {
 	"Командирский самолёт": "Command Aircraft",
 	"Разведдрон": "Recon Drone",
 	"Сенсорный маяк": "Sensor Beacon",
-	"Танк": "Tank",
+	"БТР": "APC", "РСЗО": "MLRS", "Плеватель": "Spitter",
 	"Истребитель": "Fighter",
 	"Штурмовик": "Attack Jet",
 	"Бомбардировщик": "Bomber",
 	"Дрон-камикадзе": "Kamikaze Drone",
 	"Зенитная установка": "AA Vehicle",
-	"Шагоход": "Walker",
+	"Тяжёлый танк": "Heavy Tank",
 	"Штаб": "Headquarters",
 	"Склад": "Supply Depot",
 	"Казарма": "Barracks",
@@ -227,8 +227,8 @@ static func t(s: String) -> String:
 		return s
 	if EN.has(s):
 		return EN[s]
-	if s.begins_with("Шагоход «") and s.ends_with("»"):  # the Walker's rolled name
-		return "Walker “%s”" % EN.get(s.trim_prefix("Шагоход «").trim_suffix("»"), s)
+	if s.begins_with("Тяжёлый танк «") and s.ends_with("»"):  # the heavy tank's rolled name
+		return "Heavy Tank “%s”" % EN.get(s.trim_prefix("Тяжёлый танк «").trim_suffix("»"), s)
 	if s.begins_with("Палач «") and s.ends_with("»"):  # the Fog's Executioner
 		return "Executioner “%s”" % EN.get(s.trim_prefix("Палач «").trim_suffix("»"), s)
 	return s

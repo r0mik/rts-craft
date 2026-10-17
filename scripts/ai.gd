@@ -181,6 +181,8 @@ func _military(cc, army: Array, buildings: Array) -> void:
 				game.try_train(b, "mechanic")
 			elif game.count_units(team, "command_vehicle") * 4 < vehicles - 2:
 				game.try_train(b, "command_vehicle")
+			elif game.count_units(team, "mlrs") * 3 < game.count_units(team, "tank") - 1:  # some rocket artillery
+				game.try_train(b, "mlrs")
 			else:
 				game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")
 		elif b.kind == "starport" and b.queue.size() < 1:

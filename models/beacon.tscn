@@ -2,13 +2,13 @@
 
 [ext_resource type="Texture2D" path="res://assets/materials/metal.png" id="1_v0wko"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_280l1"]
-albedo_color = Color(0.2, 0.22, 0.26, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2laas"]
+albedo_color = Color(0.2, 0.2, 0.21, 1)
 albedo_texture = ExtResource("1_v0wko")
-metallic = 0.75
+metallic = 0.55
 metallic_specular = 0.25
-roughness = 0.35
-uv1_scale = Vector3(0.35, 0.35, 0.35)
+roughness = 0.65
+uv1_scale = Vector3(0.45, 0.45, 0.45)
 uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_sw3yq"]
@@ -20,9 +20,14 @@ size = Vector3(0.06, 0.7, 0.06)
 [sub_resource type="BoxMesh" id="BoxMesh_52emq"]
 size = Vector3(0.06, 0.7, 0.06)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u10ay"]
-albedo_color = Color(0.9, 0.92, 0.94, 1)
-roughness = 0.4
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6en3b"]
+albedo_color = Color(0.3, 0.32, 0.2, 1)
+albedo_texture = ExtResource("1_v0wko")
+metallic = 0.25
+metallic_specular = 0.25
+roughness = 0.75
+uv1_scale = Vector3(0.45, 0.45, 0.45)
+uv1_triplanar = true
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_lysme"]
 top_radius = 0.05
@@ -31,7 +36,7 @@ height = 1.4
 radial_segments = 8
 rings = 1
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fcunb"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k03tx"]
 albedo_color = Color(0.25500003, 0.408, 0.61200005, 1)
 metallic = 0.2
 roughness = 0.45
@@ -39,7 +44,7 @@ roughness = 0.45
 [sub_resource type="BoxMesh" id="BoxMesh_ykofg"]
 size = Vector3(0.6, 0.08, 0.08)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cbgr8"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2vtmr"]
 albedo_color = Color(0.24499999, 0.7, 0.385, 1)
 roughness = 0.6
 emission_enabled = true
@@ -52,64 +57,64 @@ height = 0.24
 radial_segments = 32
 rings = 16
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5qrru"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ikinv"]
 transparency = 1
 cull_mode = 2
 shading_mode = 0
 albedo_color = Color(0.65, 0.74, 0.86, 0.8)
 
-[sub_resource type="TorusMesh" id="TorusMesh_ikinv"]
+[sub_resource type="TorusMesh" id="TorusMesh_lhcb1"]
 outer_radius = 0.56
 rings = 40
 ring_segments = 8
 
-[node name="SensorBeacon" type="Node3D" unique_id=1568583243]
+[node name="SensorBeacon" type="Node3D" unique_id=1467965735]
 
-[node name="@MeshInstance3D@763" type="MeshInstance3D" parent="." unique_id=1448050156]
+[node name="@MeshInstance3D@642" type="MeshInstance3D" parent="." unique_id=662164378]
 transform = Transform3D(0.9396926, 0.34202012, 0, -0.34202012, 0.9396926, 0, 0, 0, 1, 0.25, 0.3, 0)
-material_override = SubResource("StandardMaterial3D_280l1")
+material_override = SubResource("StandardMaterial3D_2laas")
 mesh = SubResource("BoxMesh_sw3yq")
-metadata/mat = "gunmetal"
+metadata/mat = "plate_dark"
 
-[node name="@MeshInstance3D@764" type="MeshInstance3D" parent="." unique_id=2059428586]
+[node name="@MeshInstance3D@643" type="MeshInstance3D" parent="." unique_id=296256567]
 transform = Transform3D(0.9848077, -0.17364818, 0, 0.16577397, 0.9401509, -0.29771662, 0.051697947, 0.29319364, 0.9546543, -0.125, 0.3, 0.21650635)
-material_override = SubResource("StandardMaterial3D_280l1")
+material_override = SubResource("StandardMaterial3D_2laas")
 mesh = SubResource("BoxMesh_ij5hh")
-metadata/mat = "gunmetal"
+metadata/mat = "plate_dark"
 
-[node name="@MeshInstance3D@765" type="MeshInstance3D" parent="." unique_id=1656543828]
+[node name="@MeshInstance3D@644" type="MeshInstance3D" parent="." unique_id=136620161]
 transform = Transform3D(0.9848077, -0.17364818, 0, 0.16577397, 0.9401509, 0.29771662, -0.051697947, -0.29319364, 0.9546543, -0.125, 0.3, -0.21650635)
-material_override = SubResource("StandardMaterial3D_280l1")
+material_override = SubResource("StandardMaterial3D_2laas")
 mesh = SubResource("BoxMesh_52emq")
-metadata/mat = "gunmetal"
+metadata/mat = "plate_dark"
 
-[node name="@MeshInstance3D@766" type="MeshInstance3D" parent="." unique_id=1466449734]
+[node name="@MeshInstance3D@645" type="MeshInstance3D" parent="." unique_id=1336251918]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-material_override = SubResource("StandardMaterial3D_u10ay")
+material_override = SubResource("StandardMaterial3D_6en3b")
 mesh = SubResource("CylinderMesh_lysme")
-metadata/mat = "white"
+metadata/mat = "olive"
 
-[node name="@Node3D@767" type="Node3D" parent="." unique_id=939606323]
+[node name="@Node3D@646" type="Node3D" parent="." unique_id=957125757]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
 metadata/anim = "spin"
 metadata/speed = 2.0
 
-[node name="@MeshInstance3D@768" type="MeshInstance3D" parent="@Node3D@767" unique_id=2119328019]
-material_override = SubResource("StandardMaterial3D_fcunb")
+[node name="@MeshInstance3D@647" type="MeshInstance3D" parent="@Node3D@646" unique_id=1779773231]
+material_override = SubResource("StandardMaterial3D_k03tx")
 mesh = SubResource("BoxMesh_ykofg")
 metadata/mat = "team"
 
-[node name="@MeshInstance3D@769" type="MeshInstance3D" parent="@Node3D@767" unique_id=399194578]
+[node name="@MeshInstance3D@648" type="MeshInstance3D" parent="@Node3D@646" unique_id=796464419]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0, 0)
-material_override = SubResource("StandardMaterial3D_cbgr8")
+material_override = SubResource("StandardMaterial3D_2vtmr")
 mesh = SubResource("SphereMesh_adl2f")
 metadata/mat = "heal_glow"
 
-[node name="@MeshInstance3D@770" type="MeshInstance3D" parent="." unique_id=1455841277]
+[node name="@MeshInstance3D@649" type="MeshInstance3D" parent="." unique_id=149782537]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
-material_override = SubResource("StandardMaterial3D_5qrru")
+material_override = SubResource("StandardMaterial3D_ikinv")
 cast_shadow = 0
-mesh = SubResource("TorusMesh_ikinv")
+mesh = SubResource("TorusMesh_lhcb1")
 metadata/mat = "holo_line"
 metadata/anim = "pulse"
 metadata/speed = 1.5

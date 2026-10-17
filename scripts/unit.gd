@@ -46,7 +46,7 @@ func _roll_stats() -> void:
 		stats[key] = stats[key] * randf_range(f[0], f[1])
 	stats.damage = roundi(stats.damage)
 	stats.hp = roundi(stats.hp)
-	stats.name = ("Палач «%s»" if game.faction(team) == "fog" else "Шагоход «%s»") % stats.titles.pick_random()
+	stats.name = ("Палач «%s»" if game.faction(team) == "fog" else "Тяжёлый танк «%s»") % stats.titles.pick_random()
 
 
 func setup(g, t: int, k: String) -> void:
