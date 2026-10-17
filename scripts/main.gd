@@ -15,7 +15,7 @@ const MAP_SIZE := Vector2(4000, 3000)
 const CELL := 48.0
 const PLAYER := 0
 const ENEMY := 1
-const TEAM_COLORS := [Color(0.25, 0.55, 1.0), Color(0.95, 0.28, 0.22)]
+const TEAM_COLORS := [Color(0.3, 0.48, 0.72), Color(0.72, 0.24, 0.18)]  # muted, grim
 
 var map_size := MAP_SIZE
 var bank := [50, 50]
@@ -91,7 +91,7 @@ func _ready() -> void:
 	autotest = "--autotest" in OS.get_cmdline_user_args()
 	view = ViewScript.new()
 	add_child(view)
-	view.setup(self, [Color(0.27, 0.57, 1.0), Color(0.94, 0.29, 0.23)])
+	view.setup(self, TEAM_COLORS)
 	entities = Node2D.new()  # logic-only nodes; everything visible lives in the 3D view
 	add_child(entities)
 	var save: Dictionary = pending_load

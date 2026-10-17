@@ -8,7 +8,7 @@ const Defs = preload("res://scripts/defs.gd")
 
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://models"))
-	var b = Models.new(Color(0.27, 0.57, 1.0))
+	var b = Models.new(Color(0.3, 0.48, 0.72))
 	var kinds: Array = Defs.BUILDINGS.keys() + Defs.UNITS.keys()
 	for kind in kinds:
 		_save(b.build(kind), kind)

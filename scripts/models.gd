@@ -43,35 +43,51 @@ func mat(name: String) -> Material:
 			_textured(m, "metal", Color(0.68, 0.7, 0.74), 0.35)
 			m.metallic = 0.35
 			m.roughness = 0.38
+		"rust":  # rusty salvaged plates
+			_textured(m, "metal", Color(0.42, 0.24, 0.14), 0.5)
+			m.metallic = 0.3
+			m.roughness = 0.85
+		"olive":  # military olive-drab modules
+			_textured(m, "metal", Color(0.3, 0.32, 0.2), 0.45)
+			m.metallic = 0.25
+			m.roughness = 0.75
+		"primer":  # red-brown primer paint on unfinished modules
+			_textured(m, "metal", Color(0.4, 0.2, 0.15), 0.45)
+			m.metallic = 0.15
+			m.roughness = 0.8
+		"concrete":  # pre-cast concrete blocks
+			_textured(m, "metal", Color(0.4, 0.39, 0.36), 0.25)
+			m.metallic = 0.0
+			m.roughness = 0.95
 		"plate":  # worn steel armour plating of buildings
-			_textured(m, "metal", Color(0.5, 0.52, 0.56), 0.45)
-			m.metallic = 0.55
-			m.roughness = 0.5
+			_textured(m, "metal", Color(0.38, 0.38, 0.39), 0.45)
+			m.metallic = 0.5
+			m.roughness = 0.65
 		"plate_dark":
-			_textured(m, "metal", Color(0.3, 0.31, 0.34), 0.45)
-			m.metallic = 0.6
-			m.roughness = 0.5
+			_textured(m, "metal", Color(0.2, 0.2, 0.21), 0.45)
+			m.metallic = 0.55
+			m.roughness = 0.65
 		"brass":  # brass / bronze armour caps
-			_textured(m, "metal", Color(0.82, 0.6, 0.28), 0.4)
-			m.metallic = 0.85
-			m.roughness = 0.32
+			_textured(m, "metal", Color(0.5, 0.38, 0.2), 0.4)  # tarnished
+			m.metallic = 0.7
+			m.roughness = 0.55
 		"grate":  # vents, ramps and floor grilles
 			_textured(m, "ribs", Color(0.26, 0.27, 0.3), 1.6)
 			m.metallic = 0.5
 			m.roughness = 0.6
 		"seam":  # thin, softer team-coloured light lines on buildings
-			_emissive(m, team_color.lerp(Color(0.6, 0.8, 1.0), 0.3), 0.9)
+			_emissive(m, team_color.lerp(Color(0.9, 0.75, 0.5), 0.3), 0.6)
 		"door_dim":  # lit doorways on buildings
 			_emissive(m, team_color.darkened(0.35), 0.5)
 			m.roughness = 0.3
 		"window":  # lit window strips
-			_emissive(m, team_color.lerp(Color(0.6, 0.8, 1.0), 0.5), 1.8)
+			_emissive(m, Color(1.0, 0.78, 0.45), 1.4)  # warm sodium-lamp windows
 		"gunmetal":
 			_textured(m, "metal", Color(0.2, 0.22, 0.26), 0.35)
 			m.metallic = 0.75
 			m.roughness = 0.35
 		"energy":  # glowing team-coloured energy seams
-			_emissive(m, team_color, 2.2)
+			_emissive(m, team_color, 1.3)
 		"door":
 			_emissive(m, team_color.darkened(0.2), 0.9)
 			m.roughness = 0.2
@@ -97,16 +113,16 @@ func mat(name: String) -> Material:
 			m.albedo_color = team_color.darkened(0.45)
 			m.roughness = 0.5
 		"glow":
-			_emissive(m, team_color.lightened(0.45), 4.0)
+			_emissive(m, team_color.lightened(0.35), 2.4)
 		"heal_glow":
 			_emissive(m, Color(0.35, 1.0, 0.55), 3.5)
 		"white":
 			m.albedo_color = Color(0.9, 0.92, 0.94)
 			m.roughness = 0.4
 		"red_glow":
-			_emissive(m, Color(1.0, 0.35, 0.25), 4.0)
+			_emissive(m, Color(1.0, 0.3, 0.2), 2.6)
 		"amber_glow":
-			_emissive(m, Color(1.0, 0.75, 0.3), 4.0)
+			_emissive(m, Color(1.0, 0.7, 0.3), 2.4)
 		"fire_glow":
 			_emissive(m, Color(1.0, 0.45, 0.1), 4.0)
 		"glass":
@@ -231,6 +247,7 @@ func _add(parent: Node3D, mesh: Mesh, pos: Vector3, m: String, rot: Vector3) -> 
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat(m)
+	mi.set_meta("mat", m)
 	if m in ["holo", "holo_line", "shield"]:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mi.position = pos
@@ -252,7 +269,28 @@ func build(kind: String) -> Node3D:
 	if m != null and kind in DETAILED:
 		var sz: Vector2 = Defs.BUILDINGS[kind].size / PX
 		_detail(m, sz.x, sz.y * depth_k, kind, DETAILED[kind])
+	if m != null and Defs.BUILDINGS.has(kind):
+		_patchwork(m, kind)
 	return m
+
+
+## "Hastily assembled from modules": every metal part of a building gets its own, mismatched
+## finish (worn steel, rust, olive drab, primer, concrete), chosen deterministically per part.
+const PATCHWORK := ["plate", "plate", "rust", "olive", "plate_dark", "primer", "concrete", "olive", "rust"]
+
+func _patchwork(root: Node3D, kind: String) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(kind) * 31 + 7
+	for mi in root.find_children("*", "MeshInstance3D", true, false):
+		var name: String = mi.get_meta("mat", "")
+		if name in ["plate", "plate_dark", "gunmetal", "metal", "hull", "dark"]:
+			var pick: String = PATCHWORK[rng.randi() % PATCHWORK.size()]
+			if name == "plate_dark" and pick == "concrete":
+				pick = "plate_dark"
+			mi.material_override = mat(pick)
+			mi.set_meta("mat", pick)
+		elif name == "brass" and rng.randf() < 0.5:
+			mi.material_override = mat("rust")
 
 
 ## A thin glowing light line around the edge of a building's base plate.

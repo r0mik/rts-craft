@@ -101,22 +101,23 @@ func apply_quality(q: int) -> void:
 
 func _make_environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
-	sky_mat.sky_top_color = Color(0.22, 0.33, 0.55)
-	sky_mat.sky_horizon_color = Color(0.62, 0.64, 0.68)
-	sky_mat.ground_horizon_color = Color(0.5, 0.47, 0.42)
-	sky_mat.ground_bottom_color = Color(0.16, 0.14, 0.11)
+	# grim overcast sky: ash grey above, dusty brown haze at the horizon
+	sky_mat.sky_top_color = Color(0.16, 0.17, 0.19)
+	sky_mat.sky_horizon_color = Color(0.36, 0.32, 0.27)
+	sky_mat.ground_horizon_color = Color(0.3, 0.26, 0.21)
+	sky_mat.ground_bottom_color = Color(0.1, 0.09, 0.08)
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.6
+	env.ambient_light_energy = 0.42
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.05
+	env.tonemap_exposure = 0.92
 	env.glow_enabled = true
-	env.glow_intensity = 0.9
+	env.glow_intensity = 0.6
 	env.glow_strength = 1.0
 	env.glow_bloom = 0.04
 	env.glow_hdr_threshold = 1.8
@@ -125,8 +126,14 @@ func _make_environment() -> void:
 	env.ssao_radius = 1.2
 	env.ssao_intensity = 2.0
 	env.adjustment_enabled = true
-	env.adjustment_contrast = 1.08
-	env.adjustment_saturation = 1.0
+	env.adjustment_contrast = 1.16
+	env.adjustment_saturation = 0.62  # washed-out, grim colours
+	env.adjustment_brightness = 0.92
+	env.fog_enabled = true  # dusty haze over the battlefield
+	env.fog_light_color = Color(0.32, 0.28, 0.24)
+	env.fog_light_energy = 0.8
+	env.fog_density = 0.0022
+	env.fog_sky_affect = 0.4
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -134,8 +141,8 @@ func _make_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun_light = sun
 	sun.rotation_degrees = Vector3(-50, -35, 0)
-	sun.light_energy = 1.2
-	sun.light_color = Color(1.0, 0.95, 0.86)
+	sun.light_energy = 1.05
+	sun.light_color = Color(1.0, 0.86, 0.68)  # low, dusty sunlight
 	sun.shadow_enabled = true
 	sun.shadow_blur = 1.3
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
