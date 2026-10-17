@@ -70,6 +70,7 @@ static func apply_window() -> void:
 	var was: int = DisplayServer.window_get_mode()
 	if was != want:
 		DisplayServer.window_set_mode(want)
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
 	if window_mode == 0:
 		_apply_size()
 		if was != DisplayServer.WINDOW_MODE_WINDOWED:  # leaving fullscreen is animated on some systems: size again
@@ -85,7 +86,6 @@ static func _apply_size() -> void:
 	if DisplayServer.window_get_size() != size:
 		DisplayServer.window_set_size(size)
 		DisplayServer.window_set_position(screen.position + (screen.size - size) / 2)
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
 
 
 ## Anti-aliasing and render scale of the main viewport; the 3D world part is in view3d.apply_quality().

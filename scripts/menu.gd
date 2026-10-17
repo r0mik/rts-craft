@@ -69,6 +69,27 @@ func _build_ui() -> void:
 	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(shade)
+	for top in [true, false]:  # cinematic letterbox bars with a thin glowing edge
+		var lb := ColorRect.new()
+		lb.color = Color(0.0, 0.01, 0.02, 0.8)
+		lb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lb.anchor_right = 1.0
+		if top:
+			lb.offset_bottom = 34.0
+		else:
+			lb.anchor_top = 1.0
+			lb.anchor_bottom = 1.0
+			lb.offset_top = -34.0
+		ui.add_child(lb)
+		var edge := ColorRect.new()
+		edge.color = Color(0.35, 0.8, 1.0, 0.55)
+		edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		edge.anchor_right = 1.0
+		edge.anchor_top = 0.0 if top else 1.0
+		edge.anchor_bottom = edge.anchor_top
+		edge.offset_top = 34.0 if top else -35.0
+		edge.offset_bottom = edge.offset_top + 1.0
+		ui.add_child(edge)
 	var root := MarginContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("margin_left", 110)
@@ -82,6 +103,19 @@ func _build_ui() -> void:
 	title.add_theme_constant_override("outline_size", 12)
 	title.add_theme_color_override("font_outline_color", Color(0.02, 0.1, 0.2))
 	col.add_child(title)
+	var bar := TextureRect.new()  # glowing underline under the title
+	var bg := Gradient.new()
+	bg.set_color(0, Color(0.45, 0.85, 1.0, 0.95))
+	bg.set_color(1, Color(0.45, 0.85, 1.0, 0.0))
+	var bt := GradientTexture2D.new()
+	bt.gradient = bg
+	bt.width = 256
+	bt.height = 4
+	bar.texture = bt
+	bar.stretch_mode = TextureRect.STRETCH_SCALE
+	bar.custom_minimum_size = Vector2(620, 3)
+	bar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	col.add_child(bar)
 	col.add_child(_label(I18N.t("стратегия в реальном времени в духе StarCraft"), 22, Color(0.75, 0.88, 1.0, 0.85)))
 	var gap := Control.new()
 	gap.custom_minimum_size = Vector2(0, 14)
@@ -134,10 +168,9 @@ func _button(text: String, fn: Callable) -> Button:
 	return b
 
 
-func _style(bg: Color, border: Color) -> StyleBoxFlat:
-	var s: StyleBoxFlat = HUD.panel_style(bg, border, 2, 4)
-	s.border_width_left = 5  # StarCraft-like accent bar on the left edge
-	s.content_margin_left = 22
+func _style(bg: Color, border: Color) -> StyleBox:
+	var s: StyleBox = HUD.UiStyle.plate(bg, border, 2, 9, 6)  # cut corners and an accent bar on the left
+	s.content_margin_left = 24
 	return s
 
 

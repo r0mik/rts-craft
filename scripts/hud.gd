@@ -9,6 +9,7 @@ const Defs = preload("res://scripts/defs.gd")
 const MinimapScript = preload("res://scripts/minimap.gd")
 const OverlayScript = preload("res://scripts/overlay.gd")
 const Settings = preload("res://scripts/settings.gd")
+const UiStyle = preload("res://scripts/ui_style.gd")
 
 const FRAME := Color(0.3, 0.62, 0.85)
 const FRAME_DIM := Color(0.16, 0.32, 0.45)
@@ -17,6 +18,7 @@ const TEXT := Color(0.82, 0.92, 1.0)
 const ACCENT := Color(0.45, 0.85, 1.0)
 const GOLD := Color(1.0, 0.85, 0.35)
 const CONSOLE_H := 214.0
+const HOLO_SHADER := preload("res://scripts/holo.gdshader")
 const CARD_COLS := 5
 const CARD_ROWS := 3
 const BTN := 62.0
@@ -89,17 +91,9 @@ func setup(g) -> void:
 
 # --- Layout -------------------------------------------------------------------
 
-static func panel_style(bg: Color, border: Color, width := 2, radius := 4) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = border
-	s.set_border_width_all(width)
-	s.set_corner_radius_all(radius)
-	s.content_margin_left = 6
-	s.content_margin_right = 6
-	s.content_margin_top = 6
-	s.content_margin_bottom = 6
-	return s
+## Metal plate with cut corners (scripts/ui_style.gd); radius sets how big the cut corners are.
+static func panel_style(bg: Color, border: Color, width := 2, radius := 4) -> StyleBox:
+	return UiStyle.plate(bg, border, width, clampi(radius * 2, 4, 12))
 
 
 func _label(text: String, size: int, color := TEXT) -> Label:
@@ -155,16 +149,23 @@ func _build_console() -> void:
 	console.anchor_bottom = 1.0
 	console.anchor_right = 1.0
 	console.offset_top = -CONSOLE_H
-	var st := panel_style(Color(0.02, 0.03, 0.05, 0.98), FRAME, 2, 0)
-	st.border_width_left = 0
-	st.border_width_right = 0
-	st.border_width_bottom = 0
-	st.border_width_top = 3
-	st.shadow_color = Color(0.2, 0.6, 1.0, 0.25)
-	st.shadow_size = 8
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.025, 0.035, 0.05, 0.98)
+	st.content_margin_left = 6
+	st.content_margin_right = 6
+	st.content_margin_top = 8
+	st.content_margin_bottom = 6
 	console.add_theme_stylebox_override("panel", st)
 	console.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(console)
+	var trim := ConsoleTrim.new()  # StarCraft-like raised armour wings along the top of the console
+	trim.anchor_top = 1.0
+	trim.anchor_bottom = 1.0
+	trim.anchor_right = 1.0
+	trim.offset_top = -CONSOLE_H - 26.0
+	trim.offset_bottom = -CONSOLE_H + 8.0
+	trim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(trim)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	console.add_child(row)
@@ -299,6 +300,12 @@ func _build_single() -> void:
 	svc.stretch = true
 	svc.custom_minimum_size = Vector2(150, 166)
 	pf.add_child(svc)
+	var holo := ColorRect.new()  # hologram look over the portrait: scanlines, sweep and vignette
+	holo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hm := ShaderMaterial.new()
+	hm.shader = HOLO_SHADER
+	holo.material = hm
+	pf.add_child(holo)
 	_portrait_vp = SubViewport.new()
 	_portrait_vp.own_world_3d = true
 	_portrait_vp.msaa_3d = Viewport.MSAA_4X
@@ -602,6 +609,42 @@ func _render_icons() -> void:
 
 
 # --- Widgets --------------------------------------------------------------------
+
+## Top edge of the bottom console: armour plates raised over the minimap and the command card,
+## a lower bevel in the middle, glowing cyan seams and rivets — the StarCraft console silhouette.
+class ConsoleTrim extends Control:
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		var base := h - 8.0  # where the console body starts
+		var metal := Color(0.08, 0.1, 0.13)
+		var metal_hi := Color(0.16, 0.2, 0.25)
+		var glow := Color(0.35, 0.8, 1.0)
+		var left_w := 300.0
+		var right_w := 380.0
+		# full-width strip along the console top
+		draw_rect(Rect2(0, base - 4.0, w, 12.0), metal)
+		# raised wing over the minimap (left) and the command card (right)
+		var lw := PackedVector2Array([Vector2(0, base), Vector2(0, 2), Vector2(left_w - 30.0, 2), Vector2(left_w, base)])
+		var rw := PackedVector2Array([Vector2(w, base), Vector2(w, 2), Vector2(w - right_w + 30.0, 2), Vector2(w - right_w, base)])
+		for poly in [lw, rw]:
+			draw_colored_polygon(poly, metal)
+			# lighter top bevel
+			draw_polyline(PackedVector2Array([poly[1], poly[2]]), metal_hi, 3.0)
+			draw_line(poly[2], poly[3], glow * Color(1, 1, 1, 0.9), 2.0)
+		# glowing seam along the console edge between the wings
+		draw_line(Vector2(left_w, base - 1.0), Vector2(w - right_w, base - 1.0), glow * Color(1, 1, 1, 0.85), 2.0)
+		draw_line(Vector2(left_w, base + 2.0), Vector2(w - right_w, base + 2.0), glow * Color(1, 1, 1, 0.2), 4.0)
+		# hazard-style notches and rivets on the wings
+		for i in 6:
+			var x := 18.0 + i * 40.0
+			draw_circle(Vector2(x, 9.0), 2.2, Color(0.45, 0.55, 0.62))
+			draw_circle(Vector2(w - x, 9.0), 2.2, Color(0.45, 0.55, 0.62))
+		for i in 3:
+			var x0 := left_w - 70.0 + i * 12.0
+			draw_colored_polygon(PackedVector2Array([Vector2(x0, base - 3.0), Vector2(x0 + 6.0, base - 3.0),
+				Vector2(x0 + 12.0, 6.0), Vector2(x0 + 6.0, 6.0)]), Color(0.9, 0.7, 0.2, 0.55))
+
 
 ## Pause overlay. Runs while the tree is paused; Esc or "Продолжить" resumes.
 class PauseMenu extends Control:
