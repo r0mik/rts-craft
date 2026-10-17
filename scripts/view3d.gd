@@ -58,6 +58,7 @@ func setup(g, team_colors: Array) -> void:
 	fx_root = Node3D.new()
 	add_child(fx_root)
 	_make_fx_resources()
+	_make_ash()
 	_make_terrain()
 	_make_water()
 	_make_doodads()
@@ -101,18 +102,19 @@ func apply_quality(q: int) -> void:
 
 func _make_environment() -> void:
 	var sky_mat := ProceduralSkyMaterial.new()
-	# grim overcast sky: ash grey above, dusty brown haze at the horizon
-	sky_mat.sky_top_color = Color(0.16, 0.17, 0.19)
-	sky_mat.sky_horizon_color = Color(0.36, 0.32, 0.27)
-	sky_mat.ground_horizon_color = Color(0.3, 0.26, 0.21)
-	sky_mat.ground_bottom_color = Color(0.1, 0.09, 0.08)
+	# Silent Hill: a blank, milky-white sky that the fog melts into
+	sky_mat.sky_top_color = Color(0.6, 0.61, 0.6)
+	sky_mat.sky_horizon_color = Color(0.68, 0.68, 0.66)
+	sky_mat.ground_horizon_color = Color(0.62, 0.62, 0.6)
+	sky_mat.ground_bottom_color = Color(0.4, 0.4, 0.39)
+	sky_mat.sun_angle_max = 0.0
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.42
+	env.ambient_light_energy = 0.7  # flat, shadowless light of an overcast foggy day
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_exposure = 0.92
@@ -126,14 +128,19 @@ func _make_environment() -> void:
 	env.ssao_radius = 1.2
 	env.ssao_intensity = 2.0
 	env.adjustment_enabled = true
-	env.adjustment_contrast = 1.16
-	env.adjustment_saturation = 0.62  # washed-out, grim colours
-	env.adjustment_brightness = 0.92
-	env.fog_enabled = true  # dusty haze over the battlefield
-	env.fog_light_color = Color(0.32, 0.28, 0.24)
-	env.fog_light_energy = 0.8
-	env.fog_density = 0.0022
-	env.fog_sky_affect = 0.4
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 0.34  # almost colourless, like the Silent Hill fog world
+	env.adjustment_brightness = 0.95
+	# thick fog: the ground near the camera focus is readable, everything further dissolves in white
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.7, 0.71, 0.69)
+	env.fog_light_energy = 1.0
+	env.fog_density = 0.92
+	env.fog_depth_begin = 30.0
+	env.fog_depth_end = 150.0
+	env.fog_depth_curve = 1.6
+	env.fog_sky_affect = 1.0
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -141,13 +148,61 @@ func _make_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun_light = sun
 	sun.rotation_degrees = Vector3(-50, -35, 0)
-	sun.light_energy = 1.05
-	sun.light_color = Color(1.0, 0.86, 0.68)  # low, dusty sunlight
+	sun.light_energy = 0.55
+	sun.light_color = Color(0.92, 0.93, 0.95)  # weak sun through the fog
+	sun.shadow_opacity = 0.55
 	sun.shadow_enabled = true
 	sun.shadow_blur = 1.3
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.directional_shadow_max_distance = 180.0
 	add_child(sun)
+
+
+## Ash falling like snow around the camera (Silent Hill). The emitter follows the camera focus.
+var _ash: GPUParticles3D
+
+func _make_ash() -> void:
+	_ash = GPUParticles3D.new()
+	_ash.amount = 1400
+	_ash.lifetime = 9.0
+	_ash.preprocess = 9.0
+	_ash.visibility_aabb = AABB(Vector3(-90, -40, -90), Vector3(180, 80, 180))
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = Vector3(70, 1, 55)
+	pm.direction = Vector3(0.25, -1, 0.1)
+	pm.spread = 25.0
+	pm.initial_velocity_min = 1.2
+	pm.initial_velocity_max = 2.4
+	pm.gravity = Vector3(0, -0.4, 0)
+	pm.turbulence_enabled = true
+	pm.turbulence_noise_strength = 1.5
+	pm.turbulence_noise_scale = 6.0
+	pm.scale_min = 0.6
+	pm.scale_max = 1.4
+	_ash.process_material = pm
+	var q := QuadMesh.new()
+	q.size = Vector2(0.3, 0.3)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.albedo_texture = _additive.albedo_texture if _additive else null
+	m.albedo_color = Color(0.82, 0.82, 0.8, 0.75)
+	q.material = m
+	_ash.draw_pass_1 = q
+	_ash.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_ash)
+	var layer := CanvasLayer.new()  # film grain and vignette over the 3D view, under the HUD
+	layer.layer = 0
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sm := ShaderMaterial.new()
+	sm.shader = load("res://scripts/grain.gdshader")
+	rect.material = sm
+	layer.add_child(rect)
+	add_child(layer)
 
 
 func _make_terrain() -> void:
@@ -734,6 +789,12 @@ func _process(delta: float) -> void:
 	var p := deg_to_rad(PITCH)
 	var target := Vector3(focus.x / PX, ground_h(focus) * 0.5, focus.y / PX)
 	camera.transform = Transform3D(Basis(), target + Vector3(0, sin(p), cos(p)) * dist).looking_at(target, Vector3.UP)
+	if _ash:  # ash falls in the box around what the camera looks at, at any zoom
+		_ash.position = target + Vector3(0, 22.0 + dist * 0.15, 0)
+		_ash.scale = Vector3.ONE * clampf(dist / 60.0, 0.8, 2.2)
+		# fog distance scales with zoom so it always frames the view
+		world_env.fog_depth_begin = dist * 0.8
+		world_env.fog_depth_end = dist * 2.1
 	for e in views.keys():
 		if is_instance_valid(e):
 			_sync(e, views[e], delta)
