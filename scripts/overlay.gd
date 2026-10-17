@@ -63,7 +63,7 @@ func _draw() -> void:
 			draw_circle(r, 4.0, Color(1.0, 0.9, 0.3, 0.9))
 	var mp := get_viewport().get_mouse_position()
 	if game.dragging:
-		var rect := Rect2(game.drag_start, Vector2.ZERO).expand(mp)
+		var rect := Rect2(game.drag_start, Vector2.ZERO).expand(game.drag_end if game.drag_touch >= 0 else mp)
 		draw_rect(rect, Color(0.3, 1.0, 0.35, 0.1), true)
 		draw_rect(rect, Color(0.3, 1.0, 0.35, 0.9), false, 1.5)
 	var silo = game.missile_silo()
@@ -79,7 +79,7 @@ func _draw() -> void:
 			draw_string(get_theme_default_font(), mp + Vector2(12, -10), I18N.t("слишком далеко"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, c)
 	else:
 		v.set_range_ring(Vector2.ZERO, 0.0)
-	if game.attack_mode:
+	if game.attack_mode and not game.touch_mode:  # no cursor to follow on a touch screen
 		var c := Color(1.0, 0.25, 0.2)
 		draw_arc(mp, 12.0, 0.0, TAU, 24, c, 2.0)
 		draw_line(mp + Vector2(-18, 0), mp + Vector2(-6, 0), c, 2.0)

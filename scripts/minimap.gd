@@ -54,7 +54,9 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.pressed:
 		var wp: Vector2 = (event.position / size * game.map_size).clamp(Vector2.ZERO, game.map_size)
-		if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.button_index == MOUSE_BUTTON_LEFT and game.attack_mode:  # attack-move to a minimap point
+			game.minimap_command(wp)
+		elif event.button_index == MOUSE_BUTTON_LEFT:
 			game.view.focus = wp
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			game.minimap_command(wp)

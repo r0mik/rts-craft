@@ -36,3 +36,17 @@ Standalone builds for Windows / Linux: [HOW_TO_RUN.md](HOW_TO_RUN.md).
 | Pause, settings | `Esc` |
 
 All commands are also on the buttons at the bottom right, with tooltips. Balance lives in `scripts/defs.gd`.
+
+### Touch screens (iPad)
+
+Touch controls turn on by themselves at the first touch; a mouse click switches back.
+
+| | |
+|---|---|
+| Select | tap a unit or building; drag a finger for a box; double tap — every unit of that kind on screen |
+| Order | tap the ground or an enemy with units selected; hold a finger anywhere (also sets rally points) |
+| Camera | two fingers: drag to pan, pinch to zoom; tap the minimap |
+| Build | pick a building, move it with your finger, lift to place |
+| Keyboard keys | buttons on the right: Menu, Cancel, Army, Base, **+ Select** (adds to the selection), groups 1–4 (tap — select, hold — assign) |
+
+To install on an iPad, see [HOW_TO_RUN.md](HOW_TO_RUN.md#ipad).

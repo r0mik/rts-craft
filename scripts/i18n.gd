@@ -6,6 +6,19 @@ const Settings = preload("res://scripts/settings.gd")
 const NAMES := {"ru": "Русский", "en": "English"}
 
 const EN := {
+	"Касание — выбор или приказ   Удержание — приказ   Рамка — провести пальцем\n": "Tap — select or order   Hold — order   Box — drag a finger\n",
+	"Два пальца — сдвиг и зум камеры   Двойное касание — все такие юниты на экране": "Two fingers — pan and zoom   Double tap — all units of that kind on screen",
+	"\nКнопки справа: «Заново» или «Меню»": "\nButtons on the right: Restart or Menu",
+	"Меню": "Menu",
+	"Отмена": "Cancel",
+	"Заново": "Restart",
+	"Армия": "Army",
+	"База": "Base",
+	"+ Выбор": "+ Select",
+	"Касания и рамка добавляют к выделению": "Taps and boxes add to the selection",
+	"Удержать — назначить": "Hold to assign",
+	"Коснитесь цели атаки": "Tap the attack target",
+	"Коснитесь цели для ракеты": "Tap the missile target",
 	"%s готова к пуску (L)": "%s is ready to launch (L)",
 	"%s готов: HP %d, урон %d, дальность %d, скорость %d": "%s is ready: HP %d, damage %d, range %d, speed %d",
 	"Battalion (батальон)": "Battalion",
