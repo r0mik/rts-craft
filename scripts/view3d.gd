@@ -15,7 +15,7 @@ const FOV := 38.0
 const ZOOM_MIN := 28.0
 const ZOOM_MAX := 140.0
 ## Units are drawn a bit larger than their collision size (readability, like in SC2).
-const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3, "medic": 1.45, "scout": 1.4, "beacon": 1.4, "battalion": 2.4, "supertank": 1.55, "phantom": 1.35, "mechanic": 1.2}
+const UNIT_SCALE := {"worker": 1.4, "marine": 1.45, "tank": 1.05, "wraith": 0.95, "titan": 1.15, "aa": 1.05, "stormbird": 1.0, "devastator": 1.0, "drone": 1.3, "medic": 1.45, "scout": 1.4, "beacon": 1.4, "officer": 1.5, "command_vehicle": 1.1, "command_ship": 1.05, "mechanic": 1.2}
 
 var game
 var camera: Camera3D
@@ -582,7 +582,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 		model.rotation.y = lerp_angle(model.rotation.y, -e.facing, minf(1.0, delta * 12.0))
 		_run_anims(root, delta)
 		match e.kind:
-			"marine", "worker", "medic", "battalion":
+			"marine", "worker", "medic", "officer":
 				var bob := absf(sin(time * 11.0 + seed)) * 0.12 if moved else 0.0
 				model.position.y = lerpf(model.position.y, bob, minf(1.0, delta * 15.0))
 				if e.kind != "worker":  # infantry walk cycle: legs swing, the forward leg bends at the knee
@@ -602,7 +602,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 					if e.is_mining() and e.carrying == 0 and e.mine_timer > 0.0 and randf() < delta * 4.0:
 						_burst(p3 + Vector3(0, 1.0, 0) + Vector3(cos(e.facing), 0, sin(e.facing)) * 1.0,
 								6, _spark_ramp, _additive, 3.0, 0.25, 0.35, Vector3(0, -6, 0))
-			"wraith", "stormbird", "devastator", "phantom":
+			"wraith", "stormbird", "devastator", "command_ship":
 				var body: Node3D = model.get_node("Body")
 				var lift: float = {"stormbird": 0.5, "devastator": 1.0}.get(e.kind, 0.0)
 				body.position.y = Models.FLY_HEIGHT + lift + sin(time * 2.2 + seed) * 0.25
@@ -643,7 +643,7 @@ func _sync(e, root: Node3D, delta: float) -> void:
 				if game.valid(e.target):
 					aim = -(e.target.position - e.position).angle() - model.rotation.y
 				torso.rotation.y = lerp_angle(torso.rotation.y, aim, minf(1.0, delta * 4.0))
-			"tank", "aa", "supertank":
+			"tank", "aa":
 				var tur: Node3D = model.get_node("Turret")
 				var want := 0.0
 				if game.valid(e.target):
@@ -971,13 +971,6 @@ func fx_shot(attacker, target, splash: bool) -> void:
 		var fwd: float = attacker.radius / PX + 0.4
 		muzzle = _world(attacker.position + dir * fwd * PX, mid_of(attacker) if attacker.is_air() else a_h * 0.55)
 		match attacker.kind:
-			"supertank":
-				muzzle = _world(attacker.position + dir * 4.8 * PX, 2.6)
-				color = Color(1.0, 0.55, 0.15)
-				width = 0.24
-			"phantom":
-				color = game.team_color(attacker.team).lightened(0.55)
-				width = 0.13
 			"tank":
 				muzzle = _world(attacker.position + dir * 3.0 * PX, 1.62)
 				color = Color(1.0, 0.6, 0.2)
@@ -1136,7 +1129,7 @@ func fx_death(e) -> void:
 	elif e.is_in_group("units"):
 		if e.stats.get("kamikaze", false) and e.hp > 0.0:
 			return  # crashed into its target: the impact blast is drawn by unit.gd
-		var size := 2.5 if e.kind in ["titan", "stormbird", "devastator", "battalion", "supertank", "phantom"] else 1.3 if e.kind in ["tank", "wraith", "aa"] else 0.6
+		var size := 2.5 if e.kind in ["titan", "stormbird", "devastator"] else 1.3 if e.kind in ["tank", "wraith", "aa"] else 0.6
 		fx_explosion(e.position, size, mid_of(e) if e.is_air() else -1.0)
 
 
@@ -1214,15 +1207,6 @@ func set_range_ring(center: Vector2, r: float) -> void:
 		_range_r = r
 	_range_ring.visible = true
 	_range_ring.position = _world(center, 0.3)
-
-
-## Units fusing into a super unit: a bright flash, rising sparks and an expanding ring.
-func fx_merge(p: Vector2) -> void:
-	var pos := _world(p, 1.5)
-	_flash_light(pos + Vector3(0, 2, 0), Color(0.6, 0.85, 1.0), 14.0, 14.0, 0.6)
-	_burst(pos, 40, _spark_ramp, _additive, 8.0, 0.5, 0.9, Vector3(0, 6, 0))
-	fx_marker(p, Color(0.6, 0.85, 1.0))
-	fx_marker(p, Color(1.0, 1.0, 1.0))
 
 
 ## Napalm field: a ring of fire emitters and an orange glow; the caller frees it when it burns out.

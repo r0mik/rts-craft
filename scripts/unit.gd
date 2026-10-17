@@ -34,6 +34,8 @@ var heal_target = null  # medic: the friendly unit being healed right now
 var heal_timer := 0.0
 var ability_cd := 0.0   # Seeker: time until the next beacon
 var life_left := 0.0    # Sensor beacon: seconds before it burns out
+var commander = null    # squad member: its commander (see Defs.SQUADS)
+var squad: Array = []   # commander: its members
 
 
 ## Gives this unit its own copy of the stats with randomised values and a random title (Titan).
@@ -190,8 +192,8 @@ func _process(delta: float) -> void:
 			game.kill(self)
 		return
 	ability_cd = maxf(0.0, ability_cd - delta)
-	if stats.has("regen") and hp < max_hp:  # Battalion: self-repair
-		hp = minf(max_hp, hp + stats.regen * delta)
+	if commander != null and hp < max_hp and game.squad_bonus(self):  # squad regeneration near the commander
+		hp = minf(max_hp, hp + game.squad_rule(self).regen * delta)
 	cooldown_left = maxf(0.0, cooldown_left - delta)
 	shot_flash = maxf(0.0, shot_flash - delta)
 	acquire_timer -= delta
@@ -303,9 +305,6 @@ func _do_attack_move(delta: float) -> void:
 
 func _engage(t, delta: float, can_chase: bool) -> void:
 	var d: float = game.edge_dist(self, t)
-	if d < stats.get("min_range", 0.0):  # too close to fire (Supertank): drop the target, look for another
-		target = null
-		return
 	if d <= stats.range:
 		facing = (t.position - position).angle()
 		if stats.get("kamikaze", false):  # crash into the target: huge damage, the drone is gone

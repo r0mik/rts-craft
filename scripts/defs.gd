@@ -26,21 +26,22 @@ const UNITS := {
 		"cost": 100, "supply": 2, "time": 20.0, "hotkey": KEY_R, "healer": true, "heal_rate": 18.0,
 		"heals": ["vehicle", "air", "building"],
 	},
-	# --- Combined super units (made by merging regular units, see COMBOS; not trainable) ---
-	"battalion": {
-		"name": "Battalion (батальон)", "hp": 800, "armor": 3, "speed": 70.0, "radius": 22.0,
-		"damage": 22, "range": 170.0, "cooldown": 0.35, "sight": 300.0, "splash": 30.0,
-		"cost": 0, "supply": 7, "time": 0.0, "regen": 15.0, "combined": true, "anti_air": false,
+	# --- Commanders: unarmed squad leaders (see SQUADS). Big sight like a scout; members near
+	# their commander get bonuses and follow it.
+	"officer": {
+		"name": "Officer (командир)", "hp": 130, "armor": 1, "speed": 110.0, "radius": 11.0,
+		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 420.0,
+		"cost": 100, "supply": 1, "time": 20.0, "hotkey": KEY_C, "unarmed": true, "commands": "infantry",
 	},
-	"supertank": {
-		"name": "Supertank (супертанк)", "hp": 1500, "armor": 7, "speed": 48.0, "radius": 32.0,
-		"damage": 150, "range": 300.0, "cooldown": 2.0, "sight": 340.0, "splash": 80.0,
-		"cost": 0, "supply": 12, "time": 0.0, "anti_air": false, "combined": true, "min_range": 90.0,
+	"command_vehicle": {
+		"name": "Command Vehicle (командирская машина)", "hp": 320, "armor": 4, "speed": 85.0, "radius": 16.0,
+		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 400.0,
+		"cost": 175, "supply": 2, "time": 28.0, "hotkey": KEY_C, "unarmed": true, "commands": "vehicle",
 	},
-	"phantom": {
-		"name": "Phantom (фантом)", "hp": 600, "armor": 2, "speed": 115.0, "radius": 20.0,
-		"damage": 30, "range": 210.0, "cooldown": 0.55, "sight": 340.0,
-		"cost": 0, "supply": 6, "time": 0.0, "air": true, "combined": true,
+	"command_ship": {
+		"name": "Command Ship (командирский корабль)", "hp": 260, "armor": 2, "speed": 140.0, "radius": 17.0,
+		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 460.0,
+		"cost": 200, "supply": 2, "time": 32.0, "hotkey": KEY_C, "unarmed": true, "air": true, "commands": "air",
 	},
 	# Scout: unarmed, very fast hover drone with huge sight; drops sensor beacons (F).
 	"scout": {
@@ -113,11 +114,11 @@ const BUILDINGS := {
 	},
 	"barracks": {
 		"name": "Barracks", "short": "BARRACKS", "hp": 1000, "armor": 2, "size": Vector2(110, 90),
-		"cost": 150, "time": 40.0, "trains": ["marine", "medic"], "hotkey": KEY_B,
+		"cost": 150, "time": 40.0, "trains": ["marine", "medic", "officer"], "hotkey": KEY_B,
 	},
 	"factory": {
 		"name": "Factory", "short": "FACTORY", "hp": 1250, "armor": 2, "size": Vector2(120, 90),
-		"cost": 200, "time": 50.0, "trains": ["tank", "aa", "mechanic"], "hotkey": KEY_F, "requires": "barracks",
+		"cost": 200, "time": 50.0, "trains": ["tank", "aa", "mechanic", "command_vehicle"], "hotkey": KEY_F, "requires": "barracks",
 	},
 	"bunker": {
 		"name": "Bunker", "short": "BUNKER", "hp": 550, "armor": 4, "size": Vector2(80, 64),
@@ -135,7 +136,7 @@ const BUILDINGS := {
 	},
 	"starport": {
 		"name": "Starport", "short": "STARPORT", "hp": 1300, "armor": 2, "size": Vector2(120, 100),
-		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird", "devastator", "drone"], "hotkey": KEY_P, "requires": "factory",
+		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird", "devastator", "drone", "command_ship"], "hotkey": KEY_P, "requires": "factory",
 	},
 	"silo": {
 		"name": "Missile Silo", "short": "SILO", "hp": 600, "armor": 3, "size": Vector2(70, 70),
@@ -168,37 +169,32 @@ const MISSILES := {
 ## poor against infantry, rifles are poor against buildings, and so on.
 const ARMOR_CLASS := {
 	"worker": "infantry", "marine": "infantry", "medic": "infantry", "scout": "infantry", "beacon": "infantry",
-	"battalion": "infantry",
-	"tank": "vehicle", "aa": "vehicle", "mechanic": "vehicle", "supertank": "vehicle", "titan": "vehicle",
-	"wraith": "air", "stormbird": "air", "devastator": "air", "drone": "air", "phantom": "air",
+	"officer": "infantry",
+	"tank": "vehicle", "aa": "vehicle", "mechanic": "vehicle", "titan": "vehicle", "command_vehicle": "vehicle",
+	"wraith": "air", "stormbird": "air", "devastator": "air", "drone": "air", "command_ship": "air",
 }  # buildings are "building"
 const CLASS_NAMES := {"infantry": "пехота", "vehicle": "техника", "air": "авиация", "building": "здания"}
 const DAMAGE_VS := {
 	"worker": {"building": 0.5},
 	"marine": {"building": 0.8},
-	"battalion": {"vehicle": 1.2, "building": 0.7},
 	"tank": {"infantry": 0.5, "vehicle": 1.5, "building": 2.0},
-	"supertank": {"infantry": 0.5, "vehicle": 1.5, "building": 2.0},
 	"titan": {"infantry": 0.8, "vehicle": 1.3, "building": 1.5},
 	"wraith": {"vehicle": 0.8, "air": 1.4, "building": 0.5},
-	"phantom": {"vehicle": 0.8, "air": 1.4, "building": 0.5},
 	"stormbird": {"infantry": 1.2, "building": 0.7},
 	"bunker": {"infantry": 1.3, "vehicle": 0.6},
 	"turret": {"infantry": 0.5, "vehicle": 0.5, "air": 1.0},
 }
 
-## Unit combinations: select the parts and press the key; they gather and merge into one super unit.
-## Super units are always stronger than their parts together (more HP and more damage per second):
-##   Battalion 800 HP / 63 dps / regen 15  vs  5 marines + 2 medics 345 HP / 46 dps / heal 28
-##   Supertank 1500 HP / 75 dps            vs  4 tanks 640 HP / 55 dps
-##   Phantom    600 HP / 55 dps            vs  3 wraiths 360 HP / 27 dps
-const COMBOS := {
-	"battalion": {"name": "Батальон", "key": KEY_Z, "parts": {"marine": 5, "medic": 2},
-		"desc": "5 пехотинцев + 2 медика: 800 HP, быстро лечится сам, пулемёт по площади. Минусы: медленный (70), не бьёт по воздуху"},
-	"supertank": {"name": "Супертанк", "key": KEY_C, "parts": {"tank": 4},
-		"desc": "4 танка: 1500 HP, сдвоенная пушка 150 урона по площади, дальность 300. Минусы: очень медленный (48), не стреляет ближе 90"},
-	"phantom": {"name": "Фантом", "key": KEY_V, "parts": {"wraith": 3},
-		"desc": "3 истребителя: 600 HP, вдвое больше огня, чем у трёх истребителей. Минус: медленнее (115 против 150)"},
+## Squads: a commander takes up to "max" units of its class (select the commander together with
+## the units and press KEY). Members within RADIUS of their living commander get the bonuses and
+## follow it; ordering the commander orders the whole squad. The commander itself never shoots.
+const SQUAD_KEY := KEY_Z
+const SQUAD_DISBAND_KEY := KEY_U
+const SQUAD_RADIUS := 380.0
+const SQUADS := {
+	"infantry": {"max": 6, "damage": 1.25, "armor": 2.0, "regen": 1.5, "excluded": ["worker", "scout", "beacon"]},
+	"vehicle": {"max": 4, "damage": 1.2, "armor": 2.0, "regen": 0.0, "excluded": ["titan"]},
+	"air": {"max": 4, "damage": 1.2, "armor": 1.0, "regen": 0.0, "excluded": ["drone"]},
 }
 
 ## Ages, advanced at the Command Center (E), one after another like in Age of Empires.

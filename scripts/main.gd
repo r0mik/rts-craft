@@ -36,7 +36,7 @@ var attack_mode := false
 var missile_mode := false  # next left click picks the missile target
 var missiles: Array = []   # in flight: {team, type, from, to, t, node}
 var fires: Array = []      # napalm fields: {pos, r, dps, t, node}
-var merges: Array = []     # unit combinations in progress: {kind, team, units, center, t}
+var squad_timer := 0.0
 
 ## Fog of war, from the player's point of view (the AI ignores it). Cells of FOG_CELL px:
 ## fog_vis = seen right now, fog_seen = explored at least once.
@@ -260,8 +260,6 @@ func find_enemy(u, radius: float):
 		if e.team == u.team or not e.is_alive() or not u.can_target(e):
 			continue
 		var d := edge_dist(u, e)
-		if d < u.stats.get("min_range", 0.0):
-			continue  # inside the dead zone (Supertank)
 		if d <= radius:
 			var score := d + (60.0 if e.is_worker() else 0.0)
 			if score < best_score:
@@ -491,10 +489,9 @@ static func load_slot(tree: SceneTree, slot: String) -> bool:
 
 func save_game(slot: String) -> bool:
 	var units := []
-	for u in get_tree().get_nodes_in_group("units"):
-		if not u.is_alive():
-			continue
-		var ud := {"team": u.team, "kind": u.kind, "pos": u.position, "hp": u.hp, "max_hp": u.max_hp,
+	var alive_units := get_tree().get_nodes_in_group("units").filter(func(u): return u.is_alive())
+	for u in alive_units:
+		var ud := {"commander": alive_units.find(u.commander) if u.commander != null else -1,"team": u.team, "kind": u.kind, "pos": u.position, "hp": u.hp, "max_hp": u.max_hp,
 			"carrying": u.carrying, "ability_cd": u.ability_cd, "life_left": u.life_left, "facing": u.facing}
 		if u.stats.has("random"):
 			ud["stats"] = u.stats  # the Titan's rolled stats
@@ -540,6 +537,7 @@ func _load_world(d: Dictionary) -> void:
 		for key in ["hp", "max_hp", "build_progress", "queue", "queue_costs", "prod_progress", "rally", "has_rally",
 				"missile_type", "shield", "max_shield", "seen_by_player"]:
 			b.set(key, bd[key])
+	var spawned := []
 	for ud in d.units:
 		var u = spawn_unit(ud.team, ud.kind, ud.pos)
 		if ud.has("stats"):
@@ -549,6 +547,11 @@ func _load_world(d: Dictionary) -> void:
 			u.set(key, ud[key])
 		if u.is_worker():
 			u.order_gather(best_mineral(u.position))
+		spawned.append(u)
+	for i in d.units.size():  # restore squads
+		var ci: int = d.units[i].get("commander", -1)
+		if ci >= 0 and ci < spawned.size():
+			join_squad(spawned[ci], [spawned[i]])
 
 
 ## Restores economy, research, ages, explored fog, camera and AI timers after the world is built.
@@ -703,7 +706,11 @@ func scaled_damage(attacker, target, dmg: float) -> float:
 	if attacker.is_in_group("units"):
 		dmg *= age_unit_mult(attacker.team)
 	dmg *= damage_vs(attacker, target)
+	if attacker.is_in_group("units") and squad_bonus(attacker):
+		dmg *= squad_rule(attacker).damage
 	var base_armor := float(target.stats.get("armor", 0))
+	if target.is_in_group("units") and squad_bonus(target):
+		base_armor += squad_rule(target).armor
 	var armor: float = base_armor + (upgrade_bonus(base_armor, a) if a > 0 else 0.0)
 	return maxf(dmg - armor, 1.0)
 
@@ -770,11 +777,16 @@ func get_commands() -> Array:
 		cmds.append({"key": KEY_G, "label": I18N.t("Атака (G)"), "fn": cmd_attack, "icon": "@attack"})
 		cmds.append({"key": KEY_X, "label": I18N.t("Стоп (X)"), "fn": cmd_stop, "icon": "@stop"})
 		cmds.append({"key": KEY_H, "label": I18N.t("Держать позицию (H)"), "fn": cmd_hold, "icon": "@hold"})
-		for ck in Defs.COMBOS:
-			if not combo_parts(units, ck).is_empty():
-				var cd: Dictionary = Defs.COMBOS[ck]
-				cmds.append({"key": cd.key, "label": I18N.t("Объединить: %s (%s) — %s") % [I18N.t(cd.name), OS.get_keycode_string(cd.key), I18N.t(cd.desc)],
-					"fn": func(): start_combine(PLAYER, ck, selected_units()), "icon": ck})
+		var cmdrs := units.filter(func(u): return u.stats.has("commands"))
+		if not cmdrs.is_empty():
+			var c0 = cmdrs[0]
+			var rule: Dictionary = Defs.SQUADS[c0.stats.commands]
+			var free := units.filter(func(u): return can_join(c0, u))
+			cmds.append({"key": Defs.SQUAD_KEY, "label": I18N.t("Взять в отряд (Z): %d из выделенных, в отряде %d/%d") % [
+				mini(free.size(), rule.max - c0.squad.size()), c0.squad.size(), rule.max],
+				"fn": cmd_join_squad, "icon": "@squad", "disabled": free.is_empty() or c0.squad.size() >= rule.max})
+			cmds.append({"key": Defs.SQUAD_DISBAND_KEY, "label": I18N.t("Распустить отряд (U)"), "fn": cmd_disband,
+				"icon": "@cancel", "disabled": cmdrs.all(func(c): return c.squad.is_empty())})
 		if units.any(func(u): return u.kind == "scout"):
 			var ready := units.any(func(u): return u.kind == "scout" and u.ability_cd <= 0.0)
 			cmds.append({"key": KEY_F, "label": I18N.t("Сбросить маяк (F): видит всё вокруг 90 с") if ready else I18N.t("Маяк перезаряжается"),
@@ -846,71 +858,97 @@ func cmd_attack() -> void:
 	placing = ""
 
 
-# --- Unit combinations ------------------------------------------------------------
+# --- Squads ---------------------------------------------------------------------------
 
-## Picks the units for a combination from candidates (the ones closest to their group centre);
-## returns [] if there are not enough of some part.
-func combo_parts(candidates: Array, ck: String) -> Array:
-	var picked := []
-	var busy := []
-	for m in merges:
-		busy.append_array(m.units)
-	for part in Defs.COMBOS[ck].parts:
-		var need: int = Defs.COMBOS[ck].parts[part]
-		var pool: Array = candidates.filter(func(u): return valid(u) and u.kind == part and not u in busy)
-		if pool.size() < need:
-			return []
-		var c := Vector2.ZERO
-		for u in pool:
-			c += u.position
-		c /= pool.size()
-		pool.sort_custom(func(a, b): return a.position.distance_squared_to(c) < b.position.distance_squared_to(c))
-		picked.append_array(pool.slice(0, need))
-	return picked
+func squad_rule(u) -> Dictionary:
+	var c = u.commander if u.commander != null else u
+	return Defs.SQUADS.get(c.stats.get("commands", ""), {})
 
 
-## Orders the parts to gather; _update_merges fuses them into the super unit once they meet.
-func start_combine(t: int, ck: String, candidates: Array) -> bool:
-	var parts := combo_parts(candidates, ck)
-	if parts.is_empty():
+## Whether a unit can join this commander's squad (same team and class, not a commander or excluded).
+func can_join(cmdr, u) -> bool:
+	if not valid(u) or u == cmdr or u.team != cmdr.team or u.stats.has("commands") or u.commander == cmdr:
 		return false
-	var c := Vector2.ZERO
-	for u in parts:
-		c += u.position
-	c /= parts.size()
-	for u in parts:
-		u.order_move(c)
-	merges.append({"kind": ck, "team": t, "units": parts, "center": c, "t": 0.0})
-	if t == PLAYER:
-		show_message(I18N.t("Собираются в %s…") % I18N.t(Defs.COMBOS[ck].name).to_lower())
-		add_marker(c, Color(0.6, 0.8, 1.0))
-	return true
+	var cls: String = cmdr.stats.commands
+	return armor_class(u) == cls and not u.kind in Defs.SQUADS[cls].excluded
 
 
-func _update_merges(delta: float) -> void:
-	for m in merges.duplicate():
-		m["t"] += delta
-		if m.units.any(func(u): return not valid(u)) or m.t > 20.0:
-			merges.erase(m)
-			if m.team == PLAYER:
-				show_message(I18N.t("Объединение сорвано"))
+## Adds units (up to the squad size) to a commander's squad; a unit leaves its old squad first.
+func join_squad(cmdr, units: Array) -> int:
+	var n := 0
+	var rule: Dictionary = Defs.SQUADS[cmdr.stats.commands]
+	for u in units:
+		if cmdr.squad.size() >= rule.max:
+			break
+		if not can_join(cmdr, u):
 			continue
-		var far := 0.0
-		for u in m.units:
-			far = maxf(far, u.position.distance_to(m.center))
-		if far > 110.0 and not (m.t > 6.0 and far < 230.0):
+		leave_squad(u)
+		u.commander = cmdr
+		cmdr.squad.append(u)
+		n += 1
+	return n
+
+
+func leave_squad(u) -> void:
+	if u.commander != null and is_instance_valid(u.commander):
+		u.commander.squad.erase(u)
+	u.commander = null
+
+
+func disband(cmdr) -> void:
+	for u in cmdr.squad.duplicate():
+		leave_squad(u)
+
+
+## True when a squad member is near its living commander (bonuses apply).
+func squad_bonus(u) -> bool:
+	return u.commander != null and valid(u.commander) and u.position.distance_to(u.commander.position) <= Defs.SQUAD_RADIUS
+
+
+func cmd_join_squad() -> void:
+	var units := selected_units()
+	for c in units.filter(func(u): return u.stats.has("commands")):
+		var n := join_squad(c, units)
+		if n > 0:
+			show_message(I18N.t("В отряд вступило: %d. Отряд %d/%d") % [n, c.squad.size(), Defs.SQUADS[c.stats.commands].max])
+			add_marker(c.position, Color(1.0, 0.85, 0.3))
+			return
+	show_message(I18N.t("Выделите командира вместе с юнитами его рода войск"))
+
+
+func cmd_disband() -> void:
+	for c in selected_units().filter(func(u): return u.stats.has("commands")):
+		disband(c)
+	show_message(I18N.t("Отряд распущен"))
+
+
+## Selected units plus the squads of selected commanders: orders go to the whole squad.
+func order_units() -> Array:
+	var res := selected_units()
+	for c in res.duplicate():
+		for m in c.squad:
+			if valid(m) and not m in res:
+				res.append(m)
+	return res
+
+
+## Squad members that are idle and fell behind walk back to their commander; dead commanders free their squads.
+func _update_squads() -> void:
+	for u in get_tree().get_nodes_in_group("units"):
+		if u.commander != null and not valid(u.commander):
+			u.commander = null
+		if not u.stats.has("commands") or not u.is_alive():
 			continue
-		merges.erase(m)
-		var was_selected := false
-		for u in m.units:
-			was_selected = was_selected or u.selected
-			remove_silently(u)
-		var su = spawn_unit(m.team, m.kind, m.center)
-		view.fx_merge(m.center)
-		if m.team == PLAYER:
-			show_message(I18N.t("%s готов!") % I18N.t(Defs.COMBOS[m.kind].name))
-			if was_selected:
-				set_selection(selection + [su])
+		u.squad = u.squad.filter(func(m): return valid(m) and m.commander == u)
+		var i := 0
+		for m in u.squad:
+			var off: Vector2 = Vector2.from_angle(i * TAU / maxf(u.squad.size(), 1.0)) * (45.0 + u.radius)
+			i += 1
+			if m.is_idle() and m.position.distance_to(u.position + off) > 120.0:
+				if u.is_idle():
+					m.order_move(u.position + off)
+				else:
+					m.order_attack_move(u.position + off)
 
 
 ## Seeker: the first ready scout in the selection drops a sensor beacon where it stands.
@@ -1109,12 +1147,12 @@ func visible_to_player(e) -> bool:
 
 
 func cmd_stop() -> void:
-	for u in selected_units():
+	for u in order_units():
 		u.order_stop()
 
 
 func cmd_hold() -> void:
-	for u in selected_units():
+	for u in order_units():
 		u.order_hold()
 
 
@@ -1210,7 +1248,7 @@ func issue_move(units: Array, p: Vector2, attack := false) -> void:
 
 
 func _right_click(p: Vector2, picked = null) -> void:
-	var units := selected_units()
+	var units := order_units()
 	if units.is_empty():
 		var blds := selected_buildings()
 		for b in blds:
@@ -1252,7 +1290,7 @@ func _right_click(p: Vector2, picked = null) -> void:
 
 
 func minimap_command(wp: Vector2) -> void:
-	var units := selected_units()
+	var units := order_units()
 	if not units.is_empty():
 		issue_move(units, wp, attack_mode)
 		attack_mode = false
@@ -1289,7 +1327,7 @@ func _unhandled_input(event: InputEvent) -> void:
 								add_marker(wp, Color(1.0, 0.25, 0.2))
 								break
 					elif attack_mode:
-						var units := selected_units()
+						var units := order_units()
 						var t = view.pick(sp)
 						if t != null and t.team >= 0 and t.team != PLAYER:
 							for u in units:
@@ -1400,7 +1438,10 @@ func _process(delta: float) -> void:
 		fog_timer = 0.2
 		_update_fog()
 	_update_missiles(delta)
-	_update_merges(delta)
+	squad_timer -= delta
+	if squad_timer <= 0.0:
+		squad_timer = 0.5
+		_update_squads()
 	_update_camera(delta)
 	_resolve_collisions()
 	if dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):

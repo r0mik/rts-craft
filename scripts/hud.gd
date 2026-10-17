@@ -51,7 +51,6 @@ var _portrait_cam: Camera3D
 var _portrait_kind := ""
 var _wire_cells: Array = []   # [{button, entity}]
 var _combo_label: RichTextLabel  # merge hints under the wireframes
-const PART_NAMES := {"marine": "пехотинцев", "medic": "медиков", "tank": "танков", "wraith": "истребителей"}
 
 
 func setup(g) -> void:
@@ -236,7 +235,7 @@ func _process(delta: float) -> void:
 	if _lang_shown != Settings.lang:  # (re)write the help line in the current language
 		_lang_shown = Settings.lang
 		help_label.text = I18N.t("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база\n") + \
-			I18N.t("Объединение: 5 пехотинцев + 2 медика → батальон (Z), 4 танка → супертанк (C), 3 истребителя → фантом (V)")
+			I18N.t("Отряды: выделите командира с солдатами и нажмите Z — до 6 пехотинцев, 4 машин или 4 самолётов")
 	fps_label.visible = Settings.show_fps
 	if Settings.show_fps:
 		fps_label.text = "FPS %d" % Engine.get_frames_per_second()
@@ -376,26 +375,20 @@ func _refresh_single(e, delta: float) -> void:
 		(c as Control).queue_redraw()
 
 
-## Merge hints for a selection: progress towards every recipe that uses a selected kind,
-## e.g. "Батальон (Z): пехотинцев 3/5, медиков 1/2" (green when ready).
+## Squad hints for a group selection: how many of the selected units each selected commander can take.
 func combo_hint(sel: Array) -> String:
 	var lines := []
-	for ck in Defs.COMBOS:
-		var cd: Dictionary = Defs.COMBOS[ck]
-		var have_any := false
-		var ready := true
-		var parts := []
-		for part in cd.parts:
-			var n := sel.filter(func(u): return game.valid(u) and u.team == 0 and u.kind == part).size()
-			have_any = have_any or n > 0
-			ready = ready and n >= int(cd.parts[part])
-			parts.append("%s %d/%d" % [I18N.t(PART_NAMES.get(part, part)), mini(n, cd.parts[part]), cd.parts[part]])
-		if not have_any:
-			continue
-		if ready:
-			lines.append(I18N.t("[color=#7dff8a]Можно объединить → %s: нажмите %s[/color]") % [I18N.t(cd.name), OS.get_keycode_string(cd.key)])
+	var mine := sel.filter(func(u): return game.valid(u) and u.team == 0 and u.is_in_group("units"))
+	for c in mine.filter(func(u): return u.stats.has("commands")):
+		var rule: Dictionary = Defs.SQUADS[c.stats.commands]
+		var free := mine.filter(func(u): return game.can_join(c, u)).size()
+		var room: int = rule.max - c.squad.size()
+		if free > 0 and room > 0:
+			lines.append(I18N.t("[color=#7dff8a]%s: можно взять в отряд %d — нажмите Z (отряд %d/%d)[/color]") % [
+				I18N.t(c.stats.name), mini(free, room), c.squad.size(), rule.max])
 		else:
-			lines.append(I18N.t("[color=#9cc8e8]%s (%s): нужно %s[/color]") % [I18N.t(cd.name), OS.get_keycode_string(cd.key), ", ".join(parts)])
+			lines.append(I18N.t("[color=#9cc8e8]%s: отряд %d/%d. Выделите его вместе с юнитами рода «%s» и нажмите Z[/color]") % [
+				I18N.t(c.stats.name), c.squad.size(), rule.max, I18N.t(Defs.CLASS_NAMES[c.stats.commands])])
 	return "\n".join(lines)
 
 
@@ -425,18 +418,17 @@ func _stats_text(e) -> String:
 					parts.append("%s ×%s" % [I18N.t(Defs.CLASS_NAMES[c]), str(vs[c])])
 				lines.append(I18N.t("Против: ") + ", ".join(parts))
 			lines.append(I18N.t("Тип: %s") % I18N.t(Defs.CLASS_NAMES[game.armor_class(e)]))
-			if e.stats.has("min_range"):
-				lines.append(I18N.t("Мёртвая зона: не стреляет ближе %d") % e.stats.min_range)
 			lines.append(I18N.t("Скорость %d") % e.stats.speed)
 		if e.carrying > 0:
 			lines.append(I18N.t("Несёт минералы: %d") % e.carrying)
-		for ck in Defs.COMBOS:  # how this unit can be merged
-			var cd: Dictionary = Defs.COMBOS[ck]
-			if cd.parts.has(e.kind) and e.team == 0:
-				var recipe := []
-				for part in cd.parts:
-					recipe.append("%d %s" % [cd.parts[part], I18N.t(PART_NAMES.get(part, part))])
-				lines.append(I18N.t("Объединение: выделите %s → %s (%s)") % [" + ".join(recipe), I18N.t(cd.name), OS.get_keycode_string(cd.key)])
+		if e.stats.has("commands"):  # commander: squad size and bonuses
+			var rule: Dictionary = Defs.SQUADS[e.stats.commands]
+			lines.append(I18N.t("Отряд: %d/%d (%s). Рядом с командиром: урон +%d%%, броня +%d") % [e.squad.size(), rule.max,
+				I18N.t(Defs.CLASS_NAMES[e.stats.commands]), roundi((rule.damage - 1.0) * 100.0), rule.armor] +
+				(I18N.t(", лечение %s HP/с") % str(rule.regen) if rule.regen > 0.0 else ""))
+		elif e.commander != null and game.valid(e.commander):
+			lines.append(I18N.t("В отряде: %s — бонус %s") % [I18N.t(e.commander.stats.name),
+				I18N.t("действует") if game.squad_bonus(e) else I18N.t("нет (далеко от командира)")])
 	else:
 		if e.constructing:
 			lines.append(I18N.t("Строится: %d%%") % int(e.build_progress * 100.0))
@@ -1075,6 +1067,15 @@ class Glyphs:
 		var red := Color(1.0, 0.35, 0.3) * tint
 		var cyan := Color(0.4, 0.85, 1.0) * tint
 		var green := Color(0.4, 1.0, 0.5) * tint
+		if name == "@squad":  # squad: a gold chevron over three soldiers
+			var gold := Color(1.0, 0.82, 0.3) * tint
+			ci.draw_polyline(PackedVector2Array([c + Vector2(-s * 0.5, -s * 0.35), c + Vector2(0, -s * 0.75),
+				c + Vector2(s * 0.5, -s * 0.35)]), gold, 4.0)
+			for i in 3:
+				var p := c + Vector2((i - 1) * s * 0.5, s * 0.25)
+				ci.draw_circle(p + Vector2(0, -s * 0.12), s * 0.13, w)
+				ci.draw_rect(Rect2(p + Vector2(-s * 0.13, 0), Vector2(s * 0.26, s * 0.4)), w)
+			return
 		if name.begins_with("@age:"):  # age: a golden pillar with the roman numeral of the age
 			var roman: String = Defs.AGES[int(name.get_slice(":", 1))].short
 			var gold := Color(1.0, 0.82, 0.3) * tint

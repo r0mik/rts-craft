@@ -169,12 +169,18 @@ func _military(cc, army: Array, buildings: Array) -> void:
 		if b.kind == "barracks" and b.queue.size() < 2:
 			# one medic for every five marines
 			var medic: bool = game.count_units(team, "medic") * 5 < game.count_units(team, "marine") - 2
-			game.try_train(b, "medic" if medic else "marine")
+			var infantry: int = game.count_units(team, "marine") + game.count_units(team, "medic")
+			if game.count_units(team, "officer") * 6 < infantry - 3:  # one officer per six soldiers
+				game.try_train(b, "officer")
+			else:
+				game.try_train(b, "medic" if medic else "marine")
 		elif b.kind == "factory" and b.queue.size() < 1:
 			# answer enemy flyers with AA Rovers, otherwise build tanks
-			var vehicles: int = game.count_units(team, "tank") + game.count_units(team, "aa") + game.count_units(team, "supertank") * 4
+			var vehicles: int = game.count_units(team, "tank") + game.count_units(team, "aa")
 			if game.count_units(team, "mechanic") * 4 < vehicles - 1:  # one mechanic per four vehicles
 				game.try_train(b, "mechanic")
+			elif game.count_units(team, "command_vehicle") * 4 < vehicles - 2:
+				game.try_train(b, "command_vehicle")
 			else:
 				game.try_train(b, "aa" if game.count_units(team, "aa") < _enemy_air() else "tank")
 		elif b.kind == "starport" and b.queue.size() < 1:
@@ -186,14 +192,16 @@ func _military(cc, army: Array, buildings: Array) -> void:
 				kind = "stormbird"
 			elif spare >= 150 and game.count_units(team, "drone") < 4:
 				kind = "drone"
+			var fighters: int = game.count_units(team, "wraith") + game.count_units(team, "stormbird")
+			if game.count_units(team, "command_ship") * 4 < fighters - 2:
+				kind = "command_ship"
 			game.try_train(b, kind)
 		elif b.kind == "ebay" and b.queue.is_empty() and game.bank[team] >= 250:
 			if not game.try_research(b, "weapons"):
 				game.try_research(b, "armor")
-	# Merge idle units at home into super units whenever a recipe is complete.
-	for ck in Defs.COMBOS:
-		var idle := army.filter(func(u): return u.is_idle())
-		game.start_combine(team, ck, idle)
+	# Commanders take idle soldiers of their class into their squads.
+	for c in army.filter(func(u): return u.stats.has("commands")):
+		game.join_squad(c, army.filter(func(u): return u.is_idle() and u.commander == null))
 	if army.is_empty():
 		return
 	var home: Vector2 = cc.position if cc != null else army[0].position

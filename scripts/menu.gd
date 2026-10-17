@@ -16,7 +16,7 @@ const HELP_EN := """[b]Goal:[/b] mine minerals, build an army and destroy every 
 
 [b]Tips:[/b]
 • Infantry barely scratches vehicles and buildings (armor), tanks are the opposite. Only AA, turrets and fighters can shoot down aircraft.
-• Merge your troops: 5 marines + 2 medics → battalion ([b]Z[/b]), 4 tanks → supertank ([b]C[/b]), 3 wraiths → phantom ([b]V[/b]).
+• Build squads: a commander ([b]C[/b] at the Barracks, Factory or Starport) leads up to 6 soldiers or up to 4 vehicles or aircraft — select it together with the troops and press [b]Z[/b]. The commander doesn't shoot but sees far; the squad follows it and fights harder near it.
 • Command Center, [b]E[/b] — a new age: buildings get twice as tough, later energy shields.
 • The Seeker ([b]R[/b] at the Command Center) and its beacons ([b]F[/b]) lift the fog of war.
 • The Missile Silo ([b]M[/b]) strikes from afar, but the blast hits your own units too.
@@ -230,7 +230,7 @@ func _show_help() -> void:
 
 [b]Советы:[/b]
 • Пехота слабо бьёт по технике и зданиям (броня), танки — наоборот. Авиацию сбивают только ПВО, турели и истребители.
-• Объединяйте войска: 5 пехотинцев + 2 медика → батальон ([b]Z[/b]), 4 танка → супертанк ([b]C[/b]), 3 истребителя → фантом ([b]V[/b]).
+• Собирайте отряды: командир ([b]C[/b] в казарме, на заводе или в космопорте) берёт до 6 пехотинцев или до 4 машин или самолётов — выделите его вместе с солдатами и нажмите [b]Z[/b]. Командир не стреляет, но далеко видит, отряд следует за ним и рядом с ним сильнее.
 • Командный центр, [b]E[/b] — новая эпоха: здания вдвое прочнее, потом появляются щиты.
 • Разведчик ([b]R[/b] в командном центре) и его маяки ([b]F[/b]) рассеивают туман войны.
 • Ракетная шахта ([b]M[/b]) бьёт далеко, но взрыв задевает и своих.

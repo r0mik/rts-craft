@@ -241,9 +241,9 @@ func build(kind: String) -> Node3D:
 		"medic": return medic()
 		"mechanic": return mechanic()
 		"scout": return seeker()
-		"battalion": return battalion()
-		"supertank": return supertank()
-		"phantom": return phantom()
+		"officer": return officer()
+		"command_vehicle": return command_vehicle()
+		"command_ship": return command_ship()
 		"beacon": return sensor_beacon()
 		"bunker": return bunker()
 		"ebay": return engineering_bay()
@@ -661,60 +661,75 @@ func _legs(r: Node3D, hip_y: float, half_w: float, thigh: float, shin_mat: Strin
 		octa(knee, 0.4 * k, 0.26 * k, 0.16, Vector3(0.06, -low, 0), "gunmetal", 0.8)
 
 
-## Battalion: a marine in heavy assault armour (scaled up in view3d.gd) with gold trim, shoulder
-## missile pods, a chest reactor and a rotary cannon instead of the rifle.
-func battalion() -> Node3D:
-	var r := marine()
-	r.name = "Battalion"
+## Officer: infantry commander without a rifle — team armour with gold trim, a tall plumed helmet,
+## a cape, binoculars in hand and a squad banner on a pole behind the back.
+func officer() -> Node3D:
+	var r := _root("Officer")
+	_legs(r, 1.1, 0.2, 0.4, "hull", "gunmetal", 1.0)
+	octa(r, 0.48, 0.6, 0.2, Vector3(0, 1.04, 0), "dark", 0.9)
+	octa(r, 0.6, 0.76, 0.56, Vector3(0, 1.22, 0), "team", 1.15)
+	box(r, Vector3(0.05, 0.06, 0.62), Vector3(0.36, 1.62, 0), "yellow")  # gold collar
+	for k in 3:  # rank chevrons on the chest
+		box(r, Vector3(0.04, 0.05, 0.22), Vector3(0.37, 1.32 + k * 0.08, 0), "yellow", Vector3(0, 0, 0))
+	box(r, Vector3(0.1, 0.9, 0.7), Vector3(-0.36, 1.25, 0), "team_dark", Vector3(0, 0, 8))  # cape
+	cyl(r, 0.18, 0.24, 0.12, Vector3(0, 1.83, 0), "gunmetal", Vector3.ZERO, 16)
+	sphere(r, 0.24, Vector3(0.02, 1.99, 0), "team", Vector3(1.05, 1.05, 0.95))
+	box(r, Vector3(0.1, 0.07, 0.3), Vector3(0.21, 1.99, 0), "amber_glow")
+	box(r, Vector3(0.42, 0.16, 0.06), Vector3(-0.04, 2.25, 0), "yellow", Vector3(0, 0, 10))  # plume
 	for sz in [-1, 1]:
-		box(r, Vector3(0.4, 0.22, 0.26), Vector3(-0.05, 1.98, sz * 0.48), "team_dark")  # missile pods
-		for k in 3:
-			cyl(r, 0.04, 0.04, 0.05, Vector3(0.16, 1.98, sz * 0.48 + (k - 1) * 0.08), "red_glow", Vector3(0, 0, -90), 8)
-		torus(r, 0.27, 0.32, Vector3(0, 1.7, sz * 0.46), "yellow")
-	anim(sphere(r, 0.1, Vector3(0.42, 1.45, 0), "glow"), "pulse", 3.0)
-	var gun := Node3D.new()  # rotary cannon on the right arm
-	gun.position = Vector3(0.6, 1.2, 0.3)
-	r.add_child(gun)
-	cyl(gun, 0.13, 0.15, 0.45, Vector3.ZERO, "gunmetal", Vector3(0, 0, -90), 16)
-	var barrels := anim(Node3D.new(), "spin", 8.0)
-	barrels.rotation_degrees = Vector3(0, 0, -90)
-	barrels.position = Vector3(0.45, 0, 0)
-	gun.add_child(barrels)
-	for k in 6:
-		var a := k * TAU / 6.0
-		cyl(barrels, 0.025, 0.025, 0.55, Vector3(cos(a) * 0.07, 0, sin(a) * 0.07), "black", Vector3.ZERO, 6)
+		sphere(r, 0.26, Vector3(0, 1.7, sz * 0.46), "team", Vector3(1.15, 0.75, 1.0), true)
+		torus(r, 0.24, 0.29, Vector3(0, 1.7, sz * 0.46), "yellow")
+		capsule(r, 0.09, 0.38, Vector3(0.04, 1.5, sz * 0.44), "gunmetal")
+	capsule(r, 0.09, 0.38, Vector3(0.24, 1.55, -0.3), "hull", Vector3(-25, 0, -110))  # arm raised
+	for dz in [-0.05, 0.05]:  # binoculars
+		cyl(r, 0.05, 0.05, 0.16, Vector3(0.42, 1.86, -0.18 + dz), "black", Vector3(0, 0, -90), 10)
+	cyl(r, 0.02, 0.02, 1.5, Vector3(-0.5, 1.9, 0.2), "gunmetal", Vector3.ZERO, 8)  # banner pole
+	box(r, Vector3(0.5, 0.34, 0.03), Vector3(-0.27, 2.45, 0.2), "team")
+	box(r, Vector3(0.12, 0.12, 0.035), Vector3(-0.27, 2.45, 0.2), "yellow")
+	anim(sphere(r, 0.05, Vector3(-0.5, 2.67, 0.2), "glow"), "pulse", 3.0)
 	return r
 
 
-## Supertank: a widened tank with heavier side armour, a second cannon and missile racks.
-func supertank() -> Node3D:
-	var r := tank()
-	r.name = "Supertank"
+## Command vehicle: the six-wheeled rover chassis without weapons, with a big spinning radar dish,
+## antenna masts, a command cabin and a team banner.
+func command_vehicle() -> Node3D:
+	var r := aa_rover()
+	r.name = "CommandVehicle"
+	r.get_node("Turret").free()
+	box(r, Vector3(1.3, 0.6, 1.2), Vector3(-0.4, 1.4, 0), "hull")  # command cabin
+	box(r, Vector3(1.32, 0.06, 1.22), Vector3(-0.4, 1.5, 0), "yellow")
+	sphere(r, 0.32, Vector3(0.3, 1.5, 0), "glass", Vector3(1.2, 0.7, 1.4))
+	var radar := anim(Node3D.new(), "spin", 1.5)
+	radar.position = Vector3(-0.6, 1.7, 0)
+	r.add_child(radar)
+	cyl(radar, 0.05, 0.05, 0.5, Vector3(0, 0.25, 0), "dark", Vector3.ZERO, 8)
+	sphere(radar, 0.55, Vector3(0, 0.75, 0), "metal", Vector3(0.3, 1.0, 1.0), true)
+	sphere(radar, 0.07, Vector3(0.18, 0.75, 0), "glow")
 	for sz in [-1, 1]:
-		box(r, Vector3(3.6, 0.5, 0.12), Vector3(0, 0.95, sz * 1.62), "gunmetal")
-		box(r, Vector3(3.4, 0.06, 0.13), Vector3(0, 1.15, sz * 1.63), "yellow")
-	var tur: Node3D = r.get_node("Turret")
-	cyl(tur, 0.1, 0.13, 2.2, Vector3(1.95, 1.68, -0.42), "gunmetal", Vector3(0, 0, -90), 16)
-	cyl(tur, 0.17, 0.17, 0.32, Vector3(3.1, 1.68, -0.42), "dark", Vector3(0, 0, -90), 8)
-	for sz in [-1, 1]:
-		box(tur, Vector3(0.8, 0.35, 0.4), Vector3(-0.4, 2.15, sz * 0.75), "team_dark")
-		for k in 4:
-			cyl(tur, 0.05, 0.05, 0.05, Vector3(0.0, 2.15 + (k % 2) * 0.1 - 0.05, sz * 0.75 + (k / 2) * 0.16 - 0.08),
-				"red_glow", Vector3(0, 0, -90), 8)
+		cyl(r, 0.015, 0.02, 1.4, Vector3(-1.1, 2.1, sz * 0.45), "dark", Vector3.ZERO, 6)
+		sphere(r, 0.04, Vector3(-1.1, 2.82, sz * 0.45), "red_glow")
+	cyl(r, 0.02, 0.02, 1.1, Vector3(0.6, 2.0, 0.5), "gunmetal", Vector3.ZERO, 8)
+	box(r, Vector3(0.5, 0.32, 0.03), Vector3(0.83, 2.35, 0.5), "team")
+	box(r, Vector3(0.12, 0.12, 0.035), Vector3(0.83, 2.35, 0.5), "yellow")
 	return r
 
 
-## Phantom: a wraith with extra wing cannons, a second set of engines and a glowing energy keel.
-func phantom() -> Node3D:
+## Command ship: a wraith airframe without guns, with a large sensor dish on the back, a long
+## antenna, gold wing trim and beacon lights.
+func command_ship() -> Node3D:
 	var r := wraith()
-	r.name = "Phantom"
+	r.name = "CommandShip"
 	var body: Node3D = r.get_node("Body")
-	box(body, Vector3(2.2, 0.08, 0.1), Vector3(-0.2, -0.3, 0), "energy")
+	var dish := anim(Node3D.new(), "spin", 1.2)
+	dish.position = Vector3(-0.6, 0.45, 0)
+	body.add_child(dish)
+	cyl(dish, 0.05, 0.05, 0.3, Vector3(0, 0.15, 0), "dark", Vector3.ZERO, 8)
+	sphere(dish, 0.6, Vector3(0, 0.5, 0), "hull", Vector3(1.0, 0.25, 1.0), true)
+	sphere(dish, 0.08, Vector3(0, 0.6, 0), "glow")
+	cyl(body, 0.015, 0.015, 1.4, Vector3(1.3, 0.3, 0), "dark", Vector3(0, 0, -80), 6)
 	for sz in [-1, 1]:
-		cyl(body, 0.06, 0.06, 1.2, Vector3(0.4, -0.15, sz * 1.2), "black", Vector3(0, 0, -90), 10)
-		cyl(body, 0.16, 0.2, 0.8, Vector3(-1.0, 0.3, sz * 0.9), "gunmetal", Vector3(0, 0, -90), 16)
-		cyl(body, 0.14, 0.14, 0.05, Vector3(-1.42, 0.3, sz * 0.9), "glow", Vector3(0, 0, -90), 16)
-		box(body, Vector3(0.6, 0.06, 0.6), Vector3(-0.6, 0.12, sz * 1.5), "yellow", Vector3(0, -sz * 30.0, 0))
+		box(body, Vector3(0.8, 0.05, 0.12), Vector3(-0.35, 0.02, sz * 1.25), "yellow", Vector3(0, -sz * 32.0, 0))
+		anim(sphere(body, 0.07, Vector3(-0.9, 0.1, sz * 1.9), "amber_glow"), "pulse", 4.0)
 	return r
 
 

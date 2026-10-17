@@ -44,6 +44,17 @@ func _draw() -> void:
 			_bar(Vector2(sp.x - w / 2.0, sp.y + 3.0), w, 4.0, e.build_progress, Color(0.35, 0.8, 1.0), 0)
 		elif is_b and not e.queue.is_empty():
 			_bar(Vector2(sp.x - w / 2.0, sp.y + 3.0), w, 4.0, e.prod_progress, Color(1.0, 0.85, 0.25), 0)
+	for c in game.selected_units():  # selected commanders: lines to their squad members
+		if not c.stats.has("commands"):
+			continue
+		var cp: Vector2 = v.to_screen(c.position, 0.2)
+		for m in c.squad:
+			if game.valid(m):
+				var near: bool = game.squad_bonus(m)
+				draw_line(cp, v.to_screen(m.position, 0.2), Color(1.0, 0.85, 0.3, 0.55 if near else 0.25), 1.5)
+				var top: Vector2 = v.to_screen(m.position, v.top_of(m) + 0.9)
+				draw_polyline(PackedVector2Array([top + Vector2(-5, 0), top + Vector2(0, -5), top + Vector2(5, 0)]),
+					Color(1.0, 0.82, 0.3, 0.95 if near else 0.4), 2.0)
 	for b in game.selected_buildings():
 		if b.has_rally:
 			var a: Vector2 = v.to_screen(b.position, 0.1)

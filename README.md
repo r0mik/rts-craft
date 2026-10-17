@@ -2,11 +2,11 @@
 
 **English** · [Русский](README.ru.md)
 
-**A real-time strategy game in the spirit of StarCraft — with Age of Empires–style ages, merging super units and missile silos.**
-Build a base, raise an army of infantry, tanks and aircraft, fuse squads into super units, lead your base through four ages
+**A real-time strategy game in the spirit of StarCraft — with Age of Empires–style ages, squads led by commanders and missile silos.**
+Build a base, raise an army of infantry, tanks and aircraft, form squads under commanders, lead your base through four ages
 and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, free and open source.
 
-![Battle: marines with a medic and tanks against a red battalion](docs/screenshots/en/battle.jpg)
+![Battle: marines with a medic and tanks against red infantry](docs/screenshots/en/battle.jpg)
 
 <p align="center">
   <b>Godot 4</b> · Windows · Linux · macOS · English and Russian · save games · free and open source
@@ -19,8 +19,9 @@ and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, fre
 - ⚔️ **Classic RTS you know from the first minute.** Workers mine minerals, you build barracks, a factory and a starport,
   drag-select your army and right-click it into battle. A StarCraft-style interface: minimap, live 3D portrait,
   command card with hotkeys.
-- 🧬 **Super units.** Five marines and two medics fuse into a **Battalion** with a rotary cannon, four tanks into a
-  **Supertank** with a twin gun, three fighters into a **Phantom**. Each one beats its parts — and each has a weak spot.
+- 🎖️ **Squads and commanders.** Train an Officer at the Barracks, a Command Vehicle at the Factory or a Command Ship
+  at the Starport and give it up to 6 soldiers or up to 4 vehicles or aircraft. The commander never fires a shot, but it
+  sees far like a scout, the squad follows it, and near it the troops hit harder, take less damage and (infantry) heal.
 - 🏛️ **Ages, like in Age of Empires.** Lead your base from the Colony Age to the Stellar Age: buildings get twice as tough,
   gain regenerating energy shields, and your army gets a power boost.
 - 🚀 **Missile silos.** Four kinds of missiles: tactical, cluster, napalm and heavy. The missile flies on an arc, the impact
@@ -41,10 +42,10 @@ and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, fre
 |---|---|
 | ![Main menu](docs/screenshots/en/menu.jpg) | ![Ages and building shields](docs/screenshots/en/age.jpg) |
 | **Main menu** — a live AI battle plays in the background | **Energy Age** — buildings under shields |
-| ![Aiming a missile](docs/screenshots/en/aim.jpg) | ![Merge hints](docs/screenshots/en/hint_group.jpg) |
-| **Missile launch** — silo range circle and blast radius | **Merging** — the game tells you what's missing |
-| ![Super units](docs/screenshots/combos.jpg) | ![Titan](docs/screenshots/titan.jpg) |
-| **Super units** next to regular ones: Battalion, Supertank, Phantom | **Titan** — a boss with random stats |
+| ![Aiming a missile](docs/screenshots/en/aim.jpg) | ![A squad with its officer](docs/screenshots/en/squad.jpg) |
+| **Missile launch** — silo range circle and blast radius | **Squad** — an officer, his soldiers and the bonus markers |
+| ![Titan](docs/screenshots/titan.jpg) | |
+| **Titan** — a boss with random stats | |
 
 ## How to start
 
@@ -65,7 +66,7 @@ The game starts in English or Russian depending on your system language; switch 
 1. In the main menu, pick a difficulty: **Easy** — the enemy only defends, so you can learn in peace;
    **Normal** — a full AI that grows its army and attacks in waves.
 2. Workers mine minerals on their own. Select a worker and build a **Supply Depot** (`V`) and **Barracks** (`B`).
-3. Select the barracks and train marines (`Q`) and medics (`E`). Once you have 5 + 2, press `Z` to get a Battalion.
+3. Select the barracks and train marines (`Q`) and medics (`E`). Train an Officer (`C`), select it together with the soldiers and press `Z` — now they are a squad.
 4. Build a **Factory** (`F`) for tanks, AA and mechanics, then a **Starport** (`P`) for aircraft.
 5. Press `E` at the Command Center to advance to a new age and harden your base.
 6. Scout the map with a Seeker (`R` at the Command Center) and destroy every red building.
@@ -81,7 +82,7 @@ Stuck? The main menu has a "How to play" page, and every button at the bottom of
 | Attack-move / stop / hold position | `G` + click / `X` / `H` |
 | Groups | `Ctrl+1..9` — assign, `1..9` — select, double press — jump to group |
 | Camera | `WASD` or arrows, screen edge, mouse wheel — zoom, `Space` — to base, click the minimap |
-| Merge units | `Z` battalion, `C` supertank, `V` phantom |
+| Squads | select a commander with units and press `Z` to add them, `U` — disband |
 | Next age | Command Center → `E` |
 | Missiles | silo → `M` / `J` / `N` / `K` to build, `L` + click to launch |
 | Quick save / load | `F5` / `F9` |
@@ -127,34 +128,36 @@ Built by a worker: select it and press the key.
 | Stormbird (missile bomber) | Starport `B` | 300 | 280 / 2 | air | 32 / 240, splash | missile salvos against ground and air |
 | Devastator (bomber) | Starport `N` | 400 | 280 / 3 | air | 120 / 200 | attacks buildings only |
 | Kamikaze Drone | Starport `K` | 100 | 40 / 0 | air | 250 | dives into a building and explodes |
+| Officer, Command Vehicle, Command Ship | Barracks / Factory / Starport `C` | 100 / 175 / 200 | 130 / 320 / 260 | by class | — | unarmed squad leaders, see Squads |
 | Titan (boss) | CC `Y` | 500 | ~1400 / 6 | vehicle | ~40 / 220, splash | one per side; random name and stats |
 </details>
 
 <details>
-<summary><b>Super units</b></summary>
+<summary><b>Squads and commanders</b></summary>
 
-Select the right units and press "Merge" — they gather and fuse into one with a flash. Supply is kept.
+A commander takes units of its class into its squad: select it together with the units and press `Z` (`U` disbands).
+Ordering the commander orders the whole squad; idle members that fall behind walk back to it. A commander never shoots,
+but it sees far like a scout. Members within 380 of their commander get the bonuses; if the commander dies, the squad breaks up.
 
-| Key | Super unit | Made from | HP / armor | Strength | Weakness |
+| Commander | Where / key | Cost | HP / armor | Squad | Bonus near the commander |
 |---|---|---|---|---|---|
-| `Z` | Battalion | 5 marines + 2 medics | 800 / 3 | splash rotary cannon, self-repairs 15 HP/s | slow, can't hit air |
-| `C` | Supertank | 4 tanks | 1500 / 7 | 150 splash damage, range 300 | very slow, can't fire closer than 90 |
-| `V` | Phantom | 3 fighters | 600 / 2 | twice the firepower of three fighters | slower than a fighter |
+| Officer | Barracks `C` | 100 | 130 / 1 | up to 6 infantry | damage +25%, armor +2, healing 1.5 HP/s |
+| Command Vehicle | Factory `C` | 175 | 320 / 4 | up to 4 vehicles | damage +20%, armor +2 |
+| Command Ship | Starport `C` | 200 | 260 / 2 | up to 4 aircraft | damage +20%, armor +1 |
 </details>
 
 <details>
 <summary><b>Combat</b></summary>
 
-- **Armor** is subtracted from every hit (at least 1 damage): a marine does 2 per shot to a tank and 1 to a supertank.
+- **Armor** is subtracted from every hit (at least 1 damage): a marine does only 2 per shot to a tank.
 - **Target classes** — infantry, vehicles, air, buildings. Weapons are more or less effective against each:
 
   | Attacker | infantry | vehicles | air | buildings |
   |---|---|---|---|---|
-  | tank, supertank | ×0.5 | ×1.5 | — | ×2 |
+  | tank | ×0.5 | ×1.5 | — | ×2 |
   | Titan | ×0.8 | ×1.3 | ×1 | ×1.5 |
   | marine | ×1 | ×1 | — | ×0.8 |
-  | battalion | ×1 | ×1.2 | — | ×0.7 |
-  | fighter, phantom | ×1 | ×0.8 | ×1.4 | ×0.5 |
+  | fighter | ×1 | ×0.8 | ×1.4 | ×0.5 |
   | missile bomber | ×1.2 | ×1 | ×1 | ×0.7 |
   | bunker | ×1.3 | ×0.6 | — | — |
   | missile turret | ×0.5 | ×0.5 | ×1 (plus ×2 bonus against air) | — |
@@ -191,7 +194,7 @@ Launch with `L` + click inside the silo's yellow range circle. The blast hits ev
 <details>
 <summary><b>Enemy, fog of war, saves and settings</b></summary>
 
-- **Enemy.** On Easy, red only defends its base (but still advances through the ages, merges troops and fires missiles
+- **Enemy.** On Easy, red only defends its base (but still advances through the ages, forms squads and fires missiles
   at anything that comes close). On Normal it plays the full AI: vehicles, aircraft, the Titan and attack waves.
 - **Fog of war.** Explored ground is darkened, unexplored ground is almost black; enemy units in the fog are hidden,
   while buildings you've seen stay on the map. The fog can be turned off in the settings.
@@ -213,8 +216,8 @@ Texts are written in Russian and translated by `scripts/i18n.gd`.
 | File | Purpose |
 |---|---|
 | `menu.tscn`, `scripts/menu.gd` | main menu (start scene) with an AI battle in the background |
-| `main.tscn`, `scripts/main.gd` | a match: map, input, orders, combat, missiles, ages, merging, fog, saves |
-| `scripts/defs.gd` | stats of units, buildings, upgrades, missiles, ages, recipes, armor and damage multipliers |
+| `main.tscn`, `scripts/main.gd` | a match: map, input, orders, combat, missiles, ages, squads, fog, saves |
+| `scripts/defs.gd` | stats of units, buildings, upgrades, missiles, ages, squads, armor and damage multipliers |
 | `scripts/unit.gd`, `scripts/building.gd` | a unit (state machine) and a building (construction, queues, shields, defense) |
 | `scripts/ai.gd` | the computer opponent |
 | `scripts/view3d.gd`, `scripts/models.gd` | 3D view, animations, effects and models built from primitives |
