@@ -11,15 +11,15 @@ const Settings = preload("res://scripts/settings.gd")
 
 const HELP_EN := """[b]Goal:[/b] mine minerals, build an army and destroy every building of the red enemy.
 
-[b]Getting started:[/b] workers mine minerals by themselves. Select a worker and build a Supply Depot ([b]V[/b]) and Barracks ([b]B[/b]), then train marines ([b]Q[/b]) and medics ([b]E[/b]). Next come the Factory ([b]F[/b]) with tanks and the Starport ([b]P[/b]) with aircraft.
+[b]Getting started:[/b] workers mine minerals by themselves. Select a worker and build a Supply Depot ([b]V[/b]) and Barracks ([b]B[/b]), then train marines ([b]Q[/b]) and medics ([b]E[/b]). Next come the Factory ([b]F[/b]) with tanks and the Airfield ([b]P[/b]) with aircraft. The Fog has other names, the same keys.
 
 [b]Controls:[/b] LMB / drag — select, RMB — move, attack, mine. [b]G[/b] + click — attack-move, [b]X[/b] — stop, [b]H[/b] — hold position, [b]Ctrl+1..9[/b] — groups. Camera — [b]WASD[/b], mouse wheel, [b]Space[/b] — to your base. Every command is also on the buttons at the bottom right, with tooltips.
 
 [b]Tips:[/b]
 • Infantry barely scratches vehicles and buildings (armor), tanks are the opposite. Only AA, turrets and fighters can shoot down aircraft.
-• Build squads: a commander ([b]C[/b] at the Barracks, Factory or Starport) leads up to 6 soldiers or up to 4 vehicles or aircraft — select it together with the troops and press [b]Z[/b]. The commander doesn't shoot but sees far; the squad follows it and fights harder near it.
-• Command Center, [b]E[/b] — a new age: buildings get twice as tough, later energy shields.
-• The Seeker ([b]R[/b] at the Command Center) and its beacons ([b]F[/b]) lift the fog of war.
+• Build squads: a commander ([b]C[/b] at the Barracks, Factory or Airfield) leads up to 6 soldiers or up to 4 vehicles or aircraft — select it together with the troops and press [b]Z[/b]. The commander doesn't shoot but sees far; the squad follows it and fights harder near it.
+• Headquarters, [b]E[/b] — a new age: buildings get twice as tough, later energy shields.
+• The Recon Drone ([b]R[/b] at the Headquarters) and its beacons ([b]F[/b]) lift the fog of war.
 • The Missile Silo ([b]M[/b]) strikes from afar, but the blast hits your own units too.
 
 [b]Esc[/b] in game — pause, save, settings and exit to the menu."""
@@ -249,15 +249,15 @@ func _show_help() -> void:
 	text.add_theme_font_size_override("bold_font_size", 17)
 	text.text = HELP_EN if Settings.lang == "en" else """[b]Цель:[/b] добывайте минералы, стройте армию и уничтожьте все здания красного противника.
 
-[b]Начало:[/b] рабочие сами добывают минералы. Выделите рабочего и постройте Supply Depot ([b]V[/b]) и Barracks ([b]B[/b]), затем нанимайте пехоту ([b]Q[/b]) и медиков ([b]E[/b]). Дальше — Factory ([b]F[/b]) с танками и Starport ([b]P[/b]) с авиацией.
+[b]Начало:[/b] рабочие сами добывают минералы. Выделите рабочего и постройте Склад ([b]V[/b]) и Казарму ([b]B[/b]), затем нанимайте солдат ([b]Q[/b]) и медиков ([b]E[/b]). Дальше — Завод ([b]F[/b]) с танками и Аэродром ([b]P[/b]) с авиацией. За Туман названия другие, клавиши те же.
 
 [b]Управление:[/b] ЛКМ / рамка — выбор, ПКМ — идти, атаковать, добывать. [b]G[/b] + клик — атака с продвижением, [b]X[/b] — стоп, [b]H[/b] — держать позицию, [b]Ctrl+1..9[/b] — группы. Камера — [b]WASD[/b], колесо, [b]Space[/b] — к базе. Все команды есть на кнопках внизу справа, подсказки — при наведении.
 
 [b]Советы:[/b]
 • Пехота слабо бьёт по технике и зданиям (броня), танки — наоборот. Авиацию сбивают только ПВО, турели и истребители.
 • Собирайте отряды: командир ([b]C[/b] в казарме, на заводе или в космопорте) берёт до 6 пехотинцев или до 4 машин или самолётов — выделите его вместе с солдатами и нажмите [b]Z[/b]. Командир не стреляет, но далеко видит, отряд следует за ним и рядом с ним сильнее.
-• Командный центр, [b]E[/b] — новая эпоха: здания вдвое прочнее, потом появляются щиты.
-• Разведчик ([b]R[/b] в командном центре) и его маяки ([b]F[/b]) рассеивают туман войны.
+• Штаб, [b]E[/b] — новая эпоха: здания вдвое прочнее, потом появляются щиты.
+• Разведдрон ([b]R[/b] в штабе) и его маяки ([b]F[/b]) рассеивают туман войны.
 • Ракетная шахта ([b]M[/b]) бьёт далеко, но взрыв задевает и своих.
 
 [b]Esc[/b] в игре — пауза и выход в меню."""

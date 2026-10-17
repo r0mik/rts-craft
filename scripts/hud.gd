@@ -277,7 +277,7 @@ func _clear_center() -> void:
 func _rebuild_selection(sel: Array) -> void:
 	_clear_center()
 	if sel.is_empty():
-		var hint := _label(I18N.t("Ничего не выбрано.\n\nВыдели рабочих и строй здания,\nвыдели Command Center или Barracks и нанимай юнитов."), 15,
+		var hint := _label(I18N.t("Ничего не выбрано.\n\nВыдели рабочих и строй здания,\nвыдели Штаб или Казарму и нанимай юнитов."), 15,
 			Color(0.75, 0.85, 0.95, 0.7))
 		hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		center.add_child(hint)

@@ -18,9 +18,11 @@ and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, fre
 
 Pick your side in the main menu (**Faction**); the enemy plays the other one.
 
-- **Humans** — colonists of a base hastily bolted together from salvaged modules: vehicles, aircraft, medics and mechanics.
-- **The Fog** — a Silent Hill–like faction: rusted, blood-stained structures hung with chains (Altar, Asylum,
-  Slaughterhouse, Nest…) and twisted creatures — Gatherers, straitjacketed Cocoons spitting acid, faceless Sisters,
+- **Humans** — soldiers in helmets and uniforms, workers in hard hats, medics and officers, backed by tanks, AA
+  vehicles, jets and a giant Walker; their base is hastily bolted together from salvaged modules.
+- **The Fog** — a Silent Hill–like faction living in a rotting town of its own: a chapel-like Altar with a bell
+  tower, a boarded-up Asylum, a Slaughterhouse with smoking chimneys, a Crypt, a Cage, a Nest of girders and bones,
+  a Well, an air-raid Siren — all rusted, blood-stained and hung with chains — and twisted creatures — Gatherers, straitjacketed Cocoons spitting acid, faceless Sisters,
   eyeless Beasts, Flyers and the Executioner with his great rusted helmet and cleaver. Everything of the Fog slowly
   regenerates (1.5 HP/s).
 
@@ -33,14 +35,14 @@ The whole world is wrapped in thick white fog with falling ash, flat grey light,
 - ⚔️ **Classic RTS you know from the first minute.** Workers mine minerals, you build barracks, a factory and a starport,
   drag-select your army and right-click it into battle. A StarCraft-style interface: minimap, live 3D portrait,
   command card with hotkeys.
-- 🎖️ **Squads and commanders.** Train an Officer at the Barracks, a Command Vehicle at the Factory or a Command Ship
-  at the Starport and give it up to 6 soldiers or up to 4 vehicles or aircraft. The commander never fires a shot, but it
+- 🎖️ **Squads and commanders.** Train an Officer at the Barracks, a Command APC at the Factory or a Command Aircraft
+  at the Airfield and give it up to 6 soldiers or up to 4 vehicles or aircraft. The commander never fires a shot, but it
   sees far like a scout, the squad follows it, and near it the troops hit harder, take less damage and (infantry) heal.
 - 🏛️ **Ages, like in Age of Empires.** Lead your base from the Colony Age to the Stellar Age: buildings get twice as tough,
   gain regenerating energy shields, and your army gets a power boost.
 - 🚀 **Missile silos.** Four kinds of missiles: tactical, cluster, napalm and heavy. The missile flies on an arc, the impact
   zone is marked in advance, and the blast hits everyone — enemies and your own units alike.
-- 🤖 **Unusual units.** A Titan boss with a random name and stats, a bomber that only hits buildings, kamikaze drones,
+- 🤖 **Unusual units.** A giant Walker (or the Fog's Executioner) boss with a random name and stats, a bomber that only hits buildings, kamikaze drones,
   a scout with sensor beacons, medics and mechanics that heal and repair your army mid-battle.
 - 🛡️ **Fair combat mechanics.** Armor and target classes: infantry barely scratches tanks, tanks crush vehicles and buildings,
   and only AA, turrets and fighters can shoot down aircraft. A blob of marines alone won't take a base.
@@ -58,8 +60,8 @@ The whole world is wrapped in thick white fog with falling ash, flat grey light,
 | **Main menu** — a live AI battle plays in the background | **Energy Age** — buildings under shields |
 | ![Aiming a missile](docs/screenshots/en/aim.jpg) | ![A squad with its officer](docs/screenshots/en/squad.jpg) |
 | **Missile launch** — silo range circle and blast radius | **Squad** — an officer, his soldiers and the bonus markers |
-| ![Titan](docs/screenshots/titan.jpg) | |
-| **Titan** — a boss with random stats | |
+| ![Fog faction](docs/screenshots/fog_faction.jpg) | |
+| **The Fog** — its own buildings and creatures | |
 
 ## How to start
 
@@ -81,9 +83,9 @@ The game starts in English or Russian depending on your system language; switch 
    **Normal** — a full AI that grows its army and attacks in waves.
 2. Workers mine minerals on their own. Select a worker and build a **Supply Depot** (`V`) and **Barracks** (`B`).
 3. Select the barracks and train marines (`Q`) and medics (`E`). Train an Officer (`C`), select it together with the soldiers and press `Z` — now they are a squad.
-4. Build a **Factory** (`F`) for tanks, AA and mechanics, then a **Starport** (`P`) for aircraft.
-5. Press `E` at the Command Center to advance to a new age and harden your base.
-6. Scout the map with a Seeker (`R` at the Command Center) and destroy every red building.
+4. Build a **Factory** (`F`) for tanks, AA and mechanics, then a **Airfield** (`P`) for aircraft.
+5. Press `E` at the Headquarters to advance to a new age and harden your base.
+6. Scout the map with a Recon Drone (`R` at the Headquarters) and destroy every red building.
 
 Stuck? The main menu has a "How to play" page, and every button at the bottom of the screen shows a tooltip.
 
@@ -97,7 +99,7 @@ Stuck? The main menu has a "How to play" page, and every button at the bottom of
 | Groups | `Ctrl+1..9` — assign, `1..9` — select, double press — jump to group |
 | Camera | `WASD` or arrows, screen edge, mouse wheel — zoom, `Space` — to base, click the minimap |
 | Squads | select a commander with units and press `Z` to add them, `U` — disband |
-| Next age | Command Center → `E` |
+| Next age | Headquarters → `E` |
 | Missiles | silo → `M` / `J` / `N` / `K` to build, `L` + click to launch |
 | Quick save / load | `F5` / `F9` |
 | Pause, save, settings, back to menu | `Esc` |
@@ -115,15 +117,15 @@ Built by a worker: select it and press the key.
 
 | Key | Building | Cost | Requires | HP / armor | Provides |
 |---|---|---|---|---|---|
-| `C` | Command Center | 400 | — | 1500 / 3 | workers, Seeker, Titan, ages, mineral drop-off, +10 supply |
+| `C` | Headquarters | 400 | — | 1500 / 3 | workers, Recon Drone, Walker, ages, mineral drop-off, +10 supply |
 | `V` | Supply Depot | 100 | — | 400 / 1 | +8 supply (max 200) |
 | `B` | Barracks | 150 | — | 1000 / 2 | marines, medics |
 | `U` | Bunker | 100 | Barracks | 550 / 4 | gun emplacement (7 damage, range 150); `R` — repair for minerals |
-| `E` | Engineering Bay | 125 | — | 850 / 1 | weapons (`G`) and armor (`R`) upgrades, up to 3 levels |
-| `T` | Missile Turret | 100 | Engineering Bay | 300 / 2 | air defense: ×2 damage against air, range 230 |
+| `E` | Workshop | 125 | — | 850 / 1 | weapons (`G`) and armor (`R`) upgrades, up to 3 levels |
+| `T` | AA Turret | 100 | Workshop | 300 / 2 | air defense: ×2 damage against air, range 230 |
 | `F` | Factory | 200 | Barracks | 1250 / 2 | tanks, AA, mechanics |
-| `P` | Starport | 200 | Factory | 1300 / 2 | fighters, missile bombers, bombers, drones |
-| `M` | Missile Silo | 200 | Engineering Bay | 600 / 3 | four kinds of missiles |
+| `P` | Airfield | 200 | Factory | 1300 / 2 | fighters, missile bombers, bombers, drones |
+| `M` | Missile Silo | 200 | Workshop | 600 / 3 | four kinds of missiles |
 </details>
 
 <details>
@@ -131,19 +133,19 @@ Built by a worker: select it and press the key.
 
 | Unit | Where / key | Cost | HP / armor | Class | Damage / range | Notes |
 |---|---|---|---|---|---|---|
-| SCV (worker) | CC `Q` | 50 | 45 / 0 | infantry | 5 / melee | mines minerals, builds |
-| Seeker (scout) | CC `R` | 60 | 55 / 0 | infantry | — | unarmed, very fast, sight 460; `F` — a beacon that sees everything around for 90 s |
-| Marine | Barracks `Q` | 50 | 45 / 0 | infantry | 6 / 130 | the backbone of the army, can't hit air |
+| Worker | CC `Q` | 50 | 45 / 0 | infantry | 5 / melee | mines minerals, builds |
+| Recon Drone | CC `R` | 60 | 55 / 0 | infantry | — | unarmed, very fast, sight 460; `F` — a beacon that sees everything around for 90 s |
+| Soldier | Barracks `Q` | 50 | 45 / 0 | infantry | 6 / 130 | the backbone of the army, can't hit air |
 | Medic | Barracks `E` | 75 | 60 / 0 | infantry | — | heals infantry for 14 HP/s, walks up to the wounded |
-| Siege Tank | Factory `T` | 150 | 160 / 4 | vehicle | 30 / 240, splash | crushes vehicles and buildings, weak against infantry |
-| AA Rover | Factory `Y` | 125 | 140 / 3 | vehicle | 20 / 280 | hits air only |
-| Mechanic | Factory `R` | 100 | 120 / 2 | vehicle | — | repairs vehicles, aircraft and buildings for 18 HP/s |
-| Wraith (fighter) | Starport `V` | 150 | 120 / 1 | air | 10 / 150 | flies high; infantry and tanks can't reach it |
-| Stormbird (missile bomber) | Starport `B` | 300 | 280 / 2 | air | 32 / 240, splash | missile salvos against ground and air |
-| Devastator (bomber) | Starport `N` | 400 | 280 / 3 | air | 120 / 200 | attacks buildings only |
-| Kamikaze Drone | Starport `K` | 100 | 40 / 0 | air | 250 | dives into a building and explodes |
-| Officer, Command Vehicle, Command Ship | Barracks / Factory / Starport `C` | 100 / 175 / 200 | 130 / 320 / 260 | by class | — | unarmed squad leaders, see Squads |
-| Titan (boss) | CC `Y` | 500 | ~1400 / 6 | vehicle | ~40 / 220, splash | one per side; random name and stats |
+| Tank | Factory `T` | 150 | 160 / 4 | vehicle | 30 / 240, splash | crushes vehicles and buildings, weak against infantry |
+| AA Vehicle | Factory `Y` | 125 | 140 / 3 | vehicle | 20 / 280 | hits air only |
+| Engineer | Factory `R` | 100 | 120 / 2 | vehicle | — | repairs vehicles, aircraft and buildings for 18 HP/s |
+| Fighter | Airfield `V` | 150 | 120 / 1 | air | 10 / 150 | flies high; infantry and tanks can't reach it |
+| Attack Jet | Airfield `B` | 300 | 280 / 2 | air | 32 / 240, splash | missile salvos against ground and air |
+| Bomber | Airfield `N` | 400 | 280 / 3 | air | 120 / 200 | attacks buildings only |
+| Kamikaze Drone | Airfield `K` | 100 | 40 / 0 | air | 250 | dives into a building and explodes |
+| Officer, Command APC, Command Aircraft | Barracks / Factory / Airfield `C` | 100 / 175 / 200 | 130 / 320 / 260 | by class | — | unarmed squad leaders, see Squads |
+| Walker (boss) | CC `Y` | 500 | ~1400 / 6 | vehicle | ~40 / 220, splash | one per side; random name and stats |
 </details>
 
 <details>
@@ -156,8 +158,8 @@ but it sees far like a scout. Members within 380 of their commander get the bonu
 | Commander | Where / key | Cost | HP / armor | Squad | Bonus near the commander |
 |---|---|---|---|---|---|
 | Officer | Barracks `C` | 100 | 130 / 1 | up to 6 infantry | damage +25%, armor +2, healing 1.5 HP/s |
-| Command Vehicle | Factory `C` | 175 | 320 / 4 | up to 4 vehicles | damage +20%, armor +2 |
-| Command Ship | Starport `C` | 200 | 260 / 2 | up to 4 aircraft | damage +20%, armor +1 |
+| Command APC | Factory `C` | 175 | 320 / 4 | up to 4 vehicles | damage +20%, armor +2 |
+| Command Aircraft | Airfield `C` | 200 | 260 / 2 | up to 4 aircraft | damage +20%, armor +1 |
 </details>
 
 <details>
@@ -169,14 +171,14 @@ but it sees far like a scout. Members within 380 of their commander get the bonu
   | Attacker | infantry | vehicles | air | buildings |
   |---|---|---|---|---|
   | tank | ×0.5 | ×1.5 | — | ×2 |
-  | Titan | ×0.8 | ×1.3 | ×1 | ×1.5 |
+  | Walker | ×0.8 | ×1.3 | ×1 | ×1.5 |
   | marine | ×1 | ×1 | — | ×0.8 |
   | fighter | ×1 | ×0.8 | ×1.4 | ×0.5 |
   | missile bomber | ×1.2 | ×1 | ×1 | ×0.7 |
   | bunker | ×1.3 | ×0.6 | — | — |
   | missile turret | ×0.5 | ×0.5 | ×1 (plus ×2 bonus against air) | — |
 
-- **Upgrades** at the Engineering Bay, 3 levels (100 / 175 / 250): +10% damage or armor per level, but at least +1.
+- **Upgrades** at the Workshop, 3 levels (100 / 175 / 250): +10% damage or armor per level, but at least +1.
 </details>
 
 <details>
@@ -187,7 +189,7 @@ but it sees far like a scout. Members within 380 of their commander get the bonu
 | I Colony | — | — | starting age |
 | II Industrial | 300 / 45 s | Barracks | building durability ×2 |
 | III Energy | 500 / 60 s | Factory | durability ×2 and building energy shields (30% of durability) |
-| IV Stellar | 800 / 80 s | Starport | durability ×2, shields 60%, units +25% HP and damage |
+| IV Stellar | 800 / 80 s | Airfield | durability ×2, shields 60%, units +25% HP and damage |
 
 Shields absorb damage first and recharge after 4 s without hits — shown as a blue dome.
 </details>
@@ -209,7 +211,7 @@ Launch with `L` + click inside the silo's yellow range circle. The blast hits ev
 <summary><b>Enemy, fog of war, saves and settings</b></summary>
 
 - **Enemy.** On Easy, red only defends its base (but still advances through the ages, forms squads and fires missiles
-  at anything that comes close). On Normal it plays the full AI: vehicles, aircraft, the Titan and attack waves.
+  at anything that comes close). On Normal it plays the full AI: vehicles, aircraft, the Walker and attack waves.
 - **Fog of war.** Explored ground is darkened, unexplored ground is almost black; enemy units in the fog are hidden,
   while buildings you've seen stay on the map. The fog can be turned off in the settings.
 - **Saves.** Three slots plus quick save (`F5` / `F9`); load from the pause menu or the main menu. The whole match is saved:

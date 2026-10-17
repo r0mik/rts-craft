@@ -3,25 +3,25 @@ extends RefCounted
 
 const UNITS := {
 	"worker": {
-		"name": "SCV (рабочий)", "hp": 45, "armor": 0, "speed": 120.0, "radius": 9.0,
+		"name": "Рабочий", "hp": 45, "armor": 0, "speed": 120.0, "radius": 9.0,
 		"damage": 5, "range": 6.0, "cooldown": 1.5, "sight": 160.0,
 		"cost": 50, "supply": 1, "time": 12.0, "hotkey": KEY_Q, "anti_air": false,
 	},
 	"marine": {
-		"name": "Marine (пехотинец)", "hp": 45, "armor": 0, "speed": 105.0, "radius": 10.0,
+		"name": "Солдат", "hp": 45, "armor": 0, "speed": 105.0, "radius": 10.0,
 		"damage": 6, "range": 130.0, "cooldown": 0.65, "sight": 240.0,
 		"cost": 50, "supply": 1, "time": 14.0, "hotkey": KEY_Q, "anti_air": false,
 	},
 	# Medic: no weapon; heals the most damaged friendly unit within "range" (vehicles and flyers too).
 	"medic": {
-		"name": "Medic (медик)", "hp": 60, "armor": 0, "speed": 110.0, "radius": 10.0,
+		"name": "Медик", "hp": 60, "armor": 0, "speed": 110.0, "radius": 10.0,
 		"damage": 0, "range": 130.0, "cooldown": 1.0, "sight": 260.0,
 		"cost": 75, "supply": 1, "time": 18.0, "hotkey": KEY_E, "healer": true, "heal_rate": 14.0,
 		"heals": ["infantry"],
 	},
 	# Mechanic: repair vehicle, no weapon; repairs vehicles, aircraft and buildings in "range".
 	"mechanic": {
-		"name": "Mechanic (механик)", "hp": 120, "armor": 2, "speed": 95.0, "radius": 13.0,
+		"name": "Ремонтник", "hp": 120, "armor": 2, "speed": 95.0, "radius": 13.0,
 		"damage": 0, "range": 140.0, "cooldown": 1.0, "sight": 280.0,
 		"cost": 100, "supply": 2, "time": 20.0, "hotkey": KEY_R, "healer": true, "heal_rate": 18.0,
 		"heals": ["vehicle", "air", "building"],
@@ -29,71 +29,71 @@ const UNITS := {
 	# --- Commanders: unarmed squad leaders (see SQUADS). Big sight like a scout; members near
 	# their commander get bonuses and follow it.
 	"officer": {
-		"name": "Officer (командир)", "hp": 130, "armor": 1, "speed": 110.0, "radius": 11.0,
+		"name": "Офицер", "hp": 130, "armor": 1, "speed": 110.0, "radius": 11.0,
 		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 420.0,
 		"cost": 100, "supply": 1, "time": 20.0, "hotkey": KEY_C, "unarmed": true, "commands": "infantry",
 	},
 	"command_vehicle": {
-		"name": "Command Vehicle (командирская машина)", "hp": 320, "armor": 4, "speed": 85.0, "radius": 16.0,
+		"name": "Командирский БТР", "hp": 320, "armor": 4, "speed": 85.0, "radius": 16.0,
 		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 400.0,
 		"cost": 175, "supply": 2, "time": 28.0, "hotkey": KEY_C, "unarmed": true, "commands": "vehicle",
 	},
 	"command_ship": {
-		"name": "Command Ship (командирский корабль)", "hp": 260, "armor": 2, "speed": 140.0, "radius": 17.0,
+		"name": "Командирский самолёт", "hp": 260, "armor": 2, "speed": 140.0, "radius": 17.0,
 		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 460.0,
 		"cost": 200, "supply": 2, "time": 32.0, "hotkey": KEY_C, "unarmed": true, "air": true, "commands": "air",
 	},
 	# Scout: unarmed, very fast hover drone with huge sight; drops sensor beacons (F).
 	"scout": {
-		"name": "Seeker (разведчик)", "hp": 55, "armor": 0, "speed": 215.0, "radius": 10.0,
+		"name": "Разведдрон", "hp": 55, "armor": 0, "speed": 215.0, "radius": 10.0,
 		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 460.0,
 		"cost": 60, "supply": 1, "time": 14.0, "hotkey": KEY_R, "unarmed": true,
 		"beacon_cooldown": 25.0,
 	},
 	# Sensor beacon left by a Seeker: does not move, sees far, burns out after "lifetime" seconds.
 	"beacon": {
-		"name": "Sensor Beacon (маяк)", "hp": 40, "armor": 0, "speed": 0.0, "radius": 8.0,
+		"name": "Сенсорный маяк", "hp": 40, "armor": 0, "speed": 0.0, "radius": 8.0,
 		"damage": 0, "range": 0.0, "cooldown": 1.0, "sight": 380.0,
 		"cost": 0, "supply": 0, "time": 0.0, "unarmed": true, "static": true, "lifetime": 90.0,
 	},
 	"tank": {
-		"name": "Siege Tank (танк)", "hp": 160, "armor": 4, "speed": 75.0, "radius": 16.0,
+		"name": "Танк", "hp": 160, "armor": 4, "speed": 75.0, "radius": 16.0,
 		"damage": 30, "range": 240.0, "cooldown": 2.2, "sight": 300.0, "splash": 40.0,
 		"cost": 150, "supply": 3, "time": 25.0, "hotkey": KEY_T, "anti_air": false,
 	},
 	"wraith": {
-		"name": "Wraith (истребитель)", "hp": 120, "armor": 1, "speed": 150.0, "radius": 13.0,
+		"name": "Истребитель", "hp": 120, "armor": 1, "speed": 150.0, "radius": 13.0,
 		"damage": 10, "range": 150.0, "cooldown": 1.1, "sight": 280.0,
 		"cost": 150, "supply": 2, "time": 28.0, "hotkey": KEY_V, "air": true,
 	},
 	# Heavy missile bomber: salvos of homing missiles against ground and air, splash damage.
 	"stormbird": {
-		"name": "Stormbird (ракетоносец)", "hp": 280, "armor": 2, "speed": 125.0, "radius": 18.0,
+		"name": "Штурмовик", "hp": 280, "armor": 2, "speed": 125.0, "radius": 18.0,
 		"damage": 32, "range": 240.0, "cooldown": 1.6, "sight": 340.0, "splash": 50.0,
 		"cost": 300, "supply": 4, "time": 40.0, "hotkey": KEY_B, "air": true,
 	},
 	# Siege bomber: one huge bunker-buster missile at a time, only against buildings.
 	"devastator": {
-		"name": "Devastator (бомбардировщик)", "hp": 280, "armor": 3, "speed": 105.0, "radius": 20.0,
+		"name": "Бомбардировщик", "hp": 280, "armor": 3, "speed": 105.0, "radius": 20.0,
 		"damage": 120, "range": 200.0, "cooldown": 4.5, "sight": 340.0,
 		"cost": 400, "supply": 5, "time": 50.0, "hotkey": KEY_N, "air": true, "buildings_only": true,
 	},
 	# Kamikaze drone: fast and fragile, dives into a building and explodes (dies on impact).
 	"drone": {
-		"name": "Kamikaze Drone (дрон-камикадзе)", "hp": 40, "armor": 0, "speed": 210.0, "radius": 9.0,
+		"name": "Дрон-камикадзе", "hp": 40, "armor": 0, "speed": 210.0, "radius": 9.0,
 		"damage": 250, "range": 8.0, "cooldown": 1.0, "sight": 280.0,
 		"cost": 100, "supply": 1, "time": 15.0, "hotkey": KEY_K, "air": true, "buildings_only": true,
 		"kamikaze": true,
 	},
 	# Anti-air vehicle: long-range missiles that hit only flyers.
 	"aa": {
-		"name": "AA Rover (ПВО)", "hp": 140, "armor": 3, "speed": 95.0, "radius": 15.0,
+		"name": "Зенитная установка", "hp": 140, "armor": 3, "speed": 95.0, "radius": 15.0,
 		"damage": 20, "range": 280.0, "cooldown": 0.9, "sight": 330.0,
 		"cost": 125, "supply": 2, "time": 22.0, "hotkey": KEY_Y, "air_only": true,
 	},
 	# Boss unit: one per side, trained at the Command Center once a Barracks is up.
 	"titan": {
-		"name": "Titan (босс)", "hp": 1400, "armor": 6, "speed": 50.0, "radius": 30.0,
+		"name": "Шагоход", "hp": 1400, "armor": 6, "speed": 50.0, "radius": 30.0,
 		"damage": 40, "range": 220.0, "cooldown": 1.6, "sight": 320.0, "splash": 60.0,
 		"cost": 500, "supply": 6, "time": 45.0, "hotkey": KEY_Y, "requires": "barracks", "limit": 1,
 		# every Titan rolls its own stats: each value is multiplied by a random factor from [min, max]
@@ -105,41 +105,41 @@ const UNITS := {
 
 const BUILDINGS := {
 	"cc": {
-		"name": "Command Center", "short": "COMMAND", "hp": 1500, "armor": 3, "size": Vector2(130, 100),
+		"name": "Штаб", "short": "COMMAND", "hp": 1500, "armor": 3, "size": Vector2(130, 100),
 		"cost": 400, "time": 70.0, "supply": 10, "trains": ["worker", "scout", "titan"], "hotkey": KEY_C,
 	},
 	"depot": {
-		"name": "Supply Depot", "short": "DEPOT", "hp": 400, "armor": 1, "size": Vector2(70, 70),
+		"name": "Склад", "short": "DEPOT", "hp": 400, "armor": 1, "size": Vector2(70, 70),
 		"cost": 100, "time": 20.0, "supply": 8, "trains": [], "hotkey": KEY_V,
 	},
 	"barracks": {
-		"name": "Barracks", "short": "BARRACKS", "hp": 1000, "armor": 2, "size": Vector2(110, 90),
+		"name": "Казарма", "short": "BARRACKS", "hp": 1000, "armor": 2, "size": Vector2(110, 90),
 		"cost": 150, "time": 40.0, "trains": ["marine", "medic", "officer"], "hotkey": KEY_B,
 	},
 	"factory": {
-		"name": "Factory", "short": "FACTORY", "hp": 1250, "armor": 2, "size": Vector2(120, 90),
+		"name": "Завод", "short": "FACTORY", "hp": 1250, "armor": 2, "size": Vector2(120, 90),
 		"cost": 200, "time": 50.0, "trains": ["tank", "aa", "mechanic", "command_vehicle"], "hotkey": KEY_F, "requires": "barracks",
 	},
 	"bunker": {
-		"name": "Bunker", "short": "BUNKER", "hp": 550, "armor": 4, "size": Vector2(80, 64),
+		"name": "Бункер", "short": "BUNKER", "hp": 550, "armor": 4, "size": Vector2(80, 64),
 		"cost": 100, "time": 25.0, "trains": [], "hotkey": KEY_U, "requires": "barracks",
 		"damage": 7, "range": 150.0, "cooldown": 0.45, "anti_air": false,
 	},
 	"ebay": {
-		"name": "Engineering Bay", "short": "ENG BAY", "hp": 850, "armor": 1, "size": Vector2(100, 80),
+		"name": "Мастерская", "short": "ENG BAY", "hp": 850, "armor": 1, "size": Vector2(100, 80),
 		"cost": 125, "time": 35.0, "trains": [], "research": ["weapons", "armor"], "hotkey": KEY_E,
 	},
 	"turret": {
-		"name": "Missile Turret", "short": "TURRET", "hp": 300, "armor": 2, "size": Vector2(50, 50),
+		"name": "Зенитная турель", "short": "TURRET", "hp": 300, "armor": 2, "size": Vector2(50, 50),
 		"cost": 100, "time": 20.0, "trains": [], "hotkey": KEY_T, "requires": "ebay",
 		"damage": 12, "range": 230.0, "cooldown": 0.85, "air_bonus": 2.0,
 	},
 	"starport": {
-		"name": "Starport", "short": "STARPORT", "hp": 1300, "armor": 2, "size": Vector2(120, 100),
+		"name": "Аэродром", "short": "STARPORT", "hp": 1300, "armor": 2, "size": Vector2(120, 100),
 		"cost": 200, "time": 50.0, "trains": ["wraith", "stormbird", "devastator", "drone", "command_ship"], "hotkey": KEY_P, "requires": "factory",
 	},
 	"silo": {
-		"name": "Missile Silo", "short": "SILO", "hp": 600, "armor": 3, "size": Vector2(70, 70),
+		"name": "Ракетная шахта", "short": "SILO", "hp": 600, "armor": 3, "size": Vector2(70, 70),
 		"cost": 200, "time": 40.0, "trains": [], "hotkey": KEY_M, "requires": "ebay",
 	},
 }

@@ -45,6 +45,24 @@ func mat(name: String) -> Material:
 			_textured(m, "metal", Color(0.68, 0.7, 0.74), 0.35)
 			m.metallic = 0.35
 			m.roughness = 0.38
+		"skin":  # human faces and hands
+			m.albedo_color = Color(0.72, 0.56, 0.45)
+			m.roughness = 0.7
+		"fatigues":  # olive-drab combat uniform
+			_textured(m, "metal", Color(0.3, 0.32, 0.22), 1.2)
+			m.roughness = 0.9
+		"vest":  # body armour / webbing
+			_textured(m, "metal", Color(0.22, 0.23, 0.18), 0.6)
+			m.roughness = 0.8
+		"helmet":
+			_textured(m, "metal", Color(0.27, 0.29, 0.22), 0.5)
+			m.roughness = 0.65
+		"overalls":  # worker overalls
+			_textured(m, "metal", Color(0.4, 0.32, 0.2), 1.2)
+			m.roughness = 0.9
+		"hardhat":
+			m.albedo_color = Color(0.85, 0.6, 0.12)
+			m.roughness = 0.4
 		"flesh":  # pale, sickly skin of the Fog's creatures
 			_textured(m, "metal", Color(0.62, 0.55, 0.5), 0.6)
 			m.metallic = 0.0
@@ -294,6 +312,10 @@ func _root(name: String) -> Node3D:
 # --- Buildings --------------------------------------------------------------
 
 func build(kind: String) -> Node3D:
+	if faction == "fog" and FOG_BUILDINGS.has(kind):
+		var fb: Node3D = call(FOG_BUILDINGS[kind])
+		_fog_dressing(fb, kind)
+		return fb
 	if faction == "fog" and FOG_MODELS.has(kind):
 		var fm: Node3D = call(FOG_MODELS[kind])
 		_fogify(fm, kind, false)
@@ -312,15 +334,362 @@ func build(kind: String) -> Node3D:
 	return m
 
 
+# --- Human infantry: people in uniforms ---------------------------------------------
+
+## A person: legs (Leg0/Leg1 with knees, animated), torso, arms, a head with a face. Returns the root.
+func _person(name: String, uniform: String, top: String, k := 1.0) -> Node3D:
+	var r := _root(name)
+	_legs(r, 0.95, 0.15, 0.36, uniform, uniform, 0.85 * k)
+	for i in 2:  # boots; knee pads in the uniform colour
+		var knee: Node3D = r.get_node("Leg%d" % i).get_node("Knee")
+		box(knee, Vector3(0.3, 0.12, 0.18), Vector3(0.07, -0.54, 0), "black")
+		for mi in knee.get_children():
+			if mi is MeshInstance3D and mi.get_meta("mat", "") in ["team", "gunmetal"]:
+				mi.material_override = mat("vest")
+				mi.set_meta("mat", "vest")
+	capsule(r, 0.24, 0.85, Vector3(0, 1.3, 0), top)  # torso
+	cyl(r, 0.08, 0.09, 0.12, Vector3(0.02, 1.72, 0), "skin", Vector3.ZERO, 10)  # neck
+	sphere(r, 0.17, Vector3(0.03, 1.88, 0), "skin", Vector3(1.0, 1.1, 0.95))  # head
+	for sz in [-1, 1]:  # eyes
+		sphere(r, 0.025, Vector3(0.17, 1.9, sz * 0.06), "black")
+	return r
+
+
+## Worker: overalls, a yellow hard hat and a tool belt; carries the mineral crystal on the shoulder.
+func human_worker() -> Node3D:
+	var r := _person("Worker", "overalls", "overalls")
+	sphere(r, 0.2, Vector3(0.02, 1.98, 0), "hardhat", Vector3(1.05, 0.7, 1.05), true)
+	box(r, Vector3(0.36, 0.03, 0.42), Vector3(0.05, 1.97, 0), "hardhat")
+	torus(r, 0.23, 0.27, Vector3(0, 1.05, 0), "vest")  # tool belt
+	for sz in [-1, 1]:
+		capsule(r, 0.07, 0.62, Vector3(0.1, 1.3, sz * 0.3), "overalls", Vector3(sz * 12.0, 0, -25))
+		sphere(r, 0.06, Vector3(0.3, 1.04, sz * 0.33), "skin")
+	cyl(r, 0.03, 0.03, 0.55, Vector3(0.45, 1.05, 0.35), "black", Vector3(0, 0, -60), 8)  # pickaxe handle
+	box(r, Vector3(0.06, 0.06, 0.4), Vector3(0.66, 1.2, 0.35), "metal", Vector3(0, 0, -60))
+	var carry := Node3D.new()
+	carry.name = "Carry"
+	carry.visible = false
+	r.add_child(carry)
+	cyl(carry, 0.02, 0.2, 0.5, Vector3(-0.1, 1.75, -0.3), "crystal", Vector3(0, 0, 25), 6)
+	return r
+
+
+## Soldier: helmet, combat uniform, body armour with pouches, a backpack and an assault rifle.
+func soldier() -> Node3D:
+	var r := _person("Soldier", "fatigues", "fatigues")
+	sphere(r, 0.21, Vector3(0.02, 1.96, 0), "helmet", Vector3(1.1, 0.75, 1.05), true)  # helmet
+	box(r, Vector3(0.36, 0.5, 0.48), Vector3(0.02, 1.35, 0), "vest")  # body armour
+	for k in 3:  # magazine pouches
+		box(r, Vector3(0.06, 0.13, 0.1), Vector3(0.22, 1.2, -0.13 + k * 0.13), "vest")
+	box(r, Vector3(0.22, 0.42, 0.36), Vector3(-0.28, 1.4, 0), "fatigues")  # backpack
+	box(r, Vector3(0.05, 0.12, 0.3), Vector3(0.21, 1.55, 0), "team")  # unit patch in the team colour
+	for sz in [-1, 1]:  # arms holding the rifle
+		capsule(r, 0.07, 0.6, Vector3(0.18, 1.32, sz * 0.22), "fatigues", Vector3(sz * 30.0, 0, -65))
+	var gun := Node3D.new()
+	gun.position = Vector3(0.4, 1.3, -0.08)
+	r.add_child(gun)
+	box(gun, Vector3(0.7, 0.1, 0.06), Vector3(0.1, 0, 0), "black")
+	box(gun, Vector3(0.08, 0.16, 0.05), Vector3(0.05, -0.1, 0), "black", Vector3(0, 0, 10))
+	box(gun, Vector3(0.2, 0.1, 0.06), Vector3(-0.3, -0.02, 0), "black")
+	cyl(gun, 0.02, 0.02, 0.3, Vector3(0.55, 0.01, 0), "black", Vector3(0, 0, -90), 6)
+	return r
+
+
+## Field medic: uniform with a white armband and red cross, a medical bag and no rifle.
+func field_medic() -> Node3D:
+	var r := _person("Medic", "fatigues", "fatigues")
+	sphere(r, 0.21, Vector3(0.02, 1.96, 0), "white", Vector3(1.1, 0.75, 1.05), true)  # white helmet
+	box(r, Vector3(0.05, 0.12, 0.04), Vector3(0.2, 2.02, 0), "red_glow")
+	box(r, Vector3(0.05, 0.04, 0.12), Vector3(0.2, 2.02, 0), "red_glow")
+	box(r, Vector3(0.36, 0.5, 0.48), Vector3(0.02, 1.35, 0), "vest")
+	for sz in [-1, 1]:
+		capsule(r, 0.07, 0.62, Vector3(0.12, 1.3, sz * 0.3), "fatigues", Vector3(sz * 15.0, 0, -35))
+		torus(r, 0.07, 0.1, Vector3(0.05, 1.5, sz * 0.31), "white", Vector3(90, 0, 0))  # armbands
+	box(r, Vector3(0.3, 0.3, 0.14), Vector3(0.05, 1.0, 0.32), "white")  # med bag
+	box(r, Vector3(0.04, 0.16, 0.05), Vector3(0.05, 1.0, 0.4), "red_glow")
+	box(r, Vector3(0.14, 0.04, 0.05), Vector3(0.05, 1.0, 0.4), "red_glow")
+	box(r, Vector3(0.05, 0.12, 0.3), Vector3(0.21, 1.55, 0), "team")
+	anim(sphere(r, 0.06, Vector3(0.45, 1.15, -0.3), "heal_glow"), "pulse", 3.0)  # injector
+	return r
+
+
+## Officer: peaked cap, long coat, binoculars raised, a team-coloured shoulder flag.
+func field_officer() -> Node3D:
+	var r := _person("Officer", "fatigues", "vest")
+	cyl(r, 0.2, 0.2, 0.1, Vector3(0.02, 2.02, 0), "helmet", Vector3.ZERO, 16)  # peaked cap
+	box(r, Vector3(0.2, 0.03, 0.3), Vector3(0.16, 1.98, 0), "black")
+	box(r, Vector3(0.05, 0.05, 0.12), Vector3(0.2, 2.03, 0), "yellow")  # cap badge
+	cyl(r, 0.27, 0.36, 0.7, Vector3(0, 1.0, 0), "vest", Vector3.ZERO, 14)  # coat skirt
+	for k in 3:
+		box(r, Vector3(0.04, 0.04, 0.16), Vector3(0.24, 1.42 + k * 0.08, -0.12), "yellow")  # rank stripes
+	capsule(r, 0.07, 0.5, Vector3(0.22, 1.55, -0.2), "vest", Vector3(-20, 0, -110))  # arm raised
+	for dz in [-0.05, 0.05]:  # binoculars
+		cyl(r, 0.04, 0.04, 0.14, Vector3(0.36, 1.88, -0.12 + dz), "black", Vector3(0, 0, -90), 8)
+	cyl(r, 0.015, 0.015, 1.2, Vector3(-0.3, 1.9, 0.2), "metal", Vector3.ZERO, 6)  # radio antenna / flag pole
+	box(r, Vector3(0.4, 0.26, 0.02), Vector3(-0.1, 2.35, 0.2), "team")
+	return r
+
+
 # --- The Fog (Silent Hill-like faction) -----------------------------------------------
 
 ## Units of the Fog with their own models; every other kind reuses the human model, "fogified".
 const FOG_MODELS := {"worker": "fog_worker", "marine": "fog_marine", "medic": "fog_medic",
-	"tank": "fog_beast", "wraith": "fog_flyer", "titan": "fog_executioner"}
-const _METALS := ["plate", "plate_dark", "gunmetal", "metal", "hull", "dark", "white", "olive", "primer",
+	"tank": "fog_beast", "wraith": "fog_flyer", "titan": "fog_executioner", "officer": "fog_herald"}
+const _METALS := ["fatigues", "vest", "helmet", "overalls", "hardhat", "plate", "plate_dark", "gunmetal", "metal", "hull", "dark", "white", "olive", "primer",
 	"concrete", "brass", "yellow", "warm", "roof", "rubber", "black", "rust", "team_dark"]
 const _LIGHTS := ["energy", "glow", "seam", "window", "door", "door_dim", "holo", "holo_line", "shield",
 	"amber_glow", "heal_glow", "hazard"]
+
+
+## Fog buildings with their own models (an abandoned, rotting town of the Otherworld).
+const FOG_BUILDINGS := {"cc": "fog_altar", "depot": "fog_crypt", "barracks": "fog_asylum", "bunker": "fog_cage",
+	"ebay": "fog_workshop", "turret": "fog_siren", "factory": "fog_slaughterhouse", "starport": "fog_nest",
+	"silo": "fog_well"}
+
+
+## Cracked concrete slab of a Fog building with a broken chain-link fence on two sides.
+func _fog_ground(r: Node3D, w: float, d: float) -> void:
+	box(r, Vector3(w, 0.35, d), Vector3(0, 0.17, 0), "concrete")
+	for k in 3:  # cracks
+		box(r, Vector3(w * 0.4, 0.02, 0.06), Vector3(-w * 0.2 + k * w * 0.2, 0.36, -d * 0.2 + k * d * 0.15), "black",
+			Vector3(0, 20.0 - k * 25.0, 0))
+	for sx in [-1, 1]:  # fence posts and torn mesh along the sides
+		for k in 4:
+			var z := -d / 2.0 + 0.3 + k * (d - 0.6) / 3.0
+			cyl(r, 0.05, 0.05, 1.6, Vector3(sx * (w / 2.0 - 0.15), 1.1, z), "rust", Vector3(0, 0, sx * (4.0 + k * 3.0)), 6)
+		box(r, Vector3(0.03, 1.2, d * 0.7), Vector3(sx * (w / 2.0 - 0.15), 1.2, -d * 0.1), "chainlink", Vector3(sx * 4.0, 0, 0))
+
+
+## Altar (HQ): a decayed chapel on a raised slab — pitched rusted roof, bell tower with a bell,
+## boarded windows, and a bloody altar stone with candles before the doors; the Order's sun halo above.
+func fog_altar() -> Node3D:
+	var r := _root("FogAltar")
+	var w := 13.0
+	var d := 10.0 * depth_k
+	_fog_ground(r, w, d)
+	box(r, Vector3(7.0, 3.2, 5.6), Vector3(-0.5, 1.95, -0.8), "concrete")  # nave
+	for sz in [-1, 1]:  # pitched roof halves
+		box(r, Vector3(7.4, 0.2, 3.4), Vector3(-0.5, 4.35, -0.8 + sz * 1.45), "blood_rust", Vector3(sz * 38.0, 0, 0))
+	for k in 3:  # boarded windows on the front
+		box(r, Vector3(0.9, 1.2, 0.06), Vector3(-2.6 + k * 2.1, 2.4, 2.02), "black")
+		for b in 2:
+			box(r, Vector3(1.1, 0.12, 0.08), Vector3(-2.6 + k * 2.1, 2.2 + b * 0.4, 2.06), "rust", Vector3(0, 0, -15 + b * 30))
+	box(r, Vector3(1.4, 2.2, 0.08), Vector3(1.9, 1.45, 2.03), "blood_rust")  # door
+	# bell tower
+	box(r, Vector3(1.8, 6.0, 1.8), Vector3(3.6, 3.35, -1.5), "concrete")
+	for sx in [-1, 1]:
+		box(r, Vector3(0.2, 1.4, 1.8), Vector3(3.6 + sx * 0.8, 6.9, -1.5), "concrete")
+	cyl(r, 0.0, 1.3, 1.4, Vector3(3.6, 8.3, -1.5), "blood_rust", Vector3(0, 45, 0), 4)
+	cyl(r, 0.35, 0.55, 0.8, Vector3(3.6, 6.9, -1.5), "rust", Vector3.ZERO, 14)  # bell
+	# the Order's sun halo over the entrance
+	var halo := Node3D.new()
+	halo.position = Vector3(-0.5, 5.6, 1.6)
+	halo.rotation_degrees = Vector3(90, 0, 0)
+	r.add_child(halo)
+	torus(halo, 0.65, 0.8, Vector3.ZERO, "rust")
+	torus(halo, 0.3, 0.38, Vector3.ZERO, "rust")
+	for k in 8:
+		var a := k * TAU / 8.0
+		box(halo, Vector3(0.08, 0.08, 0.5), Vector3(cos(a) * 1.0, 0, sin(a) * 1.0), "rust", Vector3(0, -rad_to_deg(a), 0))
+	# altar stone with candles and the team banner
+	box(r, Vector3(2.2, 0.8, 1.0), Vector3(-0.5, 0.75, 3.6), "concrete")
+	box(r, Vector3(2.0, 0.05, 0.9), Vector3(-0.5, 1.17, 3.6), "blood")
+	for k in 5:
+		cyl(r, 0.05, 0.05, 0.25, Vector3(-1.3 + k * 0.4, 1.3, 3.4 + (k % 2) * 0.3), "bandage", Vector3.ZERO, 6)
+		anim(sphere(r, 0.05, Vector3(-1.3 + k * 0.4, 1.47, 3.4 + (k % 2) * 0.3), "amber_glow"), "pulse", 4.0 + k)
+	cyl(r, 0.04, 0.04, 3.0, Vector3(-4.6, 1.9, 2.6), "rust", Vector3.ZERO, 6)
+	box(r, Vector3(0.9, 0.6, 0.03), Vector3(-4.15, 3.0, 2.6), "team")
+	return r
+
+
+## Crypt (supply): a half-sunk concrete vault with an iron door, grave markers and stacked coffins.
+func fog_crypt() -> Node3D:
+	var r := _root("FogCrypt")
+	var w := 7.0
+	var d := 7.0 * depth_k
+	_fog_ground(r, w, d)
+	box(r, Vector3(4.6, 1.8, 3.6), Vector3(0, 1.25, -0.6), "concrete")
+	box(r, Vector3(4.9, 0.3, 3.9), Vector3(0, 2.25, -0.6), "blood_rust")
+	box(r, Vector3(1.2, 1.4, 0.08), Vector3(0, 1.05, 1.22), "rust")  # iron door
+	for k in 4:
+		box(r, Vector3(0.06, 1.3, 0.1), Vector3(-0.45 + k * 0.3, 1.05, 1.27), "blood_rust")
+	for k in 3:  # stacked coffins
+		box(r, Vector3(1.6, 0.4, 0.6), Vector3(-1.6, 0.55 + k * 0.42, 2.2), "flesh_dark" if k == 1 else "rust", Vector3(0, 8 * k, 0))
+	for k in 3:  # grave markers
+		box(r, Vector3(0.1, 0.9, 0.5), Vector3(1.5 + (k % 2) * 0.6, 0.8, 1.9 + k * 0.4), "concrete", Vector3(0, 0, -8 + k * 9))
+	box(r, Vector3(0.6, 0.4, 0.03), Vector3(0, 2.0, 1.25), "team")
+	return r
+
+
+## Asylum (barracks): a two-storey hospital ward of stained concrete with rows of boarded windows,
+## a rusted fire escape, a faded red-cross sign and a dark doorway.
+func fog_asylum() -> Node3D:
+	var r := _root("FogAsylum")
+	var w := 11.0
+	var d := 9.0 * depth_k
+	_fog_ground(r, w, d)
+	box(r, Vector3(8.6, 5.2, 5.6), Vector3(0, 2.95, -0.6), "concrete")
+	box(r, Vector3(8.9, 0.3, 5.9), Vector3(0, 5.7, -0.6), "plate_dark")
+	for row in 2:
+		for k in 5:
+			var p := Vector3(-3.4 + k * 1.7, 1.9 + row * 2.2, 2.22)
+			box(r, Vector3(0.9, 1.1, 0.05), p, "black")
+			box(r, Vector3(1.0, 0.1, 0.08), p + Vector3(0, 0.1, 0.03), "rust", Vector3(0, 0, -20 + (k % 3) * 18))
+	for k in 6:  # streaks of rust and blood running down the facade
+		box(r, Vector3(0.12, 2.0, 0.04), Vector3(-3.9 + k * 1.55, 3.7, 2.24), "blood_rust" if k % 2 else "blood")
+	box(r, Vector3(1.6, 2.0, 0.08), Vector3(0, 1.3, 2.23), "black")  # doorway
+	box(r, Vector3(1.0, 0.25, 0.06), Vector3(0, 2.7, 2.24), "fog_glow")  # flickering sign
+	box(r, Vector3(0.25, 1.0, 0.06), Vector3(2.9, 5.0, 2.24), "blood")  # faded cross
+	box(r, Vector3(0.8, 0.25, 0.06), Vector3(2.9, 5.0, 2.25), "blood")
+	for k in 2:  # fire escape
+		box(r, Vector3(1.6, 0.06, 0.8), Vector3(-4.6, 2.4 + k * 2.2, 0.6), "chainlink")
+		box(r, Vector3(1.6, 0.6, 0.04), Vector3(-4.6, 2.7 + k * 2.2, 1.0), "chainlink")
+	box(r, Vector3(0.1, 4.6, 0.1), Vector3(-5.35, 2.6, 1.0), "rust")
+	box(r, Vector3(1.0, 0.7, 0.03), Vector3(3.6, 4.5, 2.25), "team")
+	return r
+
+
+## Cage (bunker): a rusted iron cage on a slab with a spike-throwing horror inside ("Turret").
+func fog_cage() -> Node3D:
+	var r := _root("FogCage")
+	var w := 8.0
+	var d := 6.4 * depth_k
+	box(r, Vector3(w, 0.4, d), Vector3(0, 0.2, 0), "concrete")
+	for k in 14:  # bars
+		var a := k * TAU / 14.0
+		cyl(r, 0.06, 0.06, 2.8, Vector3(cos(a) * 2.6, 1.8, sin(a) * 2.0 * depth_k), "rust", Vector3.ZERO, 6)
+	torus(r, 2.5, 2.7, Vector3(0, 3.2, 0), "blood_rust")
+	torus(r, 2.5, 2.7, Vector3(0, 0.55, 0), "blood_rust")
+	var tur := Node3D.new()
+	tur.name = "Turret"
+	tur.position = Vector3(0, 0.4, 0)
+	r.add_child(tur)
+	sphere(tur, 0.9, Vector3(0, 1.3, 0), "flesh_dark", Vector3(1.0, 1.2, 1.0))
+	sphere(tur, 0.35, Vector3(0.7, 1.6, 0), "flesh", Vector3(1.3, 0.8, 0.8))
+	for k in 5:  # bone spikes
+		var a := k * TAU / 5.0
+		cyl(tur, 0.0, 0.1, 0.9, Vector3(cos(a) * 0.6, 2.0, sin(a) * 0.6), "bandage", Vector3(sin(a) * 30, 0, -cos(a) * 30), 5)
+	box(r, Vector3(0.6, 0.4, 0.03), Vector3(0, 2.6, d / 2.0 - 0.6), "team")
+	return r
+
+
+## Flesh Workshop (research): a shed under a sagging rusted roof with meat hooks, hanging carcasses
+## and an operating table.
+func fog_workshop() -> Node3D:
+	var r := _root("FogWorkshop")
+	var w := 10.0
+	var d := 8.0 * depth_k
+	_fog_ground(r, w, d)
+	for sx in [-1, 1]:
+		for sz in [-1, 1]:
+			cyl(r, 0.12, 0.12, 3.4, Vector3(sx * 3.6, 2.05, sz * 2.4), "rust", Vector3.ZERO, 8)
+	box(r, Vector3(8.0, 0.15, 5.6), Vector3(0, 3.75, 0), "blood_rust", Vector3(6, 0, -4))  # sagging roof
+	box(r, Vector3(8.0, 2.4, 0.15), Vector3(0, 1.6, -2.5), "concrete")
+	cyl(r, 0.05, 0.05, 7.0, Vector3(0, 3.3, 0.4), "rust", Vector3(0, 0, 90), 6)  # hook rail
+	for k in 4:
+		var x := -2.4 + k * 1.6
+		cyl(r, 0.02, 0.02, 0.6, Vector3(x, 3.0, 0.4), "rust", Vector3.ZERO, 4)
+		capsule(r, 0.25, 1.2, Vector3(x, 2.1, 0.4), "flesh_dark" if k % 2 else "flesh")
+	box(r, Vector3(2.0, 0.15, 0.9), Vector3(1.0, 1.1, 1.6), "plate_dark")  # operating table
+	box(r, Vector3(1.8, 0.05, 0.8), Vector3(1.0, 1.2, 1.6), "blood")
+	for sx in [-1, 1]:
+		cyl(r, 0.05, 0.05, 0.8, Vector3(1.0 + sx * 0.85, 0.75, 1.6), "rust", Vector3.ZERO, 6)
+	box(r, Vector3(0.8, 0.5, 0.03), Vector3(-3.0, 2.6, -2.4), "team")
+	return r
+
+
+## Siren (air defence): a tall rusted pole with an air-raid siren ("Turret") whose horns turn to the target.
+func fog_siren() -> Node3D:
+	var r := _root("FogSiren")
+	box(r, Vector3(4.6, 0.4, 4.6 * depth_k), Vector3(0, 0.2, 0), "concrete")
+	cyl(r, 0.18, 0.25, 4.6, Vector3(0, 2.7, 0), "rust", Vector3.ZERO, 8)
+	for k in 3:  # guy wires
+		var a := k * TAU / 3.0
+		box(r, Vector3(0.03, 4.4, 0.03), Vector3(cos(a) * 1.0, 2.4, sin(a) * 1.0), "plate_dark", Vector3(sin(a) * 24, 0, -cos(a) * 24))
+	var tur := Node3D.new()
+	tur.name = "Turret"
+	tur.position = Vector3(0, 5.0, 0)
+	r.add_child(tur)
+	cyl(tur, 0.45, 0.45, 0.6, Vector3.ZERO, "blood_rust", Vector3.ZERO, 14)
+	for k in 4:  # the siren horns
+		var a := k * TAU / 4.0
+		cyl(tur, 0.38, 0.12, 0.9, Vector3(cos(a) * 0.75, 0, sin(a) * 0.75), "rust", Vector3(sin(a) * 90, 0, -cos(a) * 90), 12)
+	anim(sphere(tur, 0.12, Vector3(0, 0.45, 0), "fog_glow"), "pulse", 2.0)
+	box(r, Vector3(0.5, 0.35, 0.03), Vector3(0, 1.8, 0.25), "team")
+	return r
+
+
+## Slaughterhouse (vehicle factory): a long corrugated shed with a sliding door, smoking chimneys,
+## a hook conveyor and blood draining into a gutter.
+func fog_slaughterhouse() -> Node3D:
+	var r := _root("FogSlaughterhouse")
+	var w := 12.0
+	var d := 9.0 * depth_k
+	_fog_ground(r, w, d)
+	box(r, Vector3(9.0, 3.6, 6.0), Vector3(-1.0, 2.15, -0.5), "rust")
+	for k in 12:  # corrugation
+		box(r, Vector3(0.08, 3.4, 0.05), Vector3(-5.2 + k * 0.76, 2.15, 2.52), "blood_rust")
+	for sz in [-1, 1]:
+		box(r, Vector3(9.4, 0.15, 3.4), Vector3(-1.0, 4.5, -0.5 + sz * 1.55), "plate_dark", Vector3(sz * 20.0, 0, 0))
+	box(r, Vector3(3.6, 2.8, 0.1), Vector3(-1.4, 1.75, 2.58), "black")  # half-open sliding door
+	box(r, Vector3(1.9, 2.9, 0.12), Vector3(0.4, 1.8, 2.66), "rust")
+	for k in 2:  # chimneys with smoke-blackened tops
+		cyl(r, 0.35, 0.45, 3.5, Vector3(2.4 + k * 1.2, 5.0, -2.0), "concrete", Vector3.ZERO, 12)
+		cyl(r, 0.37, 0.37, 0.4, Vector3(2.4 + k * 1.2, 6.6, -2.0), "black", Vector3.ZERO, 12)
+	box(r, Vector3(3.0, 0.15, 0.8), Vector3(4.6, 1.2, 1.6), "plate_dark")  # conveyor out of the shed
+	for k in 3:
+		cyl(r, 0.02, 0.02, 0.6, Vector3(3.6 + k * 0.9, 1.9, 1.6), "rust", Vector3.ZERO, 4)
+		capsule(r, 0.18, 0.7, Vector3(3.6 + k * 0.9, 1.45, 1.6), "flesh_dark")
+	box(r, Vector3(6.0, 0.04, 0.4), Vector3(-1.0, 0.37, 3.2), "blood")  # blood gutter
+	box(r, Vector3(1.2, 0.8, 0.03), Vector3(-4.5, 3.4, 2.6), "team")
+	return r
+
+
+## Nest (airfield): a crater ringed by bent rusted girders and huge bones, lined with a flesh membrane.
+func fog_nest() -> Node3D:
+	var r := _root("FogNest")
+	var w := 12.0
+	var d := 10.0 * depth_k
+	box(r, Vector3(w, 0.3, d), Vector3(0, 0.15, 0), "concrete")
+	var bowl := Node3D.new()
+	bowl.scale = Vector3(1.0, 1.0, depth_k)
+	r.add_child(bowl)
+	cyl(bowl, 4.6, 3.6, 1.2, Vector3(0, 0.9, 0), "blood_rust", Vector3.ZERO, 24)
+	cyl(bowl, 4.0, 3.2, 0.1, Vector3(0, 1.45, 0), "flesh_dark", Vector3.ZERO, 24)  # membrane
+	for k in 12:  # girders and ribs curving inwards
+		var a := k * TAU / 12.0
+		var p := Vector3(cos(a) * 4.8, 2.4, sin(a) * 4.0 * depth_k)
+		var mat := "bandage" if k % 3 == 0 else "rust"
+		capsule(r, 0.15, 3.4, p, mat, Vector3(sin(a) * 30, -rad_to_deg(a), -cos(a) * 30))
+	for k in 5:  # eggs
+		sphere(r, 0.45, Vector3(-1.2 + k * 0.6, 1.8, (k % 2) * 0.8 - 0.4), "flesh", Vector3(1, 1.3, 1))
+	cyl(r, 0.05, 0.05, 3.0, Vector3(5.4, 1.8, 4.2 * depth_k), "rust", Vector3.ZERO, 6)
+	box(r, Vector3(0.9, 0.6, 0.03), Vector3(5.85, 2.9, 4.2 * depth_k), "team")
+	return r
+
+
+## Well (missile silo): a round stone well under a rusted winch frame; when loaded, a swollen flesh
+## "Missile" hangs above it on chains.
+func fog_well() -> Node3D:
+	var r := _root("FogWell")
+	var w := 7.0
+	_fog_ground(r, w, 7.0 * depth_k)
+	cyl(r, 1.8, 2.0, 1.1, Vector3(0, 0.9, 0), "concrete", Vector3.ZERO, 20)
+	cyl(r, 1.5, 1.5, 0.06, Vector3(0, 1.46, 0), "black", Vector3.ZERO, 20)
+	for sx in [-1, 1]:
+		box(r, Vector3(0.25, 4.0, 0.25), Vector3(sx * 1.9, 3.0, 0), "rust", Vector3(0, 0, sx * -6))
+	box(r, Vector3(4.2, 0.25, 0.25), Vector3(0, 5.0, 0), "blood_rust")
+	cyl(r, 0.25, 0.25, 1.0, Vector3(0, 4.7, 0), "rust", Vector3(0, 0, 90), 10)  # winch drum
+	var m := Node3D.new()
+	m.name = "Missile"
+	m.visible = false
+	r.add_child(m)
+	for sz in [-0.3, 0.3]:
+		cyl(m, 0.03, 0.03, 1.4, Vector3(0, 4.0, sz), "rust", Vector3.ZERO, 4)
+	sphere(m, 0.6, Vector3(0, 2.8, 0), "flesh", Vector3(1.0, 1.6, 1.0))
+	anim(sphere(m, 0.25, Vector3(0, 2.8, 0.45), "fog_glow"), "pulse", 2.5)
+	box(r, Vector3(0.6, 0.4, 0.03), Vector3(0, 1.0, 2.0), "team")
+	return r
 
 
 ## Repaints a model in the Fog's palette: buildings become rusted, blood-soaked iron and grimy concrete,
@@ -341,6 +710,8 @@ func _fogify(root: Node3D, kind: String, building: bool) -> void:
 			pick = "fog_glow"
 		elif name in ["glass", "glass_dark"]:
 			pick = "blood"
+		elif name == "skin":
+			pick = "flesh"
 		if pick != "":
 			mi.material_override = mat(pick)
 			mi.set_meta("mat", pick)
@@ -470,6 +841,21 @@ func fog_flyer() -> Node3D:
 	return r
 
 
+## Vestnik (squad leader): a hooded cultist of the Order in a long dark robe, carrying a lantern
+## on a pole that the creatures follow. Legs are hidden under the robe but still animated.
+func fog_herald() -> Node3D:
+	var r := _root("FogHerald")
+	_legs(r, 0.95, 0.15, 0.36, "flesh_dark", "flesh_dark", 0.85)
+	cyl(r, 0.22, 0.5, 1.5, Vector3(0, 1.15, 0), "blood_rust", Vector3.ZERO, 14)  # robe
+	sphere(r, 0.28, Vector3(0, 2.0, 0), "blood_rust", Vector3(1.0, 1.3, 1.0))  # hood
+	sphere(r, 0.16, Vector3(0.12, 1.95, 0), "black", Vector3(0.6, 1.0, 0.9))  # darkness under the hood
+	torus(r, 0.24, 0.3, Vector3(0, 1.55, 0), "team")  # sash in the team colour
+	cyl(r, 0.025, 0.025, 2.4, Vector3(0.4, 1.4, -0.3), "rust", Vector3.ZERO, 6)  # lantern pole
+	box(r, Vector3(0.22, 0.3, 0.22), Vector3(0.4, 2.55, -0.3), "rust")
+	anim(sphere(r, 0.1, Vector3(0.4, 2.55, -0.3), "amber_glow"), "pulse", 3.0)
+	return r
+
+
 ## Palach (boss): a towering executioner in a bloody apron with a huge rusted triangular helmet and
 ## a giant cleaver. Legs "Leg0"/"Leg1" and the torso "Turret" are animated like the Titan's.
 func fog_executioner() -> Node3D:
@@ -591,8 +977,8 @@ func _build(kind: String) -> Node3D:
 		"depot": return supply_depot()
 		"barracks": return barracks()
 		"factory": return factory()
-		"worker": return worker()
-		"marine": return marine()
+		"worker": return human_worker()
+		"marine": return soldier()
 		"tank": return tank()
 		"wraith": return wraith()
 		"titan": return titan()
@@ -600,10 +986,10 @@ func _build(kind: String) -> Node3D:
 		"stormbird": return stormbird()
 		"devastator": return devastator()
 		"drone": return kamikaze_drone()
-		"medic": return medic()
+		"medic": return field_medic()
 		"mechanic": return mechanic()
 		"scout": return seeker()
-		"officer": return officer()
+		"officer": return field_officer()
 		"command_vehicle": return command_vehicle()
 		"command_ship": return command_ship()
 		"beacon": return sensor_beacon()

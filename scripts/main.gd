@@ -407,7 +407,7 @@ func try_train(b, uk: String) -> bool:
 		return false
 	if supply_used(b.team) + int(st.supply) > supply_cap(b.team):
 		if b.team == PLAYER:
-			show_message(I18N.t("Нужно больше Supply Depot (V рабочим)"))
+			show_message(I18N.t("Нужно больше складов (V рабочим)"))
 		return false
 	bank[b.team] -= st.cost
 	b.queue.append(uk)
