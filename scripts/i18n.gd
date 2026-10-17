@@ -180,6 +180,17 @@ const EN := {
 	"Язык": "Language",
 	"Язык / Language: %s  ▸": "Language / Язык: %s  ▸",
 	"Режим экрана": "Display mode",
+	"Люди": "Humans", "Туман": "The Fog",
+	"Сборщик": "Gatherer", "Кокон": "Cocoon", "Сиделка": "Sister", "Вестник": "Herald", "Глаз": "Eye",
+	"Ржавый колокол": "Rusted Bell", "Зверь": "Beast", "Крикун": "Screamer", "Ткач": "Weaver",
+	"Пастырь": "Shepherd", "Летун": "Flyer", "Рой": "Swarm", "Чрево": "Womb", "Мотылёк": "Moth",
+	"Проводник": "Guide", "Палач": "Executioner",
+	"Алтарь": "Altar", "Склеп": "Crypt", "Лечебница": "Asylum", "Клетка": "Cage", "Мастерская плоти": "Flesh Workshop",
+	"Сирена": "Siren", "Скотобойня": "Slaughterhouse", "Гнездо": "Nest", "Колодец": "Well",
+	"Фракция: %s  ▸": "Faction: %s  ▸",
+	"Колонисты: техника, авиация, медики и механики. Сильная экономика и ремонт.": "Colonists: vehicles, aircraft, medics and mechanics. Strong economy and repairs.",
+	"Туман: ржавые постройки и искажённые твари. Всё, что живёт в Тумане, медленно регенерирует.": "The Fog: rusted structures and twisted creatures. Everything that lives in the Fog slowly regenerates.",
+	"Туман: регенерация %s HP/с": "The Fog: regenerates %s HP/s",
 	"Officer (командир)": "Officer",
 	"Command Vehicle (командирская машина)": "Command Vehicle",
 	"Command Ship (командирский корабль)": "Command Ship",
@@ -209,4 +220,6 @@ static func t(s: String) -> String:
 		return EN[s]
 	if s.begins_with("Титан «") and s.ends_with("»"):  # a Titan's rolled name
 		return "Titan “%s”" % EN.get(s.trim_prefix("Титан «").trim_suffix("»"), s)
+	if s.begins_with("Палач «") and s.ends_with("»"):  # the Fog's Executioner
+		return "Executioner “%s”" % EN.get(s.trim_prefix("Палач «").trim_suffix("»"), s)
 	return s

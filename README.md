@@ -14,6 +14,20 @@ and wipe out the enemy with tactical, cluster and napalm missiles. Fully 3D, fre
 
 ---
 
+## Two factions
+
+Pick your side in the main menu (**Faction**); the enemy plays the other one.
+
+- **Humans** — colonists of a base hastily bolted together from salvaged modules: vehicles, aircraft, medics and mechanics.
+- **The Fog** — a Silent Hill–like faction: rusted, blood-stained structures hung with chains (Altar, Asylum,
+  Slaughterhouse, Nest…) and twisted creatures — Gatherers, straitjacketed Cocoons spitting acid, faceless Sisters,
+  eyeless Beasts, Flyers and the Executioner with his great rusted helmet and cleaver. Everything of the Fog slowly
+  regenerates (1.5 HP/s).
+
+![The Fog faction: buildings and creatures](docs/screenshots/fog_faction.jpg)
+
+The whole world is wrapped in thick white fog with falling ash, flat grey light, washed-out colours and film grain.
+
 ## Why play
 
 - ⚔️ **Classic RTS you know from the first minute.** Workers mine minerals, you build barracks, a factory and a starport,

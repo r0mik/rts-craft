@@ -46,7 +46,7 @@ func _roll_stats() -> void:
 		stats[key] = stats[key] * randf_range(f[0], f[1])
 	stats.damage = roundi(stats.damage)
 	stats.hp = roundi(stats.hp)
-	stats.name = "Титан «%s»" % stats.titles.pick_random()
+	stats.name = ("Палач «%s»" if game.faction(team) == "fog" else "Титан «%s»") % stats.titles.pick_random()
 
 
 func setup(g, t: int, k: String) -> void:
@@ -56,6 +56,9 @@ func setup(g, t: int, k: String) -> void:
 	stats = Defs.UNITS[k]
 	if stats.has("random"):
 		_roll_stats()
+	elif game.faction(t) == "fog":  # the Fog's own name for this kind
+		stats = stats.duplicate()
+		stats.name = game.kind_name(t, k)
 	max_hp = stats.hp * game.age_unit_mult(t)
 	hp = max_hp
 	life_left = stats.get("lifetime", 0.0)
@@ -192,6 +195,8 @@ func _process(delta: float) -> void:
 			game.kill(self)
 		return
 	ability_cd = maxf(0.0, ability_cd - delta)
+	if hp < max_hp and game.faction(team) == "fog":  # the Fog's flesh slowly knits back together
+		hp = minf(max_hp, hp + Defs.FOG_REGEN * delta)
 	if commander != null and hp < max_hp and game.squad_bonus(self):  # squad regeneration near the commander
 		hp = minf(max_hp, hp + game.squad_rule(self).regen * delta)
 	cooldown_left = maxf(0.0, cooldown_left - delta)

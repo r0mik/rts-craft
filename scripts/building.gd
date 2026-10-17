@@ -37,6 +37,9 @@ func setup(g, t: int, k: String, under_construction: bool) -> void:
 	team = t
 	kind = k
 	stats = Defs.BUILDINGS[k]
+	if game.faction(t) == "fog":
+		stats = stats.duplicate()
+		stats.name = game.kind_name(t, k)
 	max_hp = stats.hp * game.age_hp_mult(t)
 	max_shield = max_hp * game.age_shield(t)
 	size = stats.size
@@ -123,6 +126,8 @@ func _process(delta: float) -> void:
 	if hp <= 0.0:
 		return
 	since_hit += delta
+	if not constructing and hp < max_hp and game.faction(team) == "fog":
+		hp = minf(max_hp, hp + Defs.FOG_REGEN * delta)
 	if not constructing and max_shield > 0.0 and since_hit > 4.0:
 		shield = minf(max_shield, shield + max_shield * 0.06 * delta)
 	if constructing:

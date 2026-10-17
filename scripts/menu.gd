@@ -5,6 +5,7 @@ extends Node
 const I18N = preload("res://scripts/i18n.gd")
 const MainScene = preload("res://main.tscn")
 const MainScript = preload("res://scripts/main.gd")
+const Defs = preload("res://scripts/defs.gd")
 const HUD = preload("res://scripts/hud.gd")
 const Settings = preload("res://scripts/settings.gd")
 
@@ -33,6 +34,8 @@ var diff_index := 0
 var diff_button: Button
 var diff_label: Label
 var help_panel: Control
+var fac_button: Button
+var fac_label: Label
 var battle  # the AI-vs-AI demo game in the background
 
 
@@ -126,6 +129,12 @@ func _build_ui() -> void:
 	load_btn.add_theme_stylebox_override("disabled", _style(Color(0.03, 0.05, 0.07, 0.6), Color(0.1, 0.15, 0.2)))
 	load_btn.add_theme_color_override("font_disabled_color", Color(0.5, 0.55, 0.6, 0.6))
 	col.add_child(load_btn)
+	fac_button = _button("", _next_faction)
+	col.add_child(fac_button)
+	fac_label = _label("", 15, Color(0.75, 0.85, 0.95, 0.8))
+	fac_label.custom_minimum_size = Vector2(560, 0)
+	col.add_child(fac_label)
+	_update_faction()
 	diff_button = _button("", _next_difficulty)
 	col.add_child(diff_button)
 	diff_label = _label("", 15, Color(0.75, 0.85, 0.95, 0.8))
@@ -179,6 +188,22 @@ func _update_difficulty() -> void:
 	diff_button.text = I18N.t("Сложность: %s  ▸") % I18N.t(d[1])
 	diff_label.text = I18N.t(d[2])
 	MainScript.difficulty = d[0]
+
+
+const FACTION_DESC := {
+	"human": "Колонисты: техника, авиация, медики и механики. Сильная экономика и ремонт.",
+	"fog": "Туман: ржавые постройки и искажённые твари. Всё, что живёт в Тумане, медленно регенерирует.",
+}
+
+
+func _update_faction() -> void:
+	fac_button.text = I18N.t("Фракция: %s  ▸") % I18N.t(Defs.FACTION_NAMES[MainScript.player_faction])
+	fac_label.text = I18N.t(FACTION_DESC[MainScript.player_faction])
+
+
+func _next_faction() -> void:
+	MainScript.player_faction = "fog" if MainScript.player_faction == "human" else "human"
+	_update_faction()
 
 
 func _next_difficulty() -> void:

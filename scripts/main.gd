@@ -65,6 +65,9 @@ var autotest := false
 var report_timer := 0.0
 ## Chosen in the main menu: "easy" — red only defends; "normal" — red plays the full AI and attacks.
 static var difficulty := "easy"
+## Chosen in the main menu: the player's faction ("human" or "fog"); the enemy plays the other one.
+static var player_faction := "human"
+var factions := ["human", "fog"]
 ## Demo mode: AI vs AI battle behind the main menu (no HUD, no fog, no input, cinematic camera).
 var demo := false
 var demo_restart := 0.0
@@ -91,7 +94,10 @@ func _ready() -> void:
 	autotest = "--autotest" in OS.get_cmdline_user_args()
 	view = ViewScript.new()
 	add_child(view)
-	view.setup(self, TEAM_COLORS)
+	if not pending_load.is_empty() and not demo:
+		player_faction = pending_load.get("factions", ["human", "fog"])[0]
+	factions = [player_faction, "fog" if player_faction == "human" else "human"]
+	view.setup(self, TEAM_COLORS, factions)
 	entities = Node2D.new()  # logic-only nodes; everything visible lives in the 3D view
 	add_child(entities)
 	var save: Dictionary = pending_load
@@ -186,6 +192,17 @@ func spawn_mineral(pos: Vector2, variant := -1):
 
 func valid(e) -> bool:
 	return is_instance_valid(e) and e.is_alive()
+
+
+func faction(t: int) -> String:
+	return factions[t] if t >= 0 and t < factions.size() else "human"
+
+
+## Display name (Russian source text) of a unit or building kind for a team's faction.
+func kind_name(t: int, kind: String) -> String:
+	if faction(t) == "fog" and Defs.FOG_NAMES.has(kind):
+		return Defs.FOG_NAMES[kind]
+	return Defs.UNITS[kind].name if Defs.UNITS.has(kind) else Defs.BUILDINGS[kind].name
 
 
 func team_color(t: int) -> Color:
@@ -382,7 +399,7 @@ func try_train(b, uk: String) -> bool:
 		return false
 	if st.has("limit") and count_units(b.team, uk) >= int(st.limit):
 		if b.team == PLAYER:
-			show_message(I18N.t("%s может быть только один") % I18N.t(st.name))
+			show_message(I18N.t("%s может быть только один") % I18N.t(kind_name(b.team, uk)))
 		return false
 	if bank[b.team] < st.cost:
 		if b.team == PLAYER:
@@ -514,7 +531,7 @@ func save_game(slot: String) -> bool:
 		ai_state.append({"team": ai.team, "elapsed": ai.elapsed, "wave_size": ai.wave_size})
 	var data := {
 		"version": 1, "saved_at": Time.get_datetime_string_from_system().replace("T", " ").left(16),
-		"difficulty": difficulty, "elapsed": elapsed, "bank": bank, "upgrades": upgrades, "ages": ages,
+		"difficulty": difficulty, "factions": factions, "elapsed": elapsed, "bank": bank, "upgrades": upgrades, "ages": ages,
 		"fog_seen": fog_seen, "focus": view.focus, "units": units, "buildings": blds, "minerals": mins, "ais": ai_state,
 	}
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
@@ -643,7 +660,7 @@ func item_name(item: String) -> String:
 		return I18N.t(Defs.MISSILES[item.get_slice(":", 1)].name)
 	if Defs.UPGRADES.has(item):
 		return "%s +%d" % [I18N.t(Defs.UPGRADES[item].name), upgrades[PLAYER][item] + 1]
-	return I18N.t(Defs.UNITS[item].name)
+	return I18N.t(kind_name(PLAYER, item))
 
 
 func try_order_build(w, kind: String, pos: Vector2) -> bool:
@@ -794,7 +811,7 @@ func get_commands() -> Array:
 		if units.any(func(u): return u.is_worker()):
 			for bk in Defs.WORKER_BUILDS:
 				var st: Dictionary = Defs.BUILDINGS[bk]
-				cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [I18N.t(st.name), OS.get_keycode_string(st.hotkey), st.cost],
+				cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [I18N.t(kind_name(PLAYER, bk)), OS.get_keycode_string(st.hotkey), st.cost],
 					"fn": func(): start_placing(bk), "icon": bk, "cost": st.cost})
 	elif not blds.is_empty():
 		var kinds := []
@@ -804,7 +821,7 @@ func get_commands() -> Array:
 					kinds.append(uk)
 		for uk in kinds:
 			var st: Dictionary = Defs.UNITS[uk]
-			cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [I18N.t(st.name), OS.get_keycode_string(st.hotkey), st.cost],
+			cmds.append({"key": st.hotkey, "label": "%s (%s) %d" % [I18N.t(kind_name(PLAYER, uk)), OS.get_keycode_string(st.hotkey), st.cost],
 				"fn": func(): train_selected(uk), "icon": uk, "cost": st.cost})
 		var cc = null
 		for b in blds:

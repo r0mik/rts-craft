@@ -197,6 +197,21 @@ const SQUADS := {
 	"air": {"max": 4, "damage": 1.2, "armor": 1.0, "regen": 0.0, "excluded": ["drone"]},
 }
 
+## Factions. "human": the Terran-like colonists. "fog": the Silent Hill-like faction of the Fog —
+## rusted, blood-stained structures and twisted creatures. Same roles and stats per kind (so the AI
+## and balance stay shared), different names and models; every Fog unit and building slowly
+## regenerates instead of relying on medics and mechanics alone.
+const FACTION_NAMES := {"human": "Люди", "fog": "Туман"}
+const FOG_REGEN := 1.5  # HP per second for Fog units and finished buildings
+const FOG_NAMES := {
+	"worker": "Сборщик", "marine": "Кокон", "medic": "Сиделка", "officer": "Вестник", "scout": "Глаз",
+	"beacon": "Ржавый колокол", "tank": "Зверь", "aa": "Крикун", "mechanic": "Ткач",
+	"command_vehicle": "Пастырь", "wraith": "Летун", "stormbird": "Рой", "devastator": "Чрево",
+	"drone": "Мотылёк", "command_ship": "Проводник", "titan": "Палач",
+	"cc": "Алтарь", "depot": "Склеп", "barracks": "Лечебница", "bunker": "Клетка", "ebay": "Мастерская плоти",
+	"turret": "Сирена", "factory": "Скотобойня", "starport": "Гнездо", "silo": "Колодец",
+}
+
 ## Ages, advanced at the Command Center (E), one after another like in Age of Empires.
 ## Index = age number (1 is the starting age). Every new age doubles building durability;
 ## from age 3 buildings get a regenerating energy shield; age 4 also boosts units.

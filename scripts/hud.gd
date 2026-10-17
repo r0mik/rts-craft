@@ -421,6 +421,8 @@ func _stats_text(e) -> String:
 			lines.append(I18N.t("Скорость %d") % e.stats.speed)
 		if e.carrying > 0:
 			lines.append(I18N.t("Несёт минералы: %d") % e.carrying)
+		if game.faction(e.team) == "fog":
+			lines.append(I18N.t("Туман: регенерация %s HP/с") % str(Defs.FOG_REGEN))
 		if e.stats.has("commands"):  # commander: squad size and bonuses
 			var rule: Dictionary = Defs.SQUADS[e.stats.commands]
 			lines.append(I18N.t("Отряд: %d/%d (%s). Рядом с командиром: урон +%d%%, броня +%d") % [e.squad.size(), rule.max,

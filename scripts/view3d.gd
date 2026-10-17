@@ -44,10 +44,10 @@ var _smoke_ramp: Gradient
 var _spark_ramp: Gradient
 
 
-func setup(g, team_colors: Array) -> void:
+func setup(g, team_colors: Array, factions := ["human", "human"]) -> void:
 	game = g
-	for c in team_colors:
-		builders.append(Models.new(c))
+	for i in team_colors.size():
+		builders.append(Models.new(team_colors[i], factions[i] if i < factions.size() else "human"))
 	_make_environment()
 	camera = Camera3D.new()
 	camera.fov = FOV
@@ -1062,6 +1062,8 @@ func fx_shot(attacker, target, splash: bool) -> void:
 				width = 0.22
 			"worker":
 				return
+	if not attacker.is_in_group("buildings") and game.faction(attacker.team) == "fog":
+		color = Color(0.72, 0.85, 0.28)  # the Fog spits acid
 	var t_h: float = mid_of(target) if target.is_air() else top_of(target) * 0.45 if not target.is_in_group("buildings") else top_of(target) * 0.5
 	var hit := _world(target.position, t_h) + Vector3(randf_range(-0.3, 0.3), 0, randf_range(-0.3, 0.3))
 	if rockets:  # a salvo of two missiles from the wing pylons
