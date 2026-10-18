@@ -34,6 +34,19 @@ var drag_start := Vector2.ZERO  # screen position where the selection box starte
 var placing := ""
 var attack_mode := false
 var missile_mode := false  # next left click picks the missile target
+# Touch controls (iPad / touch screens): see the "Touch input" section below.
+var touch_mode := OS.has_feature("mobile") or OS.has_feature("web_ios") or OS.has_feature("web_android")
+var touch_add := false        # on-screen "+" toggle: taps and boxes add to the selection (like Shift)
+var touches := {}             # finger index -> current screen position
+var touch_start := Vector2.ZERO
+var touch_start_time := 0.0
+var touch_moved := false      # the single finger left its tap radius
+var touch_gesture := false    # two fingers went down: camera only until every finger is lifted
+var touch_long_done := false  # the long press already gave its order
+var drag_touch := -1          # finger drawing the selection box, -1 for the mouse
+var drag_end := Vector2.ZERO
+var last_tap_time := 0.0
+var last_tap_entity = null
 var missiles: Array = []   # in flight: {team, type, from, to, t, node}
 var fires: Array = []      # napalm fields: {pos, r, dps, t, node}
 var squad_timer := 0.0
@@ -873,6 +886,8 @@ func cmd_attack() -> void:
 	attack_mode = true
 	missile_mode = false
 	placing = ""
+	if touch_mode:
+		show_message(I18N.t("Коснитесь цели атаки"))
 
 
 # --- Squads ---------------------------------------------------------------------------
@@ -982,7 +997,7 @@ func cmd_launch() -> void:
 	missile_mode = true
 	attack_mode = false
 	placing = ""
-	show_message(I18N.t("Выберите цель для ракеты (ЛКМ), ПКМ — отмена"))
+	show_message(I18N.t("Коснитесь цели для ракеты") if touch_mode else I18N.t("Выберите цель для ракеты (ЛКМ), ПКМ — отмена"))
 
 
 # --- Missiles ---------------------------------------------------------------
@@ -1329,7 +1344,20 @@ func show_message(text: String) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if demo:
 		return
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		_touch_input(event)
+		return
+	if event is InputEventMagnifyGesture:  # trackpad pinch (Mac, iPad with a trackpad)
+		view.zoom(1.0 / maxf(event.factor, 0.01))
+		return
+	if event is InputEventPanGesture:  # two-finger trackpad scroll moves the camera
+		view.focus = (view.focus + event.delta * 0.6 * view.dist).clamp(Vector2.ZERO, map_size)
+		return
+	if (event is InputEventMouseButton or event is InputEventMouseMotion) and event.device == InputEvent.DEVICE_ID_EMULATION:
+		return  # mouse events made up from touches: fingers are handled by _touch_input()
 	if event is InputEventMouseButton:
+		if event.pressed and touch_mode:
+			touch_mode = false  # a real mouse click: back to mouse controls
 		var sp: Vector2 = event.position
 		var wp: Vector2 = view.screen_to_ground(sp)
 		match event.button_index:
@@ -1337,22 +1365,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				if event.pressed:
 					if placing != "":
 						_try_place(wp, event.shift_pressed)
-					elif missile_mode:
-						missile_mode = false
-						for b in selected_buildings():
-							if b.kind == "silo" and launch_missile(b, wp):
-								add_marker(wp, Color(1.0, 0.25, 0.2))
-								break
-					elif attack_mode:
-						var units := order_units()
-						var t = view.pick(sp)
-						if t != null and t.team >= 0 and t.team != PLAYER:
-							for u in units:
-								u.order_attack(t)
-						else:
-							issue_move(units, wp, true)
-						add_marker(wp, Color(1.0, 0.25, 0.2))
-						attack_mode = false
+					elif missile_mode or attack_mode:
+						_world_click(sp, wp)
 					else:
 						dragging = true
 						drag_start = sp
@@ -1386,24 +1400,10 @@ func _handle_key(event: InputEventKey) -> void:
 		get_tree().reload_current_scene()
 		return
 	if key == KEY_ESCAPE:
-		if placing == "" and not attack_mode and not missile_mode:
-			hud.open_pause_menu()  # nothing to cancel: open the pause menu
-		placing = ""
-		attack_mode = false
-		missile_mode = false
+		cancel_or_pause()
 		return
 	if key >= KEY_1 and key <= KEY_9:
-		var n := int(key - KEY_0)
-		if event.ctrl_pressed:
-			control_groups[n] = selection.duplicate()
-			show_message(I18N.t("Группа %d назначена") % n)
-		elif control_groups.has(n):
-			set_selection(control_groups[n])
-			var now := Time.get_ticks_msec() / 1000.0
-			if last_group_key == n and now - last_group_time < 0.4 and not selection.is_empty():
-				view.focus = selection[0].position
-			last_group_key = n
-			last_group_time = now
+		control_group(int(key - KEY_0), event.ctrl_pressed)
 		return
 	if key == KEY_SPACE:
 		view.focus = start_positions[PLAYER]
@@ -1425,7 +1425,7 @@ func _finish_selection(a: Vector2, b: Vector2, add: bool) -> void:
 	var r := Rect2(a, Vector2.ZERO).expand(b)  # screen space
 	var picked := []
 	if r.size.length() < 8.0:
-		var e = view.pick(b)
+		var e = touch_pick(b) if touch_mode else view.pick(b)
 		if e != null and e.team >= 0:
 			picked = [e]
 	else:
@@ -1446,6 +1446,180 @@ func _finish_selection(a: Vector2, b: Vector2, add: bool) -> void:
 		set_selection(picked)
 
 
+# --- Touch input --------------------------------------------------------------
+# One finger: tap your own unit or building to select it (double tap: every unit of that kind on
+# screen), tap the ground or an enemy to send the selected units there, drag to draw a selection
+# box, hold to give an order anywhere (also sets rally points). Two fingers: pan and pinch zoom.
+# While a building is being placed, the ghost follows the finger and lifting it places the building.
+
+const TAP_RADIUS := 14.0
+const LONG_PRESS := 0.5
+const DOUBLE_TAP := 0.35
+
+
+func _touch_input(event: InputEvent) -> void:
+	touch_mode = true
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			touches[event.index] = event.position
+			if touches.size() == 1 and not touch_gesture:
+				touch_start = event.position
+				touch_start_time = Time.get_ticks_msec() / 1000.0
+				touch_moved = false
+				touch_long_done = false
+			elif touches.size() >= 2:
+				touch_gesture = true
+				if drag_touch >= 0:  # a second finger turns the selection box into a camera move
+					dragging = false
+					drag_touch = -1
+		else:
+			var was_single := touches.size() == 1 and not touch_gesture
+			touches.erase(event.index)
+			if was_single:
+				_touch_release(event.position)
+			if touches.is_empty():
+				touch_gesture = false
+	elif event is InputEventScreenDrag:
+		if not touches.has(event.index):
+			return
+		if touch_gesture and touches.size() >= 2:
+			var keys := touches.keys()
+			var a: Vector2 = touches[keys[0]]
+			var b: Vector2 = touches[keys[1]]
+			var old_mid := (a + b) / 2.0
+			var old_span := a.distance_to(b)
+			touches[event.index] = event.position
+			a = touches[keys[0]]
+			b = touches[keys[1]]
+			var mid := (a + b) / 2.0
+			view.focus += view.screen_to_ground(old_mid) - view.screen_to_ground(mid)
+			if old_span > 10.0 and a.distance_to(b) > 10.0:
+				view.zoom(old_span / a.distance_to(b))
+			view.focus = view.focus.clamp(Vector2.ZERO, map_size)
+			return
+		touches[event.index] = event.position
+		if touch_gesture or touch_long_done:
+			return
+		if not touch_moved and event.position.distance_to(touch_start) > TAP_RADIUS:
+			touch_moved = true
+			if placing == "" and not attack_mode and not missile_mode:
+				dragging = true
+				drag_touch = event.index
+				drag_start = touch_start
+		if drag_touch == event.index:
+			drag_end = event.position
+
+
+func _touch_release(sp: Vector2) -> void:
+	if drag_touch >= 0:
+		dragging = false
+		drag_touch = -1
+		_finish_selection(drag_start, sp, touch_add)
+		return
+	if touch_long_done or game_over:
+		return
+	var wp: Vector2 = view.screen_to_ground(sp)
+	if placing != "":  # lifting the finger places the building where the ghost is
+		_try_place(wp, touch_add)
+		return
+	if touch_moved:
+		return
+	if missile_mode or attack_mode:
+		_world_click(sp, wp)
+		return
+	var picked = touch_pick(sp)
+	var now := Time.get_ticks_msec() / 1000.0
+	if picked != null and picked.team == PLAYER:
+		if picked == last_tap_entity and now - last_tap_time < DOUBLE_TAP and picked.is_in_group("units"):
+			var vs := get_viewport().get_visible_rect().size
+			set_selection(view.units_in_rect(Rect2(Vector2.ZERO, vs), PLAYER).filter(func(u): return u.kind == picked.kind))
+		else:
+			_finish_selection(sp, sp, touch_add)
+		last_tap_entity = picked
+		last_tap_time = now
+	elif not order_units().is_empty():
+		_right_click(wp, picked)
+	elif picked != null and picked.team >= 0:
+		set_selection([picked])  # look at an enemy
+	elif not touch_add:
+		set_selection([])
+
+
+## Called every frame: a finger held still gives an order (like a right click).
+func _update_touch() -> void:
+	if touches.size() != 1 or touch_gesture or touch_moved or touch_long_done or game_over:
+		return
+	if Time.get_ticks_msec() / 1000.0 - touch_start_time < LONG_PRESS:
+		return
+	touch_long_done = true
+	if placing != "" or attack_mode or missile_mode:
+		return
+	_right_click(view.screen_to_ground(touch_start), touch_pick(touch_start))
+
+
+## Entity under a fingertip: a finger is less exact than a cursor, so look around the point too.
+func touch_pick(sp: Vector2):
+	var e = view.pick(sp)
+	if e != null:
+		return e
+	for r in [16.0, 30.0]:
+		for i in 8:
+			e = view.pick(sp + Vector2.from_angle(i * TAU / 8.0) * r)
+			if e != null:
+				return e
+	return null
+
+
+## The left click on the world with a target to pick (attack-move or a missile).
+func _world_click(sp: Vector2, wp: Vector2) -> void:
+	if missile_mode:
+		missile_mode = false
+		for b in selected_buildings():
+			if b.kind == "silo" and launch_missile(b, wp):
+				add_marker(wp, Color(1.0, 0.25, 0.2))
+				break
+	elif attack_mode:
+		var units := order_units()
+		var t = touch_pick(sp) if touch_mode else view.pick(sp)
+		if t != null and t.team >= 0 and t.team != PLAYER:
+			for u in units:
+				u.order_attack(t)
+		else:
+			issue_move(units, wp, true)
+		add_marker(wp, Color(1.0, 0.25, 0.2))
+		attack_mode = false
+
+
+## Esc: cancels building placement or target picking, otherwise opens the pause menu.
+func cancel_or_pause() -> void:
+	if placing == "" and not attack_mode and not missile_mode:
+		hud.open_pause_menu()
+	placing = ""
+	attack_mode = false
+	missile_mode = false
+
+
+## Every combat unit of the player (workers stay at work).
+func select_army() -> void:
+	set_selection(team_units(PLAYER).filter(func(u): return not u.is_worker()))
+
+
+## Control group n: select it (tap) or store the current selection in it (assign).
+func control_group(n: int, assign: bool) -> void:
+	if assign:
+		control_groups[n] = selection.duplicate()
+		show_message(I18N.t("Группа %d назначена") % n)
+		return
+	if not control_groups.has(n):
+		return
+	set_selection(control_groups[n])
+	var now := Time.get_ticks_msec() / 1000.0
+	if last_group_key == n and now - last_group_time < 0.4 and not selection.is_empty():
+		view.focus = selection[0].position
+	last_group_key = n
+	last_group_time = now
+
+
 # --- Frame update -----------------------------------------------------------
 
 func _process(delta: float) -> void:
@@ -1461,7 +1635,8 @@ func _process(delta: float) -> void:
 		_update_squads()
 	_update_camera(delta)
 	_resolve_collisions()
-	if dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+	_update_touch()
+	if dragging and drag_touch < 0 and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		dragging = false
 		_finish_selection(drag_start, get_viewport().get_mouse_position(), Input.is_key_pressed(KEY_SHIFT))
 	if demo and game_over:  # the menu battle starts over a few seconds after it ends
@@ -1535,7 +1710,7 @@ func _update_camera(delta: float) -> void:
 	if Input.is_physical_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): dir.x += 1
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): dir.y -= 1
 	if Input.is_physical_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): dir.y += 1
-	if DisplayServer.window_is_focused() and not autotest and Settings.edge_scroll:
+	if DisplayServer.window_is_focused() and not autotest and Settings.edge_scroll and not touch_mode:
 		var mp := get_viewport().get_mouse_position()
 		var vs := get_viewport_rect().size
 		var edge := 12.0

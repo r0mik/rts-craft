@@ -51,6 +51,11 @@ var _portrait_cam: Camera3D
 var _portrait_kind := ""
 var _wire_cells: Array = []   # [{button, entity}]
 var _combo_label: RichTextLabel  # merge hints under the wireframes
+var touch_bar: VBoxContainer     # on-screen buttons for touch screens, shown in touch mode
+var _touch_cancel: Button
+var _touch_add: Button
+var _touch_restart: Button
+var _help_touch := false
 
 
 func setup(g) -> void:
@@ -60,6 +65,7 @@ func setup(g) -> void:
 	add_child(overlay)
 	_build_top()
 	_build_console()
+	_build_touch_bar()
 	msg_label = Label.new()
 	msg_label.anchor_right = 1.0
 	msg_label.offset_top = 46.0
@@ -213,8 +219,81 @@ func show_message(text: String) -> void:
 
 
 func show_big(text: String, color: Color) -> void:
-	big_label.text = text + I18N.t("\n[R] — заново    [Esc] — меню")
+	big_label.text = text + _game_over_hint()
 	big_label.add_theme_color_override("font_color", color)
+
+
+func _game_over_hint() -> String:
+	if game.touch_mode:
+		return I18N.t("\nКнопки справа: «Заново» или «Меню»")
+	return I18N.t("\n[R] — заново    [Esc] — меню")
+
+
+## A column of big buttons at the right edge for what the keyboard does: menu, cancel, army,
+## base, add to selection (Shift) and control groups (tap: select, hold: assign).
+func _build_touch_bar() -> void:
+	touch_bar = VBoxContainer.new()
+	touch_bar.anchor_left = 1.0
+	touch_bar.anchor_right = 1.0
+	touch_bar.offset_left = -132.0
+	touch_bar.offset_right = -8.0
+	touch_bar.offset_top = 56.0
+	touch_bar.add_theme_constant_override("separation", 6)
+	touch_bar.visible = false
+	add_child(touch_bar)
+	touch_bar.add_child(_touch_button(I18N.t("Меню"), func(): game.cancel_or_pause()))
+	_touch_cancel = _touch_button(I18N.t("Отмена"), func(): game.cancel_or_pause())
+	touch_bar.add_child(_touch_cancel)
+	_touch_restart = _touch_button(I18N.t("Заново"), func(): get_tree().reload_current_scene())
+	touch_bar.add_child(_touch_restart)
+	touch_bar.add_child(_touch_button(I18N.t("Армия"), func(): game.select_army()))
+	touch_bar.add_child(_touch_button(I18N.t("База"), func(): game.view.focus = game.start_positions[game.PLAYER]))
+	_touch_add = _touch_button(I18N.t("+ Выбор"), func(): game.touch_add = _touch_add.button_pressed)
+	_touch_add.toggle_mode = true
+	_touch_add.tooltip_text = I18N.t("Касания и рамка добавляют к выделению")
+	touch_bar.add_child(_touch_add)
+	var groups := GridContainer.new()
+	groups.columns = 2
+	groups.add_theme_constant_override("h_separation", 6)
+	groups.add_theme_constant_override("v_separation", 6)
+	touch_bar.add_child(groups)
+	for n in range(1, 5):
+		var b := _touch_button(str(n), Callable())
+		b.custom_minimum_size = Vector2(59, 52)
+		var down_at := [0.0]
+		b.button_down.connect(func(): down_at[0] = Time.get_ticks_msec() / 1000.0)
+		b.button_up.connect(func(): game.control_group(n, Time.get_ticks_msec() / 1000.0 - down_at[0] >= 0.5))
+		groups.add_child(b)
+	var hint := _label(I18N.t("Удержать — назначить"), 12, Color(0.8, 0.9, 1.0, 0.6))
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	touch_bar.add_child(hint)
+
+
+func _touch_button(text: String, fn: Callable) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(124, 52)
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 18)
+	b.add_theme_color_override("font_color", TEXT)
+	b.add_theme_color_override("font_pressed_color", GOLD)
+	b.add_theme_stylebox_override("normal", panel_style(Color(0.05, 0.09, 0.12, 0.92), FRAME_DIM, 2, 4))
+	b.add_theme_stylebox_override("hover", panel_style(Color(0.05, 0.09, 0.12, 0.92), FRAME_DIM, 2, 4))
+	b.add_theme_stylebox_override("pressed", panel_style(Color(0.14, 0.24, 0.3, 0.95), GOLD, 2, 4))
+	if fn.is_valid():
+		b.pressed.connect(fn)
+	return b
+
+
+func _update_touch_bar() -> void:
+	touch_bar.visible = game.touch_mode
+	if not game.touch_mode:
+		return
+	_touch_cancel.visible = game.placing != "" or game.attack_mode or game.missile_mode
+	_touch_restart.visible = game.game_over
+	if _touch_add.button_pressed != game.touch_add:
+		_touch_add.set_pressed_no_signal(game.touch_add)
 
 
 func _process(delta: float) -> void:
@@ -232,10 +311,18 @@ func _process(delta: float) -> void:
 	res_age.tooltip_text = I18N.t(age.name)
 	msg_time -= delta
 	msg_label.modulate.a = clampf(msg_time, 0.0, 1.0)
-	if _lang_shown != Settings.lang:  # (re)write the help line in the current language
+	if _lang_shown != Settings.lang or _help_touch != game.touch_mode:  # (re)write the help line
 		_lang_shown = Settings.lang
-		help_label.text = I18N.t("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база\n") + \
-			I18N.t("Отряды: выделите командира с солдатами и нажмите Z — до 6 пехотинцев, 4 машин или 4 самолётов")
+		_help_touch = game.touch_mode
+		if game.touch_mode:
+			help_label.text = I18N.t("Касание — выбор или приказ   Удержание — приказ   Рамка — провести пальцем\n") + \
+				I18N.t("Два пальца — сдвиг и зум камеры   Двойное касание — все такие юниты на экране")
+		else:
+			help_label.text = I18N.t("ЛКМ — выбор   ПКМ — приказ   WASD — камера   G — атака   Ctrl+1..9 — группы   Space — база\n") + \
+				I18N.t("Отряды: выделите командира с солдатами и нажмите Z — до 6 пехотинцев, 4 машин или 4 самолётов")
+		if game.game_over and big_label.text != "":
+			big_label.text = big_label.text.get_slice("\n", 0) + _game_over_hint()
+	_update_touch_bar()
 	fps_label.visible = Settings.show_fps
 	if Settings.show_fps:
 		fps_label.text = "FPS %d" % Engine.get_frames_per_second()
