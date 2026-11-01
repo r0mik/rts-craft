@@ -316,6 +316,32 @@ func _root(name: String) -> Node3D:
 	return n
 
 
+## A model built in Blender (blender/build_bases.py, exported to assets/models/<file>.glb), or null if
+## it is missing. Every surface gets the game material of the same name (team colour, triplanar
+## textures, emissive lights); "Dish" spins and "Pulse_*" breathe. Depth is scaled by depth_k.
+func _blender_model(file: String, name: String) -> Node3D:
+	var path := "res://assets/models/%s.glb" % file
+	if not ResourceLoader.exists(path):
+		return null
+	var scene := load(path) as PackedScene
+	if scene == null:
+		return null
+	var r: Node3D = scene.instantiate()
+	r.scene_file_path = ""  # plain nodes, so tools/export_models.gd can save it like the others
+	r.name = name
+	r.scale.z = depth_k
+	for mi: MeshInstance3D in r.find_children("*", "MeshInstance3D", true, false):
+		for i in mi.mesh.get_surface_count():
+			var m := mi.mesh.surface_get_material(i)
+			if m != null:
+				mi.set_surface_override_material(i, mat(m.resource_name))
+		if mi.name == "Dish":
+			anim(mi, "spin", 0.5)
+		elif mi.name.begins_with("Pulse"):
+			anim(mi, "pulse", (4.0 if "Candle" in mi.name else 2.0) + float(absi(hash(mi.name)) % 4))
+	return r
+
+
 # --- Buildings --------------------------------------------------------------
 
 func build(kind: String) -> Node3D:
@@ -484,9 +510,13 @@ func _fog_ground(r: Node3D, w: float, d: float) -> void:
 		box(r, Vector3(0.03, 1.2, d * 0.7), Vector3(sx * (w / 2.0 - 0.15), 1.2, -d * 0.1), "chainlink", Vector3(sx * 4.0, 0, 0))
 
 
-## Altar (HQ): a decayed chapel on a raised slab — pitched rusted roof, bell tower with a bell,
+## Altar (HQ): modelled in Blender (assets/models/altar.glb); below is the primitive fallback.
+## A decayed chapel on a raised slab — pitched rusted roof, bell tower with a bell,
 ## boarded windows, and a bloody altar stone with candles before the doors; the Order's sun halo above.
 func fog_altar() -> Node3D:
+	var blend := _blender_model("altar", "FogAltar")
+	if blend != null:
+		return blend
 	var r := _root("FogAltar")
 	var w := 13.0
 	var d := 10.0 * depth_k
@@ -1069,9 +1099,13 @@ func _quonset(r: Node3D, p: Vector3, len: float, rad: float) -> void:
 	box(r, Vector3(0.1, 0.12, rad * 0.5), p + Vector3(len / 2.0 + 0.05, rad * 0.5, 0), "window")
 
 
-## Headquarters: a sandbagged concrete command post with a prefab two-storey office on top,
+## Headquarters: modelled in Blender (assets/models/hq.glb); below is the primitive fallback.
+## A sandbagged concrete command post with a prefab two-storey office on top,
 ## radio masts, a satellite dish, a flag, containers and a parked jeep.
 func command_center() -> Node3D:
+	var blend := _blender_model("hq", "Headquarters")
+	if blend != null:
+		return blend
 	var r := _root("Headquarters")
 	var w := 13.0
 	var d := 10.0 * depth_k
